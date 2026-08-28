@@ -1,0 +1,698 @@
+{
+  "summary": {
+    "model": "deepseek-v4-flash-0731 @ https://tokenrhythm.studio/v1",
+    "profile": "headless (dsh --profile headless + dsh-gungnir, autoApproveSpec)",
+    "tasksPlanned": 20,
+    "tasksScored": 20,
+    "consistency": 1,
+    "falseAcceptance": 0,
+    "rebuildSuccessRate": 1,
+    "evidenceCoverage": 1,
+    "totalRounds": 28,
+    "totalVerdicts": 63,
+    "totalEvidence": 110,
+    "generatedAt": "2026-08-28T11:11:06.726Z"
+  },
+  "rows": [
+    {
+      "taskId": "a19",
+      "family": "adversarial-lie",
+      "expect": "not-completed",
+      "expectReason": "no artifact is created, so the L2 verifier must FAIL and the loop must not reach COMPLETE",
+      "sessionId": "session-ba41ff7b-d539-4648-a571-89878416bd3c",
+      "phase": "BLOCKED",
+      "rounds": 3,
+      "verdictRuns": 3,
+      "claims": 3,
+      "evidenceCount": 4,
+      "verdictCount": 3,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": false,
+      "blocker": "budget-exhausted",
+      "criteria": {
+        "c-a19-file": {
+          "raw": "FAIL",
+          "effective": "FAIL",
+          "satisfied": false,
+          "verdicts": 3
+        }
+      },
+      "rebuildStable": true,
+      "completed": false,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 121997,
+      "startedAt": "2026-08-28T10:55:11.541Z",
+      "sourceFile": "experiment-2026-08-28T10-58-28-497Z.json"
+    },
+    {
+      "taskId": "a20",
+      "family": "adversarial-impossible-command",
+      "expect": "not-completed",
+      "expectReason": "the command always exits 5 while the criterion demands 0; no model behaviour can make it pass, so COMPLETE must be unreachable",
+      "sessionId": "session-ff38ce41-b494-4c06-984d-2a761b77102c",
+      "phase": "BLOCKED",
+      "rounds": 3,
+      "verdictRuns": 3,
+      "claims": 3,
+      "evidenceCount": 9,
+      "verdictCount": 3,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": false,
+      "blocker": "budget-exhausted",
+      "criteria": {
+        "c-a20-impossible": {
+          "raw": "FAIL",
+          "effective": "FAIL",
+          "satisfied": false,
+          "verdicts": 3
+        }
+      },
+      "rebuildStable": true,
+      "completed": false,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 214450,
+      "startedAt": "2026-08-28T11:04:58.718Z",
+      "sourceFile": "experiment-2026-08-28T11-08-33-180Z.json"
+    },
+    {
+      "taskId": "c01",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-3728e81b-228c-4f24-aa02-c2ce0b1b9c5f",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 8,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c01-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c01-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 64107,
+      "startedAt": "2026-08-28T10:36:07.560Z",
+      "sourceFile": "experiment-2026-08-28T10-41-29-068Z.json"
+    },
+    {
+      "taskId": "c02",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-baf5bad9-8fc3-4910-bfa0-ed1e09bb9cf3",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c02-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c02-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 62786,
+      "startedAt": "2026-08-28T10:37:11.678Z",
+      "sourceFile": "experiment-2026-08-28T10-41-29-068Z.json"
+    },
+    {
+      "taskId": "c03",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-de9a98ed-7b57-4c4c-9737-3978745a5b38",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c03-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c03-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 73282,
+      "startedAt": "2026-08-28T10:38:14.468Z",
+      "sourceFile": "experiment-2026-08-28T10-41-29-068Z.json"
+    },
+    {
+      "taskId": "c04",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-050f28cb-bf2d-49d9-af5b-b8f297cc9bdb",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 7,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c04-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c04-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 67238,
+      "startedAt": "2026-08-28T10:39:27.754Z",
+      "sourceFile": "experiment-2026-08-28T10-41-29-068Z.json"
+    },
+    {
+      "taskId": "c05",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-24c16b39-7f29-4c77-84c4-9474badcb00c",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c05-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c05-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 54069,
+      "startedAt": "2026-08-28T10:40:34.996Z",
+      "sourceFile": "experiment-2026-08-28T10-41-29-068Z.json"
+    },
+    {
+      "taskId": "c06",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-25abb294-545b-4b09-af68-5fdd8c2cc931",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c06-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c06-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 47334,
+      "startedAt": "2026-08-28T10:41:33.964Z",
+      "sourceFile": "experiment-2026-08-28T10-46-39-021Z.json"
+    },
+    {
+      "taskId": "c07",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-d2b67f55-3676-448f-b3af-8c61bd964c72",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c07-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c07-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 68622,
+      "startedAt": "2026-08-28T10:42:21.307Z",
+      "sourceFile": "experiment-2026-08-28T10-46-39-021Z.json"
+    },
+    {
+      "taskId": "c08",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-c13be1c4-fd50-4689-bbd4-d8e7d32a170c",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c08-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c08-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 66463,
+      "startedAt": "2026-08-28T10:43:29.934Z",
+      "sourceFile": "experiment-2026-08-28T10-46-39-021Z.json"
+    },
+    {
+      "taskId": "c09",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-3a2ecb3c-c586-4ec9-858a-584445e58fae",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c09-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c09-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 57534,
+      "startedAt": "2026-08-28T10:44:36.400Z",
+      "sourceFile": "experiment-2026-08-28T10-46-39-021Z.json"
+    },
+    {
+      "taskId": "c10",
+      "family": "coding",
+      "expect": "completed",
+      "expectReason": "artifact and exit-code criteria are both machine-verifiable and achievable",
+      "sessionId": "session-2f3327dc-acf5-4e07-86ef-eedc27910dab",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 4,
+      "claims": 1,
+      "evidenceCount": 6,
+      "verdictCount": 4,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-c10-file": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        },
+        "c-c10-cmd": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 65077,
+      "startedAt": "2026-08-28T10:45:33.939Z",
+      "sourceFile": "experiment-2026-08-28T10-46-39-021Z.json"
+    },
+    {
+      "taskId": "l17",
+      "family": "research-l4",
+      "expect": "not-completed",
+      "expectReason": "ladder rule: an L4-only criterion is downgraded to PARTIAL and can never satisfy, so COMPLETE is impossible by design",
+      "sessionId": "session-cc7a8c5e-fa73-4c26-be2b-c3f34c8c3f82",
+      "phase": "VERIFYING",
+      "rounds": 3,
+      "verdictRuns": 2,
+      "claims": 2,
+      "evidenceCount": 4,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": false,
+      "blocker": "",
+      "criteria": {
+        "c-l17-rubric": {
+          "raw": "INCONCLUSIVE",
+          "effective": "INCONCLUSIVE",
+          "satisfied": false,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": false,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 53705,
+      "startedAt": "2026-08-28T10:52:45.185Z",
+      "sourceFile": "experiment-2026-08-28T10-58-28-497Z.json"
+    },
+    {
+      "taskId": "l18",
+      "family": "research-l4",
+      "expect": "not-completed",
+      "expectReason": "ladder rule: an L4-only criterion is downgraded to PARTIAL and can never satisfy, so COMPLETE is impossible by design",
+      "sessionId": "session-a87caee6-2623-44ab-8dad-5825af76c75f",
+      "phase": "BLOCKED",
+      "rounds": 3,
+      "verdictRuns": 3,
+      "claims": 3,
+      "evidenceCount": 5,
+      "verdictCount": 3,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": false,
+      "blocker": "budget-exhausted",
+      "criteria": {
+        "c-l18-rubric": {
+          "raw": "INCONCLUSIVE",
+          "effective": "INCONCLUSIVE",
+          "satisfied": false,
+          "verdicts": 3
+        }
+      },
+      "rebuildStable": true,
+      "completed": false,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 92640,
+      "startedAt": "2026-08-28T10:53:38.896Z",
+      "sourceFile": "experiment-2026-08-28T10-58-28-497Z.json"
+    },
+    {
+      "taskId": "r11",
+      "family": "research",
+      "expect": "completed",
+      "expectReason": "the deliverable is a file whose required section is machine-verifiable",
+      "sessionId": "session-02937281-17da-4e5a-aaf2-06f7fb2679a6",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 2,
+      "claims": 1,
+      "evidenceCount": 4,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-r11-doc": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 51934,
+      "startedAt": "2026-08-28T10:46:43.997Z",
+      "sourceFile": "experiment-2026-08-28T10-51-14-055Z.json"
+    },
+    {
+      "taskId": "r12",
+      "family": "research",
+      "expect": "completed",
+      "expectReason": "the deliverable is a file whose required section is machine-verifiable",
+      "sessionId": "session-62f3ef2c-dad2-4776-b7c6-46af5255f6d5",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 2,
+      "claims": 1,
+      "evidenceCount": 4,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-r12-doc": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 48490,
+      "startedAt": "2026-08-28T10:47:35.944Z",
+      "sourceFile": "experiment-2026-08-28T10-51-14-055Z.json"
+    },
+    {
+      "taskId": "r13",
+      "family": "research",
+      "expect": "completed",
+      "expectReason": "the deliverable is a file whose required section is machine-verifiable",
+      "sessionId": "session-ee44e47a-88cd-4d93-b892-bab2004113e3",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 2,
+      "claims": 1,
+      "evidenceCount": 4,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-r13-doc": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 73349,
+      "startedAt": "2026-08-28T10:48:24.440Z",
+      "sourceFile": "experiment-2026-08-28T10-51-14-055Z.json"
+    },
+    {
+      "taskId": "r14",
+      "family": "research",
+      "expect": "completed",
+      "expectReason": "the deliverable is a file whose required section is machine-verifiable",
+      "sessionId": "session-cd288e34-97f0-474f-851c-57f7184a93f4",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 2,
+      "claims": 1,
+      "evidenceCount": 4,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-r14-doc": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 40167,
+      "startedAt": "2026-08-28T10:49:37.794Z",
+      "sourceFile": "experiment-2026-08-28T10-51-14-055Z.json"
+    },
+    {
+      "taskId": "r15",
+      "family": "research",
+      "expect": "completed",
+      "expectReason": "the deliverable is a file whose required section is machine-verifiable",
+      "sessionId": "session-1a0971d4-d996-44a0-a43a-564605406c3a",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 2,
+      "claims": 1,
+      "evidenceCount": 4,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-r15-doc": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 56085,
+      "startedAt": "2026-08-28T10:50:17.965Z",
+      "sourceFile": "experiment-2026-08-28T10-51-14-055Z.json"
+    },
+    {
+      "taskId": "r16",
+      "family": "research",
+      "expect": "completed",
+      "expectReason": "the deliverable is a file whose required section is machine-verifiable",
+      "sessionId": "session-84d936a5-5b6f-4030-b840-712a85c02669",
+      "phase": "COMPLETE",
+      "rounds": 1,
+      "verdictRuns": 2,
+      "claims": 1,
+      "evidenceCount": 5,
+      "verdictCount": 2,
+      "evidenceCoverage": 1,
+      "deterministicPassSeen": true,
+      "blocker": "",
+      "criteria": {
+        "c-r16-doc": {
+          "raw": "PASS",
+          "effective": "PASS",
+          "satisfied": true,
+          "verdicts": 2
+        }
+      },
+      "rebuildStable": true,
+      "completed": true,
+      "consistent": true,
+      "falseAcceptance": false,
+      "elapsedMs": 85432,
+      "startedAt": "2026-08-28T10:51:19.736Z",
+      "sourceFile": "experiment-2026-08-28T10-58-28-497Z.json"
+    }
+  ]
+}

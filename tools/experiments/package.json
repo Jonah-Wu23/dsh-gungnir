@@ -1,0 +1,17 @@
+{
+  "name": "@gungnir/experiments",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gungnir stage-1 life-death experiment: 20 coding/research/adversarial tasks driven through the real headless profile, measuring verdict-vs-ground-truth consistency, false acceptance, resume (rebuild) success and evidence coverage.",
+  "type": "module",
+  "main": "./src/run.mjs",
+  "scripts": {
+    "run": "node src/run.mjs",
+    "typecheck": "echo \"experiment harness is plain ESM (no tsc step)\" && exit 0",
+    "test": "echo \"the 20-task run IS the test: pnpm run\" && exit 0"
+  },
+  "dependencies": {
+    "@gungnir/core": "workspace:*",
+    "dsh-gungnir": "workspace:*"
+  }
+}
