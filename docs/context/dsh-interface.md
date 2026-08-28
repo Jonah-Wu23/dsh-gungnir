@@ -1,9 +1,11 @@
 # DSH 接口事实手册（L2）
 
-> 唯一的 DSH 接口事实权威。全部条目基于 **`@deepseek-ai/dsh@0.1.1-rc.2`**（全局安装于 `C:\Users\JonahWu\AppData\Roaming\npm\node_modules\@deepseek-ai\dsh`，2026-08-28 勘察）。
-> 标注：〔CLI〕= 命令实测；〔README〕= 包 README 阅读；〔类型〕= lib 内 .d.ts 勘察；〔实现〕= dist/lib 内编译后 .js 实现勘察。上游仓库：`github.com/deepseek-ai/deepseek-harness`（monorepo，各包 README 从仓库相对路径引用）。
+> 唯一的 DSH 接口事实权威。当前基线：**v0.1.2-alpha.1 源码构建**（2026-08-28 工作块 8 起；源码树 `deepseek-harness-dsh-v0.1.2-alpha.1/`，全局 `dsh` 经 `tools/dsh-shim/` 转发到 `apps/cli/lib/bin.js`；基线切换决策见 ADR-0011）。
+> §1–§14 条目实测于 `@deepseek-ai/dsh@0.1.1-rc.2`（原全局 npm 安装，2026-08-28 勘察），§15 逐项复核后与 0.1.1 的差异已标注；**两版冲突处以 v0.1.2 为准**，0.1.1 实测记录保留作回归对照。
+> 标注：〔CLI〕= 命令实测；〔README〕= 包 README 阅读；〔类型〕= lib 内 .d.ts 勘察；〔实现〕= dist/lib 内编译后 .js 实现勘察；〔v0.1.2 实测〕= 源码构建运行时验证。上游仓库：`github.com/deepseek-ai/deepseek-harness`（monorepo，各包 README 从仓库相对路径引用）。
 > **与实际行为不符时：以实测为准，回写本文件。**
-> 2026-08-28 二次深勘（M0）：逐包 .d.ts + 编译后 JS 勘察，新增 §10–§14，并据实测结论回写 §4（OPEN-1 已有结论）、§5、§6。原始报告存档于 [dsh-interface-detail.md](dsh-interface-detail.md)（只读证据附录）。
+> 2026-08-28 二次深勘（M0）：逐包 .d.ts + 编译后 JS 勘察，新增 §10–§14，并据实测结论回写 §4（OPEN-1 已有结论）、§5、§6。原始报告存档于 [dsh-interface-detail.md](dsh-interface-detail.md)（只读证据附录，0.1.1-rc.2 语境）。
+> 2026-08-28 v0.1.2-alpha.1 源码勘察见 §15（原"增量"节，基线切换后转正：凡 §15 与 §1–§14 冲突，以 §15 为准）。
 
 ## 1. CLI 与 Profile 机制〔CLI/README〕
 
@@ -26,7 +28,7 @@
 - 官方插件包内使用 `@deepseek-ai/schemastery`（Schema）+ `zod`（运行时校验）。
 - 参照实现：`dsh-goal`（域服务+durable 事件）、`dsh-command-goal`（人侧命令）、`dsh-tool-goal`（模型侧工具）、`dsh-tool-ralph`（编排策略插件——Gungnir 的定位参照物）。
 - 包 README 文风：Contract / Composition / Events / Failure discipline / Known Limitations 小节——本仓库包 README 对齐此风格。
-- **版本事实〔实现〕**：`@deepseek-ai/cordis` **4.0.1**（fork）；`@deepseek-ai/schemastery` **3.18.1**；所有 `@deepseek-ai/dsh-*` 包统一 `^0.1.1-rc.2`。
+- **版本事实〔实现〕**：`@deepseek-ai/cordis` **4.0.1**（fork）；`@deepseek-ai/schemastery` **3.18.1**；`@deepseek-ai/dsh-*` 包：0.1.1 系统一 `^0.1.1-rc.2`，**v0.1.2 起统一 `0.1.2-alpha.1`**（源码树各包 version 一致；npm 未发布，仓内对齐走 `link:` 指向本地源码树，ADR-0011）。
 - **包级导出四件套〔类型：dsh-tool-ralph/lib/types/index.d.ts〕**：`name`（常量）、`inject: string[]`（服务键数组，如 `['tools','agents','goals','sessions']`）、`Config`（schemastery `z.object(...)`，可选）、`apply(ctx, config)`。Service 类形态（dsh-goal）：`class XService { static inject; static Config; constructor(ctx, config?) }`。
 - **peerDependencies 模板〔实现：dsh-tool-ralph/package.json 原文〕**：只声明实际 inject 的包 + cordis，版本与上游一致：
   ```json
@@ -45,7 +47,7 @@
 | key | 职责 |
 |---|---|
 | `agents` | AgentRegistry：register/get/list/roots、initiator scope、`assembleContextFor` |
-| `agentLoop` | 具体循环驱动（`ctx.agentLoop.create(...)`）；唯一含 concrete loop 的包是 `dsh-agent-loop`——**禁止修改/替换** |
+| `agentLoop` | 具体循环驱动（`ctx.agentLoop.create(...)`）；唯一含 concrete loop 的包是 `dsh-agent-loop`——**官方架构明示可从配置替换**（源码树 `docs/architecture.md:11,59`：agent loop 与其他部件一样是插件、可从配置替换；`docs/capability-seams.md:507`：扩展包依赖 dsh-agent 事件与服务，不依赖本包；`apps/cli/composition.md:270`：agent-loop 是 bundles 清单的一行）。Gungnir 的 Adaptive Loop Runtime 即替换实现（ADR-0012）；树外 loop 包进 bundles 层栈的确切机制 = **OPEN-7**（二阶段 M0 实证） |
 | `goals` | 事件溯源 goal 域（§6） |
 | `tools` | 工具注册与执行管线（§4） |
 | `workflowEngine` | 模型编排脚本执行（start→WorkflowRun） |
@@ -141,6 +143,38 @@ clear(agent, ref: GoalRef): GoalRef
 - 开发机 win32：pwsh 栈挂载（`pwsh-sandbox`/`tool-pwsh`），bash 栈禁用（同 patch 文件按平台互斥）；sandbox 走 Windows ACL restricted-token（`workspace-write` 限 workspace + 会话私有 temp 子目录）。
 - ExitCode verifier 的命令一律按 pwsh 语义声明与测试。
 
+### 8.1 `ctx.shell` 与 sandbox 实测事实〔实测 · 2026-08-28 · DSH `0.1.1-rc.2`〕
+
+> 工作块 4 的 L1 接线是按 `.d.ts` 写的；本节为工作块 5 在**真实 profile 上真跑**后的回写，与类型声明不一致处以本节为准。
+
+**调用面**（插件侧 inject 需显式声明 `'shell'`，缺则 cordis 拒绝装载）：
+
+```ts
+ctx.shell.resolve({ command, timeoutMs }) => ShellExecSpec
+await ctx.shell.run(spec)                => Promise<ShellRunResult>
+```
+
+**`ShellRunResult` 实测形状**（与类型声明一致，可放心取值）：
+
+| 字段 | 实测 |
+|---|---|
+| `exitCode` | 数值；成功与被拒都有值。无值仅出现在被 signal 终止/启动失败 —— 插件侧折叠为 `exitCode=1` 并保留 stderr（loud fail，不伪造成功） |
+| `stdout` / `stderr` | `CollectedOutput { text, truncated, spillPath? }`，取 `.text` |
+| `signal` / `timedOut` / `aborted` | 终止类信号，按实测存在 |
+| `sandbox` | 可选；`{ mode, denied, enforcement, runnerFailed }` |
+
+**sandbox 语义实测**（`dsh-sandbox-policy`，win32 下 `dsh-pwsh-sandbox`，`mode: workspace-write`，由 `DSH_PERMISSION_MODE` 驱动）：
+
+| 命令 | 实测结果 |
+|---|---|
+| 写文件到工作区内（如 `out/probe-ok.txt`） | `exitCode=0` → L1 PASS，文件确实落盘 |
+| 写文件到工作区外（如 `C:\Users\...\probe-out.txt`） | `exitCode=1`、`sandbox.denied=true` → L1 FAIL，**目标文件从未被创建** |
+
+- **验证方式**：`dsh --profile headless` 真跑两条 `Write-Content` 命令（区内 / 区外），跑完后分别 `Test-Path` 复核存在性（区内 PRESENT、区外 NOT_PRESENT）。
+- **结论**：sandbox authority 仍归原 owner，Gungnir 未绕过、也未削弱；L1 判定的"退出码证据"因此是可信的世界观测。
+- **插件侧处理原则**（Let It Fail）：`sandbox.denied` / `sandbox.runnerFailed` 表示**策略拒绝或执行器故障**，不是"命令本身失败" —— 一律**抛错让 verifier 落到 INCONCLUSIVE**，绝不折叠成普通 exitCode 掩盖真故障。
+ pwsh 语义声明与测试。
+
 ## 9. 命令 API（dsh-commands）〔类型〕
 
 ```ts
@@ -201,3 +235,37 @@ KvUnit: loadAll() / putRecord(table, key, value) / deleteRecord(table, key) / se
 4. ~~自定义 `gungnir/*` durable 事件 append + 冷重建（OPEN-1 断言脚本）~~ **已验证并关闭（2026-08-28）**：自定义事件类型会被 persistence 白名单拒绝、无法 resume（§4）；ledger 走 ctx.storage。升级 DSH 时复验 assertEventsSupported 行为是否变化。
 5. `tools/result` payload 形状（两位置参数、无 exit code 字段）；`ctx.goals` 动词与 CAS 语义；`tool-goal` authority 规则未变。
 6. 破坏矩阵 D-1/D-4（kill 进程 / resume 重建）。
+7. 三个 `gungnir_*` 工具的 parameters/output 内全部 object schema 显式声明 `additionalProperties`（§15 适配点①；v0.1.2 现役强制）。
+8. complete/blocked 时序复核：verifier 终判与 GOAL_REVALIDATION 不在 `<goal_complete>`/`<goal_blocked>` wrapup 落盘前抢跑（§15 适配点②；v0.1.2 现役行为）。
+9. 插件 patch 不得再 insert `storage`/`storage-json` 行——v0.1.2 base 自带（§15 适配点⑥，重复 id 直接 boot 失败）；升级时复核 base bundle 层栈变化。
+10. loop 替换 seam 复验（OPEN-7 实证后转正）：bundles 清单中 agent-loop 行的可替换性、`ctx.agentLoop` 服务键形状、替代 driver 对 agent 生命周期/turn-step 边界/工具调度/teardown 职责的完整承担。
+
+## 15. v0.1.2-alpha.1 基线事实（2026-08-28 源码勘察；2026-08-28 工作块 8 起为开发基线）
+
+> 对象：仓库根 `deepseek-harness-dsh-v0.1.2-alpha.1/` 源码树（src/ TypeScript），已构建并设为开发基线（安装方式与冒烟结论见 ADR-0011）。标注〔v0.1.2 实测〕的条目经过该构建的运行时验证，其余为源码级结论。与 §1–§14（0.1.1-rc.2 实测）冲突时以本节为准。
+
+**白名单与持久化**〔源码〕：
+
+- `KNOWN_SESSION_EVENT_TYPES` 仍封闭且条目有增（新增 `model/selection`、`session-log-deepseek/delivery-accepted`、`subagent/model-selection-policy`），不含 `gungnir/*`；`ignorable` 标记从信封校验中移除；仍无树外插件注册通道。`packages/core/session/src/known-event-types.ts:18-70`、`packages/session/session-persistence/src/coordinator.ts:1139-1143`。→ ADR-0006 维持。
+- `SESSION_FORMAT_VERSION` 仍为 0，无兼容性承诺（`packages/core/session/src/types.ts:56`）。
+- 磁盘格式新增 `sourceEventSeqs` 区间编码（`packages/core/session/src/seq-ranges.ts:15-26`）——直接解析原始 JSONL 字节需先 `decodeSeqRanges`；经 `session.events` API 读取不受影响。
+- torn-tail 自动修复输出 warn 并注明会话（`packages/session/session-persistence-jsonl/src/index.ts:459`）——破坏测试 resume 见此 warn 属预期恢复行为，勿判失败。
+
+**稳定接缝（源码确认与 §3–§13 记录一致）**：`agent/pre-step` waterfall（`PreStepDecision` 新增可选 `startsRequestSeries?: true`，插件无需设置）；`tools/result` 两位置参数 observe-only；`ctx.goals` 全套 + GoalRef CAS + `defaultMaxGoalRounds` 256 + disarm 语义；goal-round-driver 续轮（pre-step 仍只拦 `kind:'goal'` 且 `round>0`；**idle 空转仍无上游处理**，WAITING_EXTERNAL 动机不变）；`ctx.commands.register`；`ctx.userQuestions.ask`（仍仅 root agent，子 agent 抛 `CALLER_NOT_LIVE`/`DELEGATED_CALLER`）；`ctx.shell` resolve/run（`exitCode` 类型诚实化为 `number|null`；管道空输出修复在共享 subprocess 层，Windows pwsh 亦受益）；`ctx.llm.stream`（GenerateOptions 不变，仍无原生 structured output）；`installModelSelection`/`agent/request` waterfall；`ctx.storage`（KvFacet 增可选 `layout?: 'single'|'per-record'`，默认行为不变）；`dsh plugin --profile add` + `dsh.bundle.patch` 入层机制；`dsh --profile headless` / `--dump-config` CLI；headless stderr 进度 / stdout 结果分流（0.1.1 已是此语义，changelog 该条目不构成行为变化）。
+
+**破坏性/适配点**〔源码〕：
+
+1. `defineTool` 的 object schema 强制显式 `additionalProperties: boolean`，缺省注册时抛 `JsonSchemaError`（`packages/core/tools/src/schema.ts:68-72, 366-369`）。→ 二阶段 M0 核对 `gungnir_submit_spec` / `gungnir_plan` / `gungnir_report` 全部 object schema。
+2. tool-goal 自主 complete/blocked 不再 `concludeTurn()` 硬停 turn，改为 `deferContext` 注入 `<goal_complete>`/`<goal_blocked>` wrapup（`packages/goal/tool-goal/src/wrapup.ts:9-16`、`index.ts:313-326`）。→ verifier 终判与 REVALIDATION 触发必须等 wrapup 落盘，升级时在真实 profile 复核时序。
+3. 事件改名：`tools/code-dispatch-log` → `tools/ptc-dispatch-log`（Gungnir 未监听，无影响）。
+4. 仓库布局重组为 `packages/<group>/<pkg>/`；包名不变，版本统一 `0.1.2-alpha.1`；`@deepseek-ai/cordis` 仍 4.0.1。
+5. `Minimal` agent preset 不挂载 `dsh-command-goal`（故无 `/goal`）——命令可见性由 preset composition 决定（`packages/preset/agent-presets/presets/minimal/agent.cordis.yml`）。→ `/ultragoal` 仅在挂载了 Gungnir 的 preset/composition 中可用，包 README 需写明。
+6. base bundle 自带 storage 栈〔v0.1.2 实测，boot 证据〕：`packages/bundle/base/cordis.patch.yml:141-156` 挂载 `storage` + `storage-json`（root `dshHomePath('storages')`）+ `storage-domain`（backend json）。树外插件再 insert 同 id 行 → `duplicate loader entry id: storage`，boot 失败（0.1.1 时"dsh-base 不含 storage 行"作废）。→ 插件 patch 不得重复挂载 storage，直接 inject 宿主服务；注意 ledger 数据根目录随之迁到 `storages/`。
+
+**新能力**〔源码〕：
+
+1. 子代理模型选择：`SubagentStartRequest.agentOptions: {provider, model, reasoningEffort, maxTokens}`（`packages/core/agent/src/runtime-types.ts:25-34`）；host 授权开关 `subagent-model-selection`（`packages/subagent/tool-subagent/src/model-selection-settings.ts:19-34`）；工具实例需 `modelSelectionSettings: true` 方暴露给模型。→ 三阶段 model 轴的委派路径。
+2. 插件可注册可配置 LLM 提供方与模型发现：`ctx.llm.registerConfigurableProviders(...)` / `registerModelDiscovery(...)`（`packages/llm/llm/src/index.ts:474-527, 548-568`）。→ 四阶段可选。
+3. 公网 WebFetch 默认启用 + SSRF 防护：非公网地址抛 `WEB_BLOCKED_URL`（`packages/web/web-fetch-http/src/network.ts:53-109`）；插件侧通道 `ctx.web.fetch()`。→ 二阶段 L3 external-state verifier 的公网核验通道；localhost/内网目标不可用此路径。
+4. 遥测默认状态：插件包名/版本随 DeepSeek 请求上报默认开（`dsh-plugin-package-inventory-deepseek`）；session log 增量上传默认关（`dsh-session-log-deepseek`）；`DSH_TELEMETRY_DISABLED=1` 硬关（`apps/cli/src/profile-boot.ts:90-103`）。→ dev/实验 profile 统一硬关。
+5. compaction 新增 `toolResultPruner` 与图片计价（`packages/compaction/compaction-tool-result-pruner/src/index.ts:44-185`）；事件 log 仍 append-only 完整，surface 会被改写——evidence 的事件级 locator（turn/step/callId）不受影响。
