@@ -4,3 +4,17 @@ coverage/
 *.log
 .DS_Store
 *.tsbuildinfo
+.env
+*.local.env
+deepseek_v4_tokenizer/
+deepseek-harness-dsh-v0.1.2-alpha.1/
+
+# 本地助手工作记忆（workbuddy，非仓库资产）
+.workbuddy/
+
+# 实验/冒烟产物（非源码，按需本地重跑生成）
+out/
+.tmp-*
+tools/experiments/results/experiment-*
+tools/experiments/results/prompt-*
+tools/experiments/switchbench/results/workspaces/
