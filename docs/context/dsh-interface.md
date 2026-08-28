@@ -238,7 +238,7 @@ KvUnit: loadAll() / putRecord(table, key, value) / deleteRecord(table, key) / se
 7. 三个 `gungnir_*` 工具的 parameters/output 内全部 object schema 显式声明 `additionalProperties`（§15 适配点①；v0.1.2 现役强制）。
 8. complete/blocked 时序复核：verifier 终判与 GOAL_REVALIDATION 不在 `<goal_complete>`/`<goal_blocked>` wrapup 落盘前抢跑（§15 适配点②；v0.1.2 现役行为）。
 9. 插件 patch 不得再 insert `storage`/`storage-json` 行——v0.1.2 base 自带（§15 适配点⑥，重复 id 直接 boot 失败）；升级时复核 base bundle 层栈变化。
-10. loop 替换 seam 复验（OPEN-7 实证后转正）：bundles 清单中 agent-loop 行的可替换性、`ctx.agentLoop` 服务键形状、替代 driver 对 agent 生命周期/turn-step 边界/工具调度/teardown 职责的完整承担。
+10. loop 替换 seam 复验（OPEN-7 实证后转正）：bundles 清单中 agent-loop 行的可替换性、`ctx.agentLoop` 服务键形状、替代 driver 对 agent 生命周期/turn-step 边界/工具调度/teardown 职责的完整承担。**已实证并转正（2026-08-29，OPEN-7 关闭）**：机制与职责清单见 §16。
 
 ## 15. v0.1.2-alpha.1 基线事实（2026-08-28 源码勘察；2026-08-28 工作块 8 起为开发基线）
 
@@ -269,3 +269,42 @@ KvUnit: loadAll() / putRecord(table, key, value) / deleteRecord(table, key) / se
 3. 公网 WebFetch 默认启用 + SSRF 防护：非公网地址抛 `WEB_BLOCKED_URL`（`packages/web/web-fetch-http/src/network.ts:53-109`）；插件侧通道 `ctx.web.fetch()`。→ 二阶段 L3 external-state verifier 的公网核验通道；localhost/内网目标不可用此路径。
 4. 遥测默认状态：插件包名/版本随 DeepSeek 请求上报默认开（`dsh-plugin-package-inventory-deepseek`）；session log 增量上传默认关（`dsh-session-log-deepseek`）；`DSH_TELEMETRY_DISABLED=1` 硬关（`apps/cli/src/profile-boot.ts:90-103`）。→ dev/实验 profile 统一硬关。
 5. compaction 新增 `toolResultPruner` 与图片计价（`packages/compaction/compaction-tool-result-pruner/src/index.ts:44-185`）；事件 log 仍 append-only 完整，surface 会被改写——evidence 的事件级 locator（turn/step/callId）不受影响。
+
+## 16. loop 替换 seam 与替代 driver 职责清单（OPEN-7，2026-08-29 实证关闭；v0.1.2-alpha.1 实测）
+
+> 本节是 ADR-0012/ADR-0014 的机制事实权威。全部条目经过真实 profile 运行时验证
+> （`gungnir-loop` spike profile + 真实模型 headless 全链路），实证方法随条目标注。
+
+### 16.1 替换机制〔v0.1.2 实测〕
+
+- **bundle patch 合并算法**（`@deepseek-ai/cordis-plugin-include` lib/index.js `applyEntryPatches`）：所有层的 patch 按序应用到 profile 根 entry 数组。**非 insert patch 按 id 原位修改现有行**，其中 `name` 字段是匹配前置条件（不匹配则 warn 并跳过整条 patch），**不是覆盖值**——即 patch 无法改写一行的包名。`insert`（无 id）向根数组追加行；多行 insert 后同 id 会在 loader 的 `EntryGroup.update` 抛 `duplicate loader entry id`（同 group config 内不允许重复 id）。
+- **替换两步法**（已实证）：
+  1. `- id: agent-loop` + `disabled: true`——按 id 命中 base bundle 插入的默认 driver 行并停用；
+  2. `- insert: [{id: gungnir-loop, name: <自研包>, config: …}]`——追加自研 driver 行。
+- **服务键不变**：自研 service 构造时 `super(ctx, 'agentLoop')`（cordis Service 名），并 `ctx.agents.setFactory(this)`。headless/ACP/subagent 等消费方全部经 `ctx.agents.create/resume`（AgentRegistry → factory），**不直接 import 默认 driver 包**，因此替换对它们透明。
+- `--dump-config` 验证：`gungnir-loop` profile 输出中 `agent-loop` 行带 `disabled: true`、自研行就位、无 duplicate 错误；真实 boot + headless 任务由 AdaptiveLoopAgent 完成（`gungnir` 插件的 pre-step 监听与 `ctx.tokenMeter` 均在该 session 上工作）。
+- **单实例纪律（M1 硬前置，实测教训）**：树外包与宿主必须解析到**同一份** `@deepseek-ai/*` 模块。DSH 的 `TOOL_RUNTIME_SCHEDULER` 等关键符号线是 `Symbol(...)`（非 `Symbol.for`），双副本 = 符号不相等 = scheduler 不可达。仓库侧已把 `packages/dsh-plugin`、`packages/agent-loop` 的 node_modules 以 junction 指向 v0.1.2 源码树（含 `vendor/cordis`、`vendor/schemastery`），peerDeps 锁 `0.1.2-alpha.1`（ADR-0011 第 3 条落地）。
+
+### 16.2 替代 driver 职责清单（spike 期逐条对照 `dsh-agent-loop` 源码整理；Gungnir driver 全部承担）
+
+1. **Agent 生命周期**：`AgentFactory`（`createAgent`/`resume`）+ registry `setFactory`；configured agents 启动路径（sessionId/resumeSessionId/restoreOrCreate）；ownership 反卷（factory dispose → 活跃 agent cancel + whenIdle + scope dispose → registry/session detach → owner effect 释放），memoized 防并发双拆。
+2. **turn/step 边界**：`turn/start` → `step/start` → `user/message`（append）→ … → `step/end` → `turn/end(reason)` 全序列；max-tokens sticky；reject 决策 → `blocked`；wake latching（maintenance/aborted 场景）。
+3. **pre-step 管线**：inbox claim → `systemPrompt.assemble(assembleContextFor(agent, signal))` → runtime-context 投影（`@deepseek-ai/dsh-system-prompt` 源的 snapshot 消息）→ `agent/pre-step` waterfall（`{kind:'enter', messages}`）。
+4. **请求构造**：`agent/request` waterfall → `prepareCall` adapterDefaults → `canonicalHeader` + `request/header`（initial/resume/change/series 四种 reason）→ `request/context` → `markAgentLoopRequest(deepFreeze(...))`。
+5. **LLM 流**：`ctx.llm.stream` / `preparedCall.stream`；`BlockAssembler` 聚合；`assistant/chunk`（逐 chunk 落盘）→ `assistant/message`（`sourceEventSeqs` 指回 chunk 区间）；usage；abort 时 interrupted blocks 落盘；`agent/request-error` waterfall 的 retry 协议。
+6. **工具调度**：`ctx.tools.executionMode` 分类；exclusive 屏障 + 有界并行池（`maxParallelToolCalls`）；registry 变更后重分类；model-order commit；`tool/call` → `tool/result`（`sourceEventSeqs: [callSeq]`）；`additionalContexts` 注入 next-step inbox；`concludesTurn`；abort drain（未启动调用补 `TOOL_ABORTED_BEFORE_DISPATCH` 合成结果，保持 replay 有效）；scheduler 内部故障不伪造结果、fail loud。
+7. **取消语义**：`cancel(cause, {keepInbox})`；`agent/status`（idle⇄running）；`agent/error` 边界上报；`runMaintenance` 独占窗口；disposed 取消不 latch。
+8. **resume/fork**：persistence `prepare` 载入；Inbox 从 `agent/inbox/spliced` 重放重建；`request/header` 带 `reason: 'resume'` 锚；fork seed 经 `CreateAgentOptions.seed`。
+9. **系统提示面**：`renderPrompt` + `renderContextSections` + `joinContextSections`；prompt 变量（provider/model/cwd）由 loop 服务注册。
+
+### 16.3 token-meter 插件侧可达性（OPEN-5，v0.1.2 实测关闭）
+
+- base bundle 自带 `token-meter` 行（`packages/bundle/base/cordis.patch.yml:323-324`）→ 凡 base-backed profile 均有 `ctx.tokenMeter`，插件可安全 inject（Gungnir 插件已声明并实测）。
+- `ctx.tokenMeter.measure(session, requestHeader?)` → `TokenMeasurement { logRevision, baseline, surfaceDeltaTokens, totalTokens, surfaceTokens, nodes }`；`baseline.kind === 'usage'` 时携带 provider 实报（`inputTokens` / `outputTokens` / `cacheReadTokens`），是精确 token 口径；无 usage 锚时退启发式估计。
+- 实测（真实 headless，gungnir 插件轮末调用）：`total=18886 surface=5068 baseline={kind:'usage', usage:{inputTokens:13829, outputTokens:16, cacheReadTokens:2816}}`。**M2/M3 的 token 指标以 usage 锚点为准**，启发式仅作退路。
+
+### 16.4 tool-goal wrapup 时序（适配点②，v0.1.2 实测）
+
+- 机制：`update_goal(complete/blocked)` 在 goal-round 权限下不再 `concludeTurn()`，改为 `deferContext` 注入 `<goal_complete>`/`<goal_blocked>` wrapup 消息（`packages/goal/tool-goal/src/wrapup.ts`）；wrapup 作为下一步输入进 turn，模型写收尾消息后 turn 才结束。
+- 与 Gungnir 的时序契约：Gungnir 的轮末 reconcile 触发点只有两个——`gungnir_report` 工具内（报告即轮末）与 `agent/turn-stopping`（兜底）。二者都不可能在 update_goal 与 wrapup 落盘之间抢跑：update_goal 所在 step 以 null 结束（无 concludeTurn）→ turn 继续到 wrapup step；turn-stopping 只在 wrapup step 收口后触发。
+- 实测：真实 headless 全链路（spec→REVALIDATION→COMPLETE→update_goal→收尾→turn/end completed）两次通过，session log 事件序与上述一致，无 goal/changed 相位失配告警。goal-round 权限路径（round>0 turn 内 complete → wrapup 注入）由确定性探针补验（M1 测试基建，同 D-13 resume 场景）。

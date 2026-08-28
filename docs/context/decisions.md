@@ -135,6 +135,29 @@ Harness 长期只信任 GoalSpec，不信任长 Plan；Plan 是 rolling-horizon 
 8. **D1–D4 双读，三阶段重估**：在保留第 4 条"Strategy API 膨胀早期信号"警戒的同时，记录正向解读——driveTurn / sub-conversation / tool filtering / shared observation 很可能正是 Adaptive Runtime 的最小通用 ISA（Gungnir Kernel 候选：GoalSpec/GoalStatus + Shared Evidence State + Strategy Host + Subconversation + Tool Surface Control + Router + Verifier），其中 shared observation（Strategy 间共享客观执行事实而非全部 reasoning history）与 ADR-0004 的 Claim ≠ Evidence 天然吻合。n=1 种 Loop 证据不足，不作单边判读，三阶段计划修订时重估。
 9. **B 关联基础设施全部停止投资**：Physical Loop Hypervisor、SafePoint ABI、Loop serialization、Loop handoff protocol 从开发路径移除（ADR-0012 附录 A 的退路形态保留不删）。**重开 B 的条件（证伪即重开）**：当前证据（5 小型单模块任务 × 1 seed + baseline token 为离线估计）足以停止 B 的近期研发，但不足以永久否证所有 Physical Loop Switching 场景；仅当出现 (a) 新 Loop 无法利用 D1–D4 等通用原语干净 Strategy 化；(b) Strategy 化后产生明确质量/成本损失；或 (c) 需要真正独立生命周期/故障隔离——才重新打开本案。
 
+### ADR-0014 loop 替换机制：disabled+insert 两步法，单实例纪律，driver 职责清单全承担（accepted，2026-08-29）
+
+> 《二阶段实施详细计划》原预留的"ADR-0013（替换机制）"因编号被 SwitchBench 判决占用而顺延为本条（见 ADR-0013 编号说明）。机制事实权威在 [dsh-interface.md](dsh-interface.md) §16。
+
+**背景**：ADR-0012 决定经组合接缝一次性替换默认 agent-loop，确切机制留待 OPEN-7 实证。候选：profile bundles 清单替换行 / 树外包经 dsh.bundle.patch 覆盖同 id 行。
+
+**实证结论**（v0.1.2-alpha.1 真实 profile 运行时验证）：
+1. include 插件的 patch 算法（`applyEntryPatches`）中，非 insert patch 按 id 原位修改现有行，`name` 是匹配前置条件而非覆盖值——**patch 不能改写一行的包名**；insert 是追加，同 group 内重复 id 直接 boot 失败（`duplicate loader entry id`）。
+2. 可行替换机制 = **两步法**：非 insert patch 置 `agent-loop` 行 `disabled: true` + insert 自研行（`dsh-gungnir-loop`）。服务键保持 `agentLoop`（cordis Service 名 + `ctx.agents.setFactory`），消费方经 registry factory 面全部透明。
+3. headless 全链路真跑：AdaptiveLoopAgent v0（原生等价 driver）完成 spec→verdict→REVALIDATION→COMPLETE→update_goal 全流程，exit 0；Gungnir 插件 pre-step 监听与 tokenMeter 在替换 driver 的 session 上正常工作。
+4. **B3 首证**：同任务双 driver（默认 vs Gungnir）session log 事件词汇 17 类完全一致，turn/step 嵌套、tool/call↔tool/result 配对、request/header 先序等结构不变量双侧成立（`tools/loop-verify/compare-events.mjs`）。
+5. **单实例纪律（实测教训，升格为硬前置）**：DSH 的 `TOOL_RUNTIME_SCHEDULER` 等符号线是普通 `Symbol`（非 `Symbol.for`），树外包与宿主必须解析到同一份 `@deepseek-ai/*` 模块；双副本 = 符号不相等 = scheduler 不可达。仓库侧插件与 loop 包的依赖已 junction 重指向 v0.1.2 源码树，peerDeps 锁 `0.1.2-alpha.1`（ADR-0011 第 3 条就此落地）。
+
+**决定**：
+1. 替换机制冻结为"disabled+insert 两步法 + 服务键 `agentLoop` 不变"；替代 driver 必须完整承担 dsh-interface.md §16.2 的九项职责（B3 是验收红线）。
+2. 仓库包依赖纪律：任何 import `@deepseek-ai/*` 运行时符号的 Gungnir 包，其 node_modules 必须与宿主同源（junction/link 指向同一模块实例）；peerDeps 锁实测版本。
+3. token 口径（OPEN-5 关闭）：M2/M3 实验以 `ctx.tokenMeter.measure()` 的 usage 锚点为准（含 cacheReadTokens），启发式仅作退路。
+4. spike profile `gungnir-loop`（bundles: base + headless + dsh-gungnir-loop + dsh-gungnir）作为 Adaptive Loop 开发/实验的现役 profile。
+
+**依据**：真实 profile 实测（本 ADR 实证结论 1–5）；`tools/loop-verify/compare-events.mjs` 对照输出；`gungnir-loop` profile `--dump-config` 与 boot 日志。
+
+**未取代任何 ADR**；是 ADR-0012 第 2 条的机制落地、ADR-0013 第 7 条（Baseline-Preserving）的 v0 实现（EXECUTE 恒等模式）。
+
 ## 决策模板
 
 新增决策时使用：标题、状态、日期、背景（为什么必须选）、决定、依据（文档章节/实测数据）、被取代的 ADR（如有）。

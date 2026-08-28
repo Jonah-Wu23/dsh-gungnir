@@ -25,7 +25,9 @@ import { LlmRubricVerifier } from './verifiers/llm-rubric.ts'
 
 export const name = 'gungnir'
 
-export const inject = ['agents', 'commands', 'goals', 'llm', 'shell', 'storage', 'tools', 'userQuestions']
+// tokenMeter（OPEN-5）：v0.1.2 base bundle 自带 token-meter 行，插件侧可直接注入
+// ctx.tokenMeter 做请求/表面 token 测量（dsh-interface.md §16）。
+export const inject = ['agents', 'commands', 'goals', 'llm', 'shell', 'storage', 'tokenMeter', 'tools', 'userQuestions']
 
 export interface Config {
   workspaceRoot?: string
@@ -299,6 +301,18 @@ export function apply(ctx: Context, config: Config): void {
     void engine
       .runRoundEnd(agentId)
       .catch((error: unknown) => log('error', `round-end reconcile failed for ${agentId} (ledger stays at last consistent event)`, error))
+    // OPEN-5：轮末 token 测量（ctx.tokenMeter.measure(session)，dsh-token-meter 0.1.2）。
+    // 失败只报错不中断 reconcile 链路——测量是观测，不是裁决依据。
+    const session = asDict(pick(agent, 'session'))
+    const turn = typeof pick(payload, 'turn') === 'number' ? (pick(payload, 'turn') as number) : 0
+    void (async () => {
+      const meter = service(ctx, 'tokenMeter', true)
+      const measure = meter['measure']
+      if (typeof measure !== 'function' || session === null) throw new Error('ctx.tokenMeter.measure unavailable')
+      const m = asDict(await (measure as (s: unknown) => unknown).call(meter, session))
+      if (m === null) throw new Error('tokenMeter.measure returned non-object')
+      log('info', `token-meter turn=${turn}: total=${String(m['totalTokens'])} surface=${String(m['surfaceTokens'])} baseline=${JSON.stringify(m['baseline'])}`)
+    })().catch((error: unknown) => log('warn', `token measurement failed (turn ${turn})`, error))
   })
 
   onAny(ctx, 'goal/changed', (...args: unknown[]) => {

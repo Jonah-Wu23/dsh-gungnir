@@ -1,0 +1,24 @@
+# dsh-gungnir-loop bundle patch: replace the default agent loop (ADR-0012 /
+# OPEN-7 seam). Two ordered operations against the base-inserted rows:
+#
+# 1. Disable the default driver row (`agent-loop` -> @deepseek-ai/dsh-agent-loop).
+#    A non-insert patch addresses the existing row by id; `name` is a match
+#    guard (never an override), so the plugin package itself cannot be renamed
+#    by patching — disabling + inserting our own row is the replacement path.
+# 2. Insert the Gungnir driver row. The service key stays `ctx.agentLoop`
+#    (AgentRegistry factory seam), so headless/ACP/subagent consumers are
+#    transparently served by the Gungnir driver.
+#
+# Session lifetime rule (ADR-0012 铁律 9): the driver instance is created once
+# per session at composition time; nothing hot-swaps it while a turn/step/tool
+# call is open.
+
+- id: agent-loop
+  disabled: true
+
+- insert:
+    - id: gungnir-loop
+      name: dsh-gungnir-loop
+      config:
+        maxParallelToolCalls: 8
+        agents: []
