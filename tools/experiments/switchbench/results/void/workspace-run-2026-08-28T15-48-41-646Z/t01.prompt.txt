@@ -1,0 +1,12 @@
+You are working in the current directory: a small Node.js repository whose test suite currently fails.
+
+Goal: make `node --test` pass.
+
+Hard constraints:
+1. You may modify files only under src/. Everything else (tests, package.json, README.md) is frozen: do not create, delete, or modify it.
+2. Do not add dependencies.
+3. Do not change the set of exported names of the modules in src/.
+4. Do not skip, weaken, or rewrite tests. The fix belongs in src/.
+5. README.md is the authoritative specification; the fix must conform to it.
+
+Investigate the failure, find the root cause, fix it, and verify with `node --test` before finishing.

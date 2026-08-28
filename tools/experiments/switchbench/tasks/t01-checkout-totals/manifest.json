@@ -1,0 +1,27 @@
+{
+  "files": {
+    "package.json": "d047c917da977c869093d0000756813bd23d77fa928d63e5754f2b40f10ab6e2",
+    "README.md": "2ed94095fde3557aeeb05c4d944c5ada6051deac7bf291240d74241ed7988043",
+    "test/checkout.test.js": "ac34a58f4e7f615615ee8cf62b97cbce8b859daea0b92471edc9472ffa5f8b15",
+    "test/coupons.test.js": "be6519a40c0c9b41a55dbc410d2cdeec00da16717b487fb62ad42a8e3be0117f",
+    "test/money.test.js": "dd2add8284bc2fe8e73837fda6fbb166f3ab41484730f58c9fda5c377ed4e4be",
+    "test/pricing.test.js": "763e5103d6edbcd4d8f2f0789c42853ab2eb4c7e4c30467aa8f4300701a8f5a2"
+  },
+  "exports": {
+    "src/checkout.js": [
+      "checkoutTotal"
+    ],
+    "src/coupons.js": [
+      "applyCoupon"
+    ],
+    "src/money.js": [
+      "roundHalfUpCents"
+    ],
+    "src/pricing.js": [
+      "priceLines"
+    ],
+    "src/tax.js": [
+      "applyTax"
+    ]
+  }
+}

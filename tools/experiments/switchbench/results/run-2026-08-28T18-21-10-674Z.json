@@ -1,0 +1,66 @@
+{
+  "architecture": "baseline (plain DSH, no Gungnir plugin)",
+  "model": "deepseek-v4-flash-0731 @ jiyuan-lvdong (https://tokenrhythm.studio/v1, openai-completions) — frozen",
+  "profile": "switchbench-base (hand-created: dsh-base + dsh-headless, agent-default-model -> frozen model)",
+  "runtimeNotes": {
+    "permissionMode": "workspace-write (platform default; write-confined to workspace + private temp; escalations would fail closed in headless — none expected for this task surface)",
+    "telemetry": "DSH_TELEMETRY_DISABLED=1",
+    "taskTimeoutMs": 300000,
+    "workspaceIsolation": "run workspaces materialized under os.tmpdir(), outside the repository (first killer run was voided for harness leakage; see results/void-*)",
+    "tokenMetering": "unavailable on plugin side (OPEN-5 open); Day 1 records wall-clock only; session logs kept under ~/.dsh/sessions for later Gate 2/3 scoring"
+  },
+  "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+  "runDir": "E:\\AI\\dsh-gungnir\\tools\\experiments\\switchbench\\results\\workspaces\\run-2026-08-28T18-21-10-674Z",
+  "rows": [
+    {
+      "taskId": "t03",
+      "killer": false,
+      "title": "csv-escape: quoted fields do not double internal double quotes",
+      "startedAt": "2026-08-28T18:21:10.692Z",
+      "elapsedMs": 84450,
+      "dshExitCode": 0,
+      "sessionId": "session-9d24a2bd-c0b7-410c-aa47-a74416e8db40",
+      "workspace": "C:\\Users\\JonahWu\\AppData\\Local\\Temp\\switchbench-workspaces\\run-2026-08-28T18-21-10-674Z\\t03",
+      "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+      "verify": {
+        "verdict": "PASS",
+        "gates": {
+          "bugNotReproducible": {
+            "ok": true,
+            "exitCode": 0,
+            "output": "original bug not reproducible\n"
+          },
+          "trunkTestsPass": {
+            "ok": true,
+            "exitCode": 0,
+            "counts": {
+              "tests": 12,
+              "pass": 12,
+              "fail": 0
+            },
+            "tail": "TAP version 13\n# Subtest: csv: plain fields need no quoting\nok 1 - csv: plain fields need no quoting\n  ---\n  duration_ms: 0.681\n  type: 'test'\n  ...\n# Subtest: csv: fields with commas are quoted\nok 2 - csv: fields with commas are quoted\n  ---\n  duration_ms: 0.2144\n  type: 'test'\n  ...\n# Subtest: csv: internal double quotes are doubled\nok 3 - csv: internal double quotes are doubled\n  ---\n  duration_ms: 0.1437\n  type: 'test'\n  ...\n# Subtest: csv: fields with newlines are quoted\nok 4 - csv: fields with newlines are quoted\n  ---\n  duration_ms: 1.3645\n  type: 'test'\n  ...\n# Subtest: csv: header is emitted even with no rows, without trailing newline\nok 5 - csv: header is emitted even with no rows, without trailing newline\n  ---\n  duration_ms: 0.1458\n  type: 'test'\n  ...\n# Subtest: csv: null and undefined render as empty\nok 6 - csv: null and undefined render as empty\n  ---\n  duration_ms: 0.0969\n  type: 'test'\n  ...\n# Subtest: export: order rows with special characters render exactly per spec\nok 7 - export: order rows with special characters render exactly per spec\n  ---\n  duration_ms: 1.1485\n  type: 'test'\n  ...\n# Subtest: export: plain orders need no quoting\nok 8 - export: plain orders need no quoting\n  ---\n  duration_ms: 0.2232\n  type: 'test'\n  ...\n# Subtest: format: amounts group thousands and keep two decimals\nok 9 - format: amounts group thousands and keep two decimals\n  ---\n  duration_ms: 1.2755\n  type: 'test'\n  ...\n# Subtest: format: negative and small amounts\nok 10 - format: negative and small amounts\n  ---\n  duration_ms: 0.1456\n  type: 'test'\n  ...\n# Subtest: format: ISO dates are UTC and zero-padded\nok 11 - format: ISO dates are UTC and zero-padded\n  ---\n  duration_ms: 0.7348\n  type: 'test'\n  ...\n# Subtest: format: row shaping formats amount and date\nok 12 - format: row shaping formats amount and date\n  ---\n  duration_ms: 0.7152\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 115.2105\n"
+          },
+          "integrity": {
+            "ok": true,
+            "violations": []
+          },
+          "exports": {
+            "ok": true,
+            "violations": []
+          }
+        },
+        "constraintsSatisfied": true
+      },
+      "srcFootprint": {
+        "changed": [
+          "/src/csv.js"
+        ],
+        "added": [],
+        "deleted": []
+      },
+      "vgcrPass": true,
+      "outputTail": " tests first.\n\nAlso let me double check the quoting rule: \"A field is wrapped in double quotes iff it contains at least one of: , \" \\n \\r.\" The current regex `/[\",\\n\\r]/` matches. Then inside, double the quotes. Fix:\n\n```js\nfunction renderField(value) {\n  const text = String(value ?? '')\n  if (/[\",\\n\\r]/.test(text)) {\n    return `\"${text.replace(/\"/g, '\"\"')}\"`\n  }\n  return text\n}\n```\n\nThat's the fix. Let me run the tests to confirm the failure, then apply the fix and re-run.\n\nLet me run with `node --test --test-isolation=none`.\ndsh: reasoning:\nAs expected, the root cause is in `src/csv.js`: the `renderField` function quotes fields containing special characters but does not double the internal double quotes. Per the README spec:\n\n- \"Inside a quoted field, every double quote is **escaped by doubling** (`\"\"`).\"\n\nFix: escape quotes by doubling before wrapping.\n\nThe fix:\n\n```js\nfunction renderField(value) {\n  const text = String(value ?? '')\n  if (/[\",\\n\\r]/.test(text)) {\n    return `\"${text.replace(/\"/g, '\"\"')}\"`\n  }\n  return text\n}\n```\n\nLet me apply this edit.\ndsh: reasoning:\nAll 12 tests pass. Let me verify the final state of the file and confirm the fix conforms to the README spec.\n"
+    }
+  ],
+  "generatedAt": "2026-08-28T18:22:35.472Z"
+}

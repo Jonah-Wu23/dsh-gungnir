@@ -1,0 +1,122 @@
+{"t":1787941812618,"driver":"main","type":"driver-run-start","label":"main","strategy":"branch-search"}
+{"t":1787941812618,"type":"strategy-phase","phase":"enumerate"}
+{"t":1787941812618,"driver":"enumerate","type":"driver-run-start","label":"enumerate"}
+{"t":1787941812618,"driver":"enumerate","type":"turn-start","turn":1,"contextMessages":2}
+{"t":1787941812620,"type":"llm-retry","attempt":1,"error":"fetch failed"}
+{"t":1787941827739,"type":"llm-response","roundTripMs":15121,"promptTokens":682,"completionTokens":99,"cachedTokens":640,"finishReason":"tool_calls"}
+{"t":1787941827740,"driver":"enumerate","type":"tool-call","seq":1,"name":"list_dir","args":{"path":"."}}
+{"t":1787941827740,"driver":"enumerate","type":"tool-call","seq":2,"name":"read_file","args":{"path":"README.md"}}
+{"t":1787941827741,"driver":"enumerate","type":"tool-result","seq":1,"name":"list_dir","ok":true,"outputBytes":39}
+{"t":1787941827741,"driver":"enumerate","type":"tool-result","seq":2,"name":"read_file","ok":true,"outputBytes":1285}
+{"t":1787941827741,"driver":"enumerate","type":"turn-end","turn":1,"toolCalls":2}
+{"t":1787941827741,"driver":"enumerate","type":"turn-start","turn":2,"contextMessages":5}
+{"t":1787941835677,"type":"llm-response","roundTripMs":7935,"promptTokens":1162,"completionTokens":115,"cachedTokens":768,"finishReason":"tool_calls"}
+{"t":1787941835677,"driver":"enumerate","type":"tool-call","seq":3,"name":"list_dir","args":{"path":"src"}}
+{"t":1787941835677,"driver":"enumerate","type":"tool-call","seq":4,"name":"list_dir","args":{"path":"test"}}
+{"t":1787941835677,"driver":"enumerate","type":"tool-call","seq":5,"name":"read_file","args":{"path":"package.json"}}
+{"t":1787941835678,"driver":"enumerate","type":"tool-result","seq":3,"name":"list_dir","ok":true,"outputBytes":49}
+{"t":1787941835678,"driver":"enumerate","type":"tool-result","seq":4,"name":"list_dir","ok":true,"outputBytes":35}
+{"t":1787941835678,"driver":"enumerate","type":"tool-result","seq":5,"name":"read_file","ok":true,"outputBytes":116}
+{"t":1787941835678,"driver":"enumerate","type":"turn-end","turn":2,"toolCalls":3}
+{"t":1787941835678,"driver":"enumerate","type":"turn-start","turn":3,"contextMessages":9}
+{"t":1787941839251,"type":"llm-response","roundTripMs":3572,"promptTokens":1369,"completionTokens":146,"cachedTokens":1152,"finishReason":"tool_calls"}
+{"t":1787941839251,"driver":"enumerate","type":"tool-call","seq":6,"name":"read_file","args":{"path":"src/parse.js"}}
+{"t":1787941839253,"driver":"enumerate","type":"tool-call","seq":7,"name":"read_file","args":{"path":"src/compare.js"}}
+{"t":1787941839254,"driver":"enumerate","type":"tool-call","seq":8,"name":"read_file","args":{"path":"src/queue.js"}}
+{"t":1787941839255,"driver":"enumerate","type":"tool-call","seq":9,"name":"read_file","args":{"path":"src/scheduler.js"}}
+{"t":1787941839256,"driver":"enumerate","type":"tool-result","seq":6,"name":"read_file","ok":true,"outputBytes":507}
+{"t":1787941839256,"driver":"enumerate","type":"tool-result","seq":7,"name":"read_file","ok":true,"outputBytes":301}
+{"t":1787941839256,"driver":"enumerate","type":"tool-result","seq":8,"name":"read_file","ok":true,"outputBytes":510}
+{"t":1787941839256,"driver":"enumerate","type":"tool-result","seq":9,"name":"read_file","ok":true,"outputBytes":346}
+{"t":1787941839256,"driver":"enumerate","type":"turn-end","turn":3,"toolCalls":4}
+{"t":1787941839256,"driver":"enumerate","type":"turn-start","turn":4,"contextMessages":14}
+{"t":1787941847569,"type":"llm-response","roundTripMs":8313,"promptTokens":1988,"completionTokens":89,"cachedTokens":1408,"finishReason":"tool_calls"}
+{"t":1787941847569,"driver":"enumerate","type":"tool-call","seq":10,"name":"read_file","args":{"path":"test/parse.test.js"}}
+{"t":1787941847571,"driver":"enumerate","type":"tool-call","seq":11,"name":"read_file","args":{"path":"test/scheduler.test.js"}}
+{"t":1787941847572,"driver":"enumerate","type":"tool-result","seq":10,"name":"read_file","ok":true,"outputBytes":739}
+{"t":1787941847572,"driver":"enumerate","type":"tool-result","seq":11,"name":"read_file","ok":true,"outputBytes":1487}
+{"t":1787941847572,"driver":"enumerate","type":"turn-end","turn":4,"toolCalls":2}
+{"t":1787941847572,"driver":"enumerate","type":"turn-start","turn":5,"contextMessages":17}
+{"t":1787941848667,"type":"llm-response","roundTripMs":1095,"promptTokens":2786,"completionTokens":63,"cachedTokens":2048,"finishReason":"tool_calls"}
+{"t":1787941848667,"driver":"enumerate","type":"tool-call","seq":12,"name":"run_command","args":{"command":"npm test 2>&1 | head -80"}}
+{"t":1787941849337,"driver":"enumerate","type":"tool-result","seq":12,"name":"run_command","ok":true,"outputBytes":3106,"exitCode":0,"output":"exit 0\n--- stdout ---\n\n> test\n> node --test\n\n✖ parse: priority is a non-negative integer in the parsed task (1.6264ms)\n✖ parse: throws on non-numeric priority (0.2828ms)\n✖ parse: throws on negative priority (0.1567ms)\n✔ parse: preserves the task id (0.912ms)\n✖ scheduler: lower priority number runs first across digit widths (3.0792ms)\n✔ scheduler: ties keep FIFO insertion order (0.2676ms)\n✔ scheduler: mixed priorities with ties (0.1893ms)\n✔ queue: drain does not mutate the queue (0.2248ms)\nℹ tests 8\nℹ suites 0\nℹ pass 4\nℹ fail 4\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 108.0758\n\n✖ failing tests:\n\ntest at test\\parse.test.js:5:1\n✖ parse: priority is a non-negative integer in the parsed task (1.6264ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n  + actual - expected\n  \n    {\n      id: 'a',\n  +   priority: '10'\n  -   priority: 10\n    }\n  \n      at TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-X6nwow/t04/test/parse.test.js:7:10)\n      at Test.runInAsyncScope (node:async_hooks:228:14)\n      at Test.run (node:internal/test_runner/test:1118:25)\n      at Test.start (node:internal/test_runner/test:1015:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: { id: 'a', priority: '10' },\n    expected: { id: 'a', priority: 10 },\n    operator: 'deepStrictEqual',\n    diff: 'simple'\n  }\n\ntest at test\\parse.test.js:11:1\n✖ parse: throws on non-numeric priority (0.2828ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception (RangeError).\n      at TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-X6nwow/t04/test/parse.test.js:12:10)\n      at Test.runInAsyncScope (node:async_hooks:228:14)\n      at Test.run (node:internal/test_runner/test:1118:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)\n      at Test.postRun (node:internal/test_runner/test:1247:19)\n      at Test.run (node:internal/test_runner/test:1175:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\ntest at test\\parse.test.js:15:1\n✖ parse: throws on negative priority (0.1567ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception (RangeError).\n      at TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-X6nwow/t04/test/parse.test.js:16:10)\n      at Test.runInAsyncScope (node:async_hooks:228:14)\n      at Test.run (node:internal/test_runner/test:1118:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)\n      at Test.postRun (node:internal/test_runner/test:1247:19)\n      at Test.run (node:internal/test_runner/test:1175:12)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    operator: 'throws',\n    diff: 'simple'\n  }\n\n--- stderr ---"}
+{"t":1787941849337,"driver":"enumerate","type":"turn-end","turn":5,"toolCalls":1}
+{"t":1787941849337,"driver":"enumerate","type":"turn-start","turn":6,"contextMessages":19}
+{"t":1787941876220,"type":"llm-response","roundTripMs":26883,"promptTokens":3825,"completionTokens":2841,"cachedTokens":2816,"finishReason":"tool_calls"}
+{"t":1787941876220,"driver":"enumerate","type":"tool-call","seq":13,"name":"run_command","args":{"command":"node -e \"\nimport('./src/parse.js').then(m => {\n  console.log('parse 10:', JSON.stringify(m.parseTask({id:'a', priority:' 10 '})));\n  console.log('parse soon:', JSON.stringify(m.parseTask({id:'x', priority:'soon'})));\n  console.log('parse -3:', JSON.stringify(m.parseTask({id:'x', priority:'-3'})));\n});\nimport('./src/compare.js').then(m => {\n  console.log('compare str 10 vs 2:', m.compare({priority:'10'},{priority:'2'}));\n  console.log('compare num 10 vs 2:', m.compare({priority:10},{priority:2}));\n});\n\""}}
+{"t":1787941876230,"driver":"enumerate","type":"tool-call","seq":14,"name":"run_command","args":{"command":"node -e \"\nimport('./src/scheduler.js').then(m => {\n  console.log('runOrder:', JSON.stringify(m.runOrder([\n    { id: 'a', priority: '2' },\n    { id: 'b', priority: '10' },\n    { id: 'c', priority: '1' },\n  ])));\n});\n\""}}
+{"t":1787941876310,"driver":"enumerate","type":"tool-result","seq":13,"name":"run_command","ok":true,"outputBytes":37,"exitCode":0,"output":"exit 0\n--- stdout ---\n\n--- stderr ---"}
+{"t":1787941876320,"driver":"enumerate","type":"tool-result","seq":14,"name":"run_command","ok":true,"outputBytes":37,"exitCode":0,"output":"exit 0\n--- stdout ---\n\n--- stderr ---"}
+{"t":1787941876320,"driver":"enumerate","type":"turn-end","turn":6,"toolCalls":2}
+{"t":1787941876320,"driver":"enumerate","type":"turn-start","turn":7,"contextMessages":22}
+{"t":1787941884399,"type":"llm-response","roundTripMs":8079,"promptTokens":6710,"completionTokens":334,"cachedTokens":6656,"finishReason":"tool_calls"}
+{"t":1787941884399,"driver":"enumerate","type":"tool-call","seq":15,"name":"run_command","args":{"command":"node --input-type=module -e \"\nimport { parseTask } from './src/parse.js';\nimport { compare } from './src/compare.js';\nimport { runOrder } from './src/scheduler.js';\nconsole.log('parse 10:', JSON.stringify(parseTask({id:'a', priority:' 10 '})), typeof parseTask({id:'a', priority:' 10 '}).priority);\nconsole.log('parse soon:', JSON.stringify(parseTask({id:'x', priority:'soon'})));\nconsole.log('parse -3:', JSON.stringify(parseTask({id:'x', priority:'-3'})));\nconsole.log('compare str 10 vs 2:', compare({priority:'10'},{priority:'2'}));\nconsole.log('compare num 10 vs 2:', compare({priority:10},{priority:2}));\nconsole.log('runOrder:', JSON.stringify(runOrder([{id:'a',priority:'2'},{id:'b',priority:'10'},{id:'c',priority:'1'}])));\n\""}}
+{"t":1787941884490,"driver":"enumerate","type":"tool-result","seq":15,"name":"run_command","ok":true,"outputBytes":37,"exitCode":0,"output":"exit 0\n--- stdout ---\n\n--- stderr ---"}
+{"t":1787941884490,"driver":"enumerate","type":"turn-end","turn":7,"toolCalls":1}
+{"t":1787941884490,"driver":"enumerate","type":"turn-start","turn":8,"contextMessages":24}
+{"t":1787941887961,"type":"llm-response","roundTripMs":3470,"promptTokens":7068,"completionTokens":307,"cachedTokens":7040,"finishReason":"tool_calls"}
+{"t":1787941887961,"driver":"enumerate","type":"tool-call","seq":16,"name":"run_command","args":{"command":"cat > /tmp/probe.mjs <<'EOF'\nimport { parseTask } from './src/parse.js';\nimport { compare } from './src/compare.js';\nimport { runOrder } from './src/scheduler.js';\nconsole.log('parse 10:', JSON.stringify(parseTask({id:'a', priority:' 10 '})), typeof parseTask({id:'a', priority:' 10 '}).priority);\nconsole.log('parse soon:', JSON.stringify(parseTask({id:'x', priority:'soon'})));\nconsole.log('parse -3:', JSON.stringify(parseTask({id:'x', priority:'-3'})));\nconsole.log('compare str 10 vs 2:', compare({priority:'10'},{priority:'2'}));\nconsole.log('compare num 10 vs 2:', compare({priority:10},{priority:2}));\nconsole.log('runOrder:', JSON.stringify(runOrder([{id:'a',priority:'2'},{id:'b',priority:'10'},{id:'c',priority:'1'}])));\nEOF\nnode /tmp/probe.mjs"}}
+{"t":1787941887999,"driver":"enumerate","type":"tool-result","seq":16,"name":"run_command","ok":false,"outputBytes":51,"exitCode":1,"output":"exit 1\n--- stdout ---\n\n--- stderr ---\n��ʱ��Ӧ�� <<��"}
+{"t":1787941887999,"driver":"enumerate","type":"turn-end","turn":8,"toolCalls":1}
+{"t":1787941887999,"driver":"enumerate","type":"driver-limit","limit":"max-turns","turns":8}
+{"t":1787941887999,"driver":"enumerate","type":"driver-run-end","label":"enumerate","finishReason":"max-turns","turns":8}
+{"t":1787941887999,"driver":"enumerate","type":"turn-start","turn":9,"contextMessages":27}
+{"t":1787941949900,"type":"llm-retry","attempt":1,"error":"model http 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>alb</center>\r\n</body>\r\n</html>\r\n"}
+{"t":1787941973059,"type":"llm-response","roundTripMs":85059,"promptTokens":4718,"completionTokens":2153,"cachedTokens":4608,"finishReason":"tool_calls"}
+{"t":1787941973059,"driver":"enumerate","type":"tool-call","seq":17,"name":"run_command","args":{"command":"node --input-type=module -e \"import {compare} from './src/compare.js'; console.log(compare({priority:'10'},{priority:'2'})); console.log(compare({priority:10},{priority:2})); console.log(compare({priority:'2'},{priority:'10'}));\""}}
+{"t":1787941973164,"driver":"enumerate","type":"tool-result","seq":17,"name":"run_command","ok":true,"outputBytes":44,"exitCode":0,"output":"exit 0\n--- stdout ---\n-1\n1\n1\n\n--- stderr ---"}
+{"t":1787941973164,"driver":"enumerate","type":"turn-end","turn":9,"toolCalls":1}
+{"t":1787941973164,"type":"strategy-degrade","phase":"enumerate","reason":"hypothesis enumeration unparseable","rawTail":""}
+{"t":1787941973164,"driver":"main","type":"turn-start","turn":1,"contextMessages":2}
+{"t":1787941977329,"type":"llm-response","roundTripMs":4164,"promptTokens":944,"completionTokens":83,"cachedTokens":896,"finishReason":"tool_calls"}
+{"t":1787941977329,"type":"tool-call","seq":18,"name":"list_dir","args":{"path":"."}}
+{"t":1787941977330,"type":"tool-call","seq":19,"name":"read_file","args":{"path":"README.md"}}
+{"t":1787941977330,"type":"tool-result","seq":18,"name":"list_dir","ok":true,"outputBytes":39}
+{"t":1787941977330,"type":"tool-result","seq":19,"name":"read_file","ok":true,"outputBytes":1285}
+{"t":1787941977330,"driver":"main","type":"turn-end","turn":1,"toolCalls":2}
+{"t":1787941977330,"driver":"main","type":"turn-start","turn":2,"contextMessages":5}
+{"t":1787941989422,"type":"llm-response","roundTripMs":12091,"promptTokens":1408,"completionTokens":114,"cachedTokens":1024,"finishReason":"tool_calls"}
+{"t":1787941989422,"type":"tool-call","seq":20,"name":"list_dir","args":{"path":"src"}}
+{"t":1787941989423,"type":"tool-call","seq":21,"name":"list_dir","args":{"path":"test"}}
+{"t":1787941989423,"type":"tool-call","seq":22,"name":"read_file","args":{"path":"package.json"}}
+{"t":1787941989423,"type":"tool-result","seq":20,"name":"list_dir","ok":true,"outputBytes":49}
+{"t":1787941989423,"type":"tool-result","seq":21,"name":"list_dir","ok":true,"outputBytes":35}
+{"t":1787941989423,"type":"tool-result","seq":22,"name":"read_file","ok":true,"outputBytes":116}
+{"t":1787941989423,"driver":"main","type":"turn-end","turn":2,"toolCalls":3}
+{"t":1787941989423,"driver":"main","type":"turn-start","turn":3,"contextMessages":9}
+{"t":1787941992250,"type":"llm-response","roundTripMs":2826,"promptTokens":1614,"completionTokens":146,"cachedTokens":1280,"finishReason":"tool_calls"}
+{"t":1787941992250,"type":"tool-call","seq":23,"name":"read_file","args":{"path":"src/parse.js"}}
+{"t":1787941992250,"type":"tool-call","seq":24,"name":"read_file","args":{"path":"src/compare.js"}}
+{"t":1787941992250,"type":"tool-call","seq":25,"name":"read_file","args":{"path":"src/queue.js"}}
+{"t":1787941992250,"type":"tool-call","seq":26,"name":"read_file","args":{"path":"src/scheduler.js"}}
+{"t":1787941992251,"type":"tool-result","seq":23,"name":"read_file","ok":true,"outputBytes":507}
+{"t":1787941992251,"type":"tool-result","seq":24,"name":"read_file","ok":true,"outputBytes":301}
+{"t":1787941992251,"type":"tool-result","seq":25,"name":"read_file","ok":true,"outputBytes":510}
+{"t":1787941992251,"type":"tool-result","seq":26,"name":"read_file","ok":true,"outputBytes":346}
+{"t":1787941992251,"driver":"main","type":"turn-end","turn":3,"toolCalls":4}
+{"t":1787941992251,"driver":"main","type":"turn-start","turn":4,"contextMessages":14}
+{"t":1787942002499,"type":"llm-response","roundTripMs":10248,"promptTokens":2233,"completionTokens":95,"cachedTokens":1664,"finishReason":"tool_calls"}
+{"t":1787942002499,"type":"tool-call","seq":27,"name":"read_file","args":{"path":"test/parse.test.js"}}
+{"t":1787942002500,"type":"tool-call","seq":28,"name":"read_file","args":{"path":"test/scheduler.test.js"}}
+{"t":1787942002500,"type":"tool-result","seq":27,"name":"read_file","ok":true,"outputBytes":739}
+{"t":1787942002500,"type":"tool-result","seq":28,"name":"read_file","ok":true,"outputBytes":1487}
+{"t":1787942002500,"driver":"main","type":"turn-end","turn":4,"toolCalls":2}
+{"t":1787942002500,"driver":"main","type":"turn-start","turn":5,"contextMessages":17}
+{"t":1787942011681,"type":"llm-response","roundTripMs":9180,"promptTokens":3037,"completionTokens":1212,"cachedTokens":2304,"finishReason":"tool_calls"}
+{"t":1787942011681,"type":"tool-call","seq":29,"name":"write_file","args":{"path":"src/parse.js","contentChars":632}}
+{"t":1787942011681,"type":"tool-result","seq":29,"name":"write_file","ok":true,"outputBytes":30}
+{"t":1787942011681,"driver":"main","type":"turn-end","turn":5,"toolCalls":1}
+{"t":1787942011681,"driver":"main","type":"turn-start","turn":6,"contextMessages":19}
+{"t":1787942016542,"type":"llm-response","roundTripMs":4860,"promptTokens":4270,"completionTokens":67,"cachedTokens":4224,"finishReason":"tool_calls"}
+{"t":1787942016542,"type":"tool-call","seq":30,"name":"run_command","args":{"command":"node --test --test-isolation=none"}}
+{"t":1787942016680,"type":"tool-result","seq":30,"name":"run_command","ok":true,"outputBytes":583,"exitCode":0,"output":"exit 0\n--- stdout ---\n✔ parse: priority is a non-negative integer in the parsed task (1.0618ms)\n✔ parse: throws on non-numeric priority (0.3986ms)\n✔ parse: throws on negative priority (0.1423ms)\n✔ parse: preserves the task id (0.0735ms)\n✔ scheduler: lower priority number runs first across digit widths (0.2179ms)\n✔ scheduler: ties keep FIFO insertion order (0.0878ms)\n✔ scheduler: mixed priorities with ties (0.0966ms)\n✔ queue: drain does not mutate the queue (0.1356ms)\nℹ tests 8\nℹ suites 0\nℹ pass 8\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 26.6124\n\n--- stderr ---"}
+{"t":1787942016680,"driver":"main","type":"turn-end","turn":6,"toolCalls":1}
+{"t":1787942016680,"driver":"main","type":"turn-start","turn":7,"contextMessages":21}
+{"t":1787942020190,"type":"llm-response","roundTripMs":3510,"promptTokens":4541,"completionTokens":217,"cachedTokens":4224,"finishReason":"tool_calls"}
+{"t":1787942020190,"type":"tool-call","seq":31,"name":"run_command","args":{"command":"git status --short 2>/dev/null || ls -la src test"}}
+{"t":1787942020261,"type":"tool-result","seq":31,"name":"run_command","ok":true,"outputBytes":621,"exitCode":0,"output":"exit 0\n--- stdout ---\nsrc:\ntotal 4\ndrwxr-xr-x 1 JonahWu 197121   0 Aug 29 02:30 .\ndrwxr-xr-x 1 JonahWu 197121   0 Aug 29 02:30 ..\n-rw-r--r-- 1 JonahWu 197121 301 Aug 28 23:40 compare.js\n-rw-r--r-- 1 JonahWu 197121 632 Aug 29 02:33 parse.js\n-rw-r--r-- 1 JonahWu 197121 510 Aug 28 23:40 queue.js\n-rw-r--r-- 1 JonahWu 197121 346 Aug 28 23:40 scheduler.js\n\ntest:\ntotal 8\ndrwxr-xr-x 1 JonahWu 197121    0 Aug 29 02:30 .\ndrwxr-xr-x 1 JonahWu 197121    0 Aug 29 02:30 ..\n-rw-r--r-- 1 JonahWu 197121  739 Aug 28 23:40 parse.test.js\n-rw-r--r-- 1 JonahWu 197121 1487 Aug 28 23:40 scheduler.test.js\n\n--- stderr ---\nϵͳ�Ҳ���ָ����·����"}
+{"t":1787942020261,"driver":"main","type":"turn-end","turn":7,"toolCalls":1}
+{"t":1787942020261,"driver":"main","type":"turn-start","turn":8,"contextMessages":23}
+{"t":1787942026915,"type":"llm-response","roundTripMs":6654,"promptTokens":5051,"completionTokens":265,"cachedTokens":4736,"finishReason":"stop"}
+{"t":1787942026915,"driver":"main","type":"turn-end","turn":8,"toolCalls":0}
+{"t":1787942026915,"driver":"main","type":"driver-run-end","label":"main","finishReason":"no-tool-calls","turns":8}

@@ -1,0 +1,66 @@
+{
+  "architecture": "baseline (plain DSH, no Gungnir plugin)",
+  "model": "deepseek-v4-flash-0731 @ jiyuan-lvdong (https://tokenrhythm.studio/v1, openai-completions) — frozen",
+  "profile": "switchbench-base (hand-created: dsh-base + dsh-headless, agent-default-model -> frozen model)",
+  "runtimeNotes": {
+    "permissionMode": "workspace-write (platform default; write-confined to workspace + private temp; escalations would fail closed in headless — none expected for this task surface)",
+    "telemetry": "DSH_TELEMETRY_DISABLED=1",
+    "taskTimeoutMs": 300000,
+    "workspaceIsolation": "run workspaces materialized under os.tmpdir(), outside the repository (first killer run was voided for harness leakage; see results/void-*)",
+    "tokenMetering": "unavailable on plugin side (OPEN-5 open); Day 1 records wall-clock only; session logs kept under ~/.dsh/sessions for later Gate 2/3 scoring"
+  },
+  "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+  "runDir": "E:\\AI\\dsh-gungnir\\tools\\experiments\\switchbench\\results\\workspaces\\run-2026-08-28T18-28-55-012Z",
+  "rows": [
+    {
+      "taskId": "t04",
+      "killer": false,
+      "title": "priority-parse: parse returns string priority, comparator orders lexicographically",
+      "startedAt": "2026-08-28T18:28:55.032Z",
+      "elapsedMs": 77262,
+      "dshExitCode": 0,
+      "sessionId": "session-b7ee495b-e17d-41d7-b088-47ddef5c54e9",
+      "workspace": "C:\\Users\\JonahWu\\AppData\\Local\\Temp\\switchbench-workspaces\\run-2026-08-28T18-28-55-012Z\\t04",
+      "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+      "verify": {
+        "verdict": "PASS",
+        "gates": {
+          "bugNotReproducible": {
+            "ok": true,
+            "exitCode": 0,
+            "output": "original bug not reproducible\n"
+          },
+          "trunkTestsPass": {
+            "ok": true,
+            "exitCode": 0,
+            "counts": {
+              "tests": 8,
+              "pass": 8,
+              "fail": 0
+            },
+            "tail": "TAP version 13\n# Subtest: parse: priority is a non-negative integer in the parsed task\nok 1 - parse: priority is a non-negative integer in the parsed task\n  ---\n  duration_ms: 1.06\n  type: 'test'\n  ...\n# Subtest: parse: throws on non-numeric priority\nok 2 - parse: throws on non-numeric priority\n  ---\n  duration_ms: 0.426\n  type: 'test'\n  ...\n# Subtest: parse: throws on negative priority\nok 3 - parse: throws on negative priority\n  ---\n  duration_ms: 0.1234\n  type: 'test'\n  ...\n# Subtest: parse: preserves the task id\nok 4 - parse: preserves the task id\n  ---\n  duration_ms: 0.1009\n  type: 'test'\n  ...\n# Subtest: scheduler: lower priority number runs first across digit widths\nok 5 - scheduler: lower priority number runs first across digit widths\n  ---\n  duration_ms: 2.2683\n  type: 'test'\n  ...\n# Subtest: scheduler: ties keep FIFO insertion order\nok 6 - scheduler: ties keep FIFO insertion order\n  ---\n  duration_ms: 0.2089\n  type: 'test'\n  ...\n# Subtest: scheduler: mixed priorities with ties\nok 7 - scheduler: mixed priorities with ties\n  ---\n  duration_ms: 0.1653\n  type: 'test'\n  ...\n# Subtest: queue: drain does not mutate the queue\nok 8 - queue: drain does not mutate the queue\n  ---\n  duration_ms: 0.2444\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 109.2861\n"
+          },
+          "integrity": {
+            "ok": true,
+            "violations": []
+          },
+          "exports": {
+            "ok": true,
+            "violations": []
+          }
+        },
+        "constraintsSatisfied": true
+      },
+      "srcFootprint": {
+        "changed": [
+          "/src/parse.js"
+        ],
+        "added": [],
+        "deleted": []
+      },
+      "vgcrPass": true,
+      "outputTail": " it. The README requires the parsed priority to be a non-negative integer (radix 10), throwing `RangeError` on invalid input. Because the priority stayed a string, the scheduler's comparator (`compare`) performed lexicographic string ordering instead of numeric ordering, violating the \"interaction rule\" (raw payload strings must never reach the comparator). This caused 4 test failures:\n\n1. `parse: priority is a non-negative integer in the parsed task` — got `'10'` (string) instead of `10`\n2. `parse: throws on non-numeric priority` — no RangeError for `'soon'`\n3. `parse: throws on negative priority` — no RangeError for `'-3'`\n4. `scheduler: lower priority number runs first across digit widths` — `['c','b','a']` (lexicographic: 1, 10, 2) instead of `['c','a','b']` (numeric: 1, 2, 10)\n\n**Fix**: validate the trimmed priority against `/^\\d+$/` (rejects non-digits and negatives), throw `RangeError` on failure, and return `Number.parseInt(trimmed, 10)` as the priority.\n\n**Verification**: `node --test --test-isolation=none` → 8/8 pass.\n\nConstraints: only modified src/parse.js; no dependencies; exported names unchanged; tests untouched; conforms to README; worked only inside the directory.\n"
+    }
+  ],
+  "generatedAt": "2026-08-28T18:30:12.584Z"
+}

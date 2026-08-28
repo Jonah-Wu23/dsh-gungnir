@@ -1,0 +1,24 @@
+{
+  "files": {
+    "package.json": "b33542e2771beedf046ab9dd55ed14ba08b12a9b765eb6bc861d72aad4e4d8bd",
+    "README.md": "3326139eb4350e9264ad0cb1e599d09c24c5e855381272220fc9b161565c784c",
+    "test/csv.test.js": "e9fa96d269d9265e28dceb465deaf3aaeb44cff1aaa67aa8063dab16137c6390",
+    "test/export.test.js": "54be0dfbaa75d1eea78a84c2378119c491651f12438ca2c6dcd5761fae80052a",
+    "test/format.test.js": "5db369c761d43f7c7fcfe7ad3165eaed8fc4976db9c10efe008c202d6b54127e"
+  },
+  "exports": {
+    "src/csv.js": [
+      "toCsv"
+    ],
+    "src/dates.js": [
+      "formatIsoDate"
+    ],
+    "src/export.js": [
+      "exportOrders"
+    ],
+    "src/rows.js": [
+      "formatAmount",
+      "shapeOrderRow"
+    ]
+  }
+}

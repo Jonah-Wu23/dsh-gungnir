@@ -1,0 +1,8 @@
+{
+  "name": "switchbench-t01-checkout-totals",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

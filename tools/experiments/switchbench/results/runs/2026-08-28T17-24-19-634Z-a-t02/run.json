@@ -1,0 +1,96 @@
+{
+  "architecture": "a",
+  "taskId": "t02",
+  "killer": false,
+  "seed": 1001,
+  "runStamp": "2026-08-28T17-24-19-634Z",
+  "startedAt": "2026-08-28T17:24:19.647Z",
+  "endedAt": "2026-08-28T17:24:19.647Z",
+  "runError": "ENOENT: no such file or directory, open 'E:\\AI\\.env'",
+  "timedOut": false,
+  "finishReason": null,
+  "finishSummary": null,
+  "packet": null,
+  "telemetry": null,
+  "metrics": {
+    "wallMs": 0,
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "cachedTokens": 0,
+    "llmRoundTrips": 0,
+    "llmErrors": 0,
+    "toolCalls": 0,
+    "ttfua": null,
+    "waste": {
+      "ratio": 0,
+      "wasted": 0,
+      "total": 0
+    },
+    "claimedCompletion": false,
+    "finishReason": null,
+    "constraintViolations": {
+      "pathEscapes": [],
+      "outsideSrcWrites": []
+    },
+    "tests": {
+      "executed": [],
+      "scores": {
+        "recall": 0,
+        "precision": null,
+        "executedCount": 0,
+        "executedNecessaryCount": 0,
+        "necessaryTotal": 7,
+        "missedMust": [
+          "cache: keys that differ only in case are distinct entries",
+          "cache: entry expires at exactly ttlMs, not before",
+          "cache: overwriting does not change eviction order",
+          "keys: case is significant after trim",
+          "keys: trims surrounding whitespace",
+          "cache: surrounding whitespace is trimmed on set and get",
+          "cache: read-through caches the fetched value"
+        ],
+        "executedIrrelevant": [],
+        "unmatchedExecuted": []
+      }
+    }
+  },
+  "verify": {
+    "verdict": "FAIL",
+    "gates": {
+      "bugNotReproducible": {
+        "ok": false,
+        "exitCode": 1,
+        "output": "reproducible: size: expected 2, got 1\nreproducible: get('Alpha'): expected A, got B\n"
+      },
+      "trunkTestsPass": {
+        "ok": false,
+        "exitCode": 1,
+        "counts": {
+          "tests": 8,
+          "pass": 5,
+          "fail": 3
+        },
+        "tail": " case is significant after trim\n  ---\n  duration_ms: 1.8017\n  type: 'test'\n  location: 'C:\\\\Users\\\\JonahWu\\\\AppData\\\\Local\\\\Temp\\\\switchbench-ws-19eX0O\\\\t02\\\\test\\\\keys.test.js:5:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    'alpha' !== 'Alpha'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'Alpha'\n  actual: 'alpha'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-19eX0O/t02/test/keys.test.js:6:10)\n    Test.runInAsyncScope (node:async_hooks:228:14)\n    Test.run (node:internal/test_runner/test:1118:25)\n    Test.start (node:internal/test_runner/test:1015:17)\n    startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)\n  ...\n# Subtest: keys: trims surrounding whitespace\nnot ok 7 - keys: trims surrounding whitespace\n  ---\n  duration_ms: 0.3417\n  type: 'test'\n  location: 'C:\\\\Users\\\\JonahWu\\\\AppData\\\\Local\\\\Temp\\\\switchbench-ws-19eX0O\\\\t02\\\\test\\\\keys.test.js:10:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    'beta' !== 'Beta'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'Beta'\n  actual: 'beta'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-19eX0O/t02/test/keys.test.js:11:10)\n    Test.runInAsyncScope (node:async_hooks:228:14)\n    Test.run (node:internal/test_runner/test:1118:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:787:18)\n    Test.postRun (node:internal/test_runner/test:1247:19)\n    Test.run (node:internal/test_runner/test:1175:12)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)\n  ...\n# Subtest: keys: empty key stays empty\nok 8 - keys: empty key stays empty\n  ---\n  duration_ms: 0.2128\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 5\n# fail 3\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 110.0691\n"
+      },
+      "integrity": {
+        "ok": true,
+        "violations": []
+      },
+      "exports": {
+        "ok": true,
+        "violations": []
+      }
+    },
+    "constraintsSatisfied": true
+  },
+  "srcFootprint": {
+    "changed": [],
+    "added": [],
+    "deleted": []
+  },
+  "vgcrPass": false,
+  "falseCompletion": false,
+  "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+  "model": "deepseek-v4-flash-0731 @ jiyuan-lvdong (frozen)",
+  "taskTimeoutMs": 300000
+}

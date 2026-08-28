@@ -1,0 +1,113 @@
+{"t":1787940271832,"type":"loop-run-start","loop":"branch-search"}
+{"t":1787940271832,"type":"loop-phase","phase":"enumerate"}
+{"t":1787940285188,"type":"llm-response","roundTripMs":13356,"promptTokens":682,"completionTokens":96,"cachedTokens":640,"finishReason":"tool_calls"}
+{"t":1787940285189,"type":"tool-call","seq":1,"name":"list_dir","args":{"path":"."},"loop":"enumerate"}
+{"t":1787940285189,"type":"tool-call","seq":2,"name":"run_command","args":{"command":"cat README.md"},"loop":"enumerate"}
+{"t":1787940285200,"type":"tool-result","seq":1,"name":"list_dir","ok":true,"outputBytes":39,"loop":"enumerate"}
+{"t":1787940285261,"type":"tool-result","seq":2,"name":"run_command","ok":true,"outputBytes":1931,"exitCode":0,"output":"exit 0\n--- stdout ---\n# checkout-totals\n\nSmall checkout pricing library. All monetary amounts are **integer cents**.\n\n## Pricing pipeline (authoritative specification)\n\nFor a cart of lines, where each line has `unitPriceCents` and `qty`:\n\n1. `lineGross = unitPriceCents * qty` (exact integer product, never rounded).\n2. **Bulk line discount**: if `qty >= 10`, `lineDiscount = roundHalfUpCents(lineGross * 10 / 100)`;\n   otherwise `lineDiscount = 0`. The discount is computed **once per line**, never per unit.\n3. `discountedSubtotal = sum of (lineGross - lineDiscount)` over all lines.\n4. **Coupon**: a single coupon with an integer percent rate `rate` (may be `null` = no coupon).\n   `couponDiscount = roundHalfUpCents(discountedSubtotal * rate / 100)` — computed **exactly once\n   on the whole discounted subtotal**. It is never computed per line and never rounded per line.\n5. **Tax**: `tax = roundHalfUpCents((discountedSubtotal - couponDiscount) * 8 / 100)` — tax is\n   always applied **after** the coupon discount.\n6. `total = discountedSubtotal - couponDiscount + tax`.\n\n## Rounding rule (authoritative specification)\n\n`roundHalfUpCents(x)` rounds to the nearest integer, halves round **up** (towards positive\ninfinity): `2.4 -> 2`, `2.5 -> 3`, `-0.5 -> 0` is never reachable because amounts are\nnon-negative. Every amount in the pipeline is rounded **at most once**, at the step that\ndefines it. Intermediate values are never rounded.\n\n## Public API (must not change)\n\n- `src/money.js`: `roundHalfUpCents`\n- `src/pricing.js`: `priceLines(lines) -> { lines: [{ id, lineGross, lineDiscount, lineNet }], discountedSubtotal }`\n- `src/coupons.js`: `applyCoupon(priced, ratePercent) -> { couponDiscount, amountAfterCoupon }`\n- `src/tax.js`: `applyTax(amountAfterCoupon) -> { tax, amountWithTax }`\n- `src/checkout.js`: `checkoutTotal(lines, couponRatePercent) -> { discountedSubtotal, couponDiscount, tax, total }`\n\n--- stderr ---","loop":"enumerate"}
+{"t":1787940287866,"type":"llm-response","roundTripMs":2604,"promptTokens":1348,"completionTokens":115,"cachedTokens":768,"finishReason":"tool_calls"}
+{"t":1787940287866,"type":"tool-call","seq":3,"name":"list_dir","args":{"path":"src"},"loop":"enumerate"}
+{"t":1787940287867,"type":"tool-call","seq":4,"name":"list_dir","args":{"path":"test"},"loop":"enumerate"}
+{"t":1787940287867,"type":"tool-call","seq":5,"name":"run_command","args":{"command":"cat package.json"},"loop":"enumerate"}
+{"t":1787940287877,"type":"tool-result","seq":3,"name":"list_dir","ok":true,"outputBytes":59,"loop":"enumerate"}
+{"t":1787940287877,"type":"tool-result","seq":4,"name":"list_dir","ok":true,"outputBytes":70,"loop":"enumerate"}
+{"t":1787940287926,"type":"tool-result","seq":5,"name":"run_command","ok":true,"outputBytes":154,"exitCode":0,"output":"exit 0\n--- stdout ---\n{\n  \"name\": \"checkout-totals\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"scripts\": {\n    \"test\": \"node --test\"\n  }\n}\n\n--- stderr ---","loop":"enumerate"}
+{"t":1787940290910,"type":"llm-response","roundTripMs":2984,"promptTokens":1583,"completionTokens":181,"cachedTokens":1408,"finishReason":"tool_calls"}
+{"t":1787940290910,"type":"tool-call","seq":6,"name":"read_file","args":{"path":"src/money.js"},"loop":"enumerate"}
+{"t":1787940290912,"type":"tool-call","seq":7,"name":"read_file","args":{"path":"src/pricing.js"},"loop":"enumerate"}
+{"t":1787940290913,"type":"tool-call","seq":8,"name":"read_file","args":{"path":"src/coupons.js"},"loop":"enumerate"}
+{"t":1787940290914,"type":"tool-call","seq":9,"name":"read_file","args":{"path":"src/tax.js"},"loop":"enumerate"}
+{"t":1787940290915,"type":"tool-call","seq":10,"name":"read_file","args":{"path":"src/checkout.js"},"loop":"enumerate"}
+{"t":1787940290916,"type":"tool-result","seq":6,"name":"read_file","ok":true,"outputBytes":233,"loop":"enumerate"}
+{"t":1787940290916,"type":"tool-result","seq":7,"name":"read_file","ok":true,"outputBytes":641,"loop":"enumerate"}
+{"t":1787940290916,"type":"tool-result","seq":8,"name":"read_file","ok":true,"outputBytes":590,"loop":"enumerate"}
+{"t":1787940290916,"type":"tool-result","seq":9,"name":"read_file","ok":true,"outputBytes":290,"loop":"enumerate"}
+{"t":1787940290916,"type":"tool-result","seq":10,"name":"read_file","ok":true,"outputBytes":559,"loop":"enumerate"}
+{"t":1787940307718,"type":"llm-response","roundTripMs":16801,"promptTokens":2424,"completionTokens":159,"cachedTokens":1664,"finishReason":"tool_calls"}
+{"t":1787940307718,"type":"tool-call","seq":11,"name":"read_file","args":{"path":"test/money.test.js"},"loop":"enumerate"}
+{"t":1787940307720,"type":"tool-call","seq":12,"name":"read_file","args":{"path":"test/pricing.test.js"},"loop":"enumerate"}
+{"t":1787940307721,"type":"tool-call","seq":13,"name":"read_file","args":{"path":"test/coupons.test.js"},"loop":"enumerate"}
+{"t":1787940307722,"type":"tool-call","seq":14,"name":"read_file","args":{"path":"test/checkout.test.js"},"loop":"enumerate"}
+{"t":1787940307723,"type":"tool-result","seq":11,"name":"read_file","ok":true,"outputBytes":515,"loop":"enumerate"}
+{"t":1787940307723,"type":"tool-result","seq":12,"name":"read_file","ok":true,"outputBytes":970,"loop":"enumerate"}
+{"t":1787940307723,"type":"tool-result","seq":13,"name":"read_file","ok":true,"outputBytes":976,"loop":"enumerate"}
+{"t":1787940307723,"type":"tool-result","seq":14,"name":"read_file","ok":true,"outputBytes":1594,"loop":"enumerate"}
+{"t":1787940310066,"type":"llm-response","roundTripMs":2342,"promptTokens":3946,"completionTokens":59,"cachedTokens":2560,"finishReason":"tool_calls"}
+{"t":1787940310066,"type":"tool-call","seq":15,"name":"run_command","args":{"command":"npm test 2>&1"},"loop":"enumerate"}
+{"t":1787940310676,"type":"tool-result","seq":15,"name":"run_command","ok":false,"outputBytes":2314,"exitCode":1,"output":"exit 1\n--- stdout ---\n\n> test\n> node --test\n\n✖ checkout: multi-line cart with 7% coupon totals exactly per spec (1.7055ms)\n✔ checkout: tax applies after coupon discount (0.2335ms)\n✔ checkout: cart without coupon (0.1504ms)\n✔ checkout: empty cart totals zero (0.128ms)\n✖ coupons: discount is rounded once on the whole discounted subtotal, never per line (1.5602ms)\n✔ coupons: null rate means no discount (0.2404ms)\n✔ money: rounds half up (0.719ms)\n✔ money: rounds down below half (0.1355ms)\n✔ money: zero stays zero (0.1323ms)\n✔ pricing: bulk discount starts at qty 10 (1.1051ms)\n✔ pricing: no bulk discount below qty 10 (0.1665ms)\n✔ pricing: discounted subtotal sums line nets (0.2067ms)\nℹ tests 12\nℹ suites 0\nℹ pass 10\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 112.8227\n\n✖ failing tests:\n\ntest at test\\checkout.test.js:11:1\n✖ checkout: multi-line cart with 7% coupon totals exactly per spec (1.7055ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  858 !== 857\n  \n      at TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-qHoccO/t01/test/checkout.test.js:17:10)\n      at Test.runInAsyncScope (node:async_hooks:228:14)\n      at Test.run (node:internal/test_runner/test:1118:25)\n      at Test.start (node:internal/test_runner/test:1015:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 858,\n    expected: 857,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\ntest at test\\coupons.test.js:6:1\n✖ coupons: discount is rounded once on the whole discounted subtotal, never per line (1.5602ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n  \n  124 !== 123\n  \n      at TestContext.<anonymous> (file:///C:/Users/JonahWu/AppData/Local/Temp/switchbench-ws-qHoccO/t01/test/coupons.test.js:15:10)\n      at Test.runInAsyncScope (node:async_hooks:228:14)\n      at Test.run (node:internal/test_runner/test:1118:25)\n      at Test.start (node:internal/test_runner/test:1015:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: 124,\n    expected: 123,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n\n--- stderr ---","loop":"enumerate"}
+{"t":1787940370736,"type":"llm-retry","attempt":1,"error":"model http 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>alb</center>\r\n</body>\r\n</html>\r\n"}
+{"t":1787940421806,"type":"llm-response","roundTripMs":111129,"promptTokens":4745,"completionTokens":4520,"cachedTokens":4736,"finishReason":"tool_calls"}
+{"t":1787940421806,"type":"tool-call","seq":16,"name":"run_command","args":{"command":"node -e \"\nimport('./src/pricing.js').then(async (p) => {\n  const { applyCoupon } = await import('./src/coupons.js');\n  const priced = p.priceLines([{ id: 'a', unitPriceCents: 250, qty: 3 }, { id: 'b', unitPriceCents: 202, qty: 5 }]);\n  const perLine = priced.lines.reduce((s, l) => s + Math.floor(l.lineNet*7/100 + 0.5), 0);\n  const whole = Math.floor(priced.discountedSubtotal*7/100 + 0.5);\n  console.log({ discountedSubtotal: priced.discountedSubtotal, applyCoupon: applyCoupon(priced,7).couponDiscount, perLine, whole });\n});\n\""},"loop":"enumerate"}
+{"t":1787940421899,"type":"tool-result","seq":16,"name":"run_command","ok":true,"outputBytes":37,"exitCode":0,"output":"exit 0\n--- stdout ---\n\n--- stderr ---","loop":"enumerate"}
+{"t":1787940428272,"type":"llm-response","roundTripMs":6372,"promptTokens":9289,"completionTokens":235,"cachedTokens":9216,"finishReason":"tool_calls"}
+{"t":1787940428272,"type":"tool-call","seq":17,"name":"run_command","args":{"command":"node --input-type=module -e \"\nimport { priceLines } from './src/pricing.js';\nimport { applyCoupon } from './src/coupons.js';\nconst priced = priceLines([{ id: 'a', unitPriceCents: 250, qty: 3 }, { id: 'b', unitPriceCents: 202, qty: 5 }]);\nconst perLine = priced.lines.reduce((s, l) => s + Math.floor(l.lineNet*7/100 + 0.5), 0);\nconst whole = Math.floor(priced.discountedSubtotal*7/100 + 0.5);\nconsole.log({ discountedSubtotal: priced.discountedSubtotal, applyCoupon: applyCoupon(priced,7).couponDiscount, perLine, whole });\n\""},"loop":"enumerate"}
+{"t":1787940428363,"type":"tool-result","seq":17,"name":"run_command","ok":true,"outputBytes":37,"exitCode":0,"output":"exit 0\n--- stdout ---\n\n--- stderr ---","loop":"enumerate"}
+{"t":1787940449788,"type":"llm-response","roundTripMs":21424,"promptTokens":9548,"completionTokens":136,"cachedTokens":9472,"finishReason":"tool_calls"}
+{"t":1787940449788,"type":"tool-call","seq":18,"name":"run_command","args":{"command":"node --input-type=module -e \"import { priceLines } from './src/pricing.js'; const p = priceLines([{id:'a',unitPriceCents:250,qty:3},{id:'b',unitPriceCents:202,qty:5}]); process.stdout.write(JSON.stringify(p)+'\\n');\""},"loop":"enumerate"}
+{"t":1787940449893,"type":"tool-result","seq":18,"name":"run_command","ok":true,"outputBytes":193,"exitCode":0,"output":"exit 0\n--- stdout ---\n{\"lines\":[{\"id\":\"a\",\"lineGross\":750,\"lineDiscount\":0,\"lineNet\":750},{\"id\":\"b\",\"lineGross\":1010,\"lineDiscount\":0,\"lineNet\":1010}],\"discountedSubtotal\":1760}\n\n--- stderr ---","loop":"enumerate"}
+{"t":1787940449893,"type":"loop-limit","conversation":"enumerate","limit":"max-turns"}
+{"t":1787940514950,"type":"llm-retry","attempt":1,"error":"model http 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>alb</center>\r\n</body>\r\n</html>\r\n"}
+{"t":1787940576532,"type":"llm-retry","attempt":2,"error":"model http 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>alb</center>\r\n</body>\r\n</html>\r\n"}
+{"t":1787940639611,"type":"llm-error","error":"model http 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>alb</center>\r\n</body>\r\n</html>\r\n"}
+{"t":1787940639611,"type":"loop-error","phase":"enumerate","error":"model http 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body bgcolor=\"white\">\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>alb</center>\r\n</body>\r\n</html>\r\n"}
+{"t":1787940639611,"type":"loop-degrade","phase":"enumerate","reason":"hypothesis enumeration unparseable","rawTail":""}
+{"t":1787940639611,"type":"loop-phase","phase":"investigate","branches":0}
+{"t":1787940639611,"type":"loop-converged","selected":null,"reason":"no hypothesis confirmed or inconclusive after investigation"}
+{"t":1787940639612,"type":"safepoint-handoff","packetBytes":549,"selected":null}
+{"t":1787940639612,"driver":"execution","type":"driver-run-start","label":"execution"}
+{"t":1787940639612,"driver":"execution","type":"turn-start","turn":1,"contextMessages":2}
+{"t":1787940644735,"type":"llm-response","roundTripMs":5123,"promptTokens":1127,"completionTokens":90,"cachedTokens":1024,"finishReason":"tool_calls"}
+{"t":1787940644735,"type":"tool-call","seq":19,"name":"list_dir","args":{"path":"."}}
+{"t":1787940644735,"type":"tool-call","seq":20,"name":"read_file","args":{"path":"README.md"}}
+{"t":1787940644735,"type":"tool-result","seq":19,"name":"list_dir","ok":true,"outputBytes":39}
+{"t":1787940644735,"type":"tool-result","seq":20,"name":"read_file","ok":true,"outputBytes":1894}
+{"t":1787940644735,"driver":"execution","type":"turn-end","turn":1,"toolCalls":2}
+{"t":1787940644735,"driver":"execution","type":"turn-start","turn":2,"contextMessages":5}
+{"t":1787940646712,"type":"llm-response","roundTripMs":1976,"promptTokens":1775,"completionTokens":116,"cachedTokens":1152,"finishReason":"tool_calls"}
+{"t":1787940646712,"type":"tool-call","seq":21,"name":"list_dir","args":{"path":"src"}}
+{"t":1787940646713,"type":"tool-call","seq":22,"name":"list_dir","args":{"path":"test"}}
+{"t":1787940646713,"type":"tool-call","seq":23,"name":"read_file","args":{"path":"package.json"}}
+{"t":1787940646713,"type":"tool-result","seq":21,"name":"list_dir","ok":true,"outputBytes":59}
+{"t":1787940646713,"type":"tool-result","seq":22,"name":"list_dir","ok":true,"outputBytes":70}
+{"t":1787940646713,"type":"tool-result","seq":23,"name":"read_file","ok":true,"outputBytes":117}
+{"t":1787940646713,"driver":"execution","type":"turn-end","turn":2,"toolCalls":3}
+{"t":1787940646713,"driver":"execution","type":"turn-start","turn":3,"contextMessages":9}
+{"t":1787940648414,"type":"llm-response","roundTripMs":1700,"promptTokens":1999,"completionTokens":181,"cachedTokens":1792,"finishReason":"tool_calls"}
+{"t":1787940648414,"type":"tool-call","seq":24,"name":"read_file","args":{"path":"src/money.js"}}
+{"t":1787940648415,"type":"tool-call","seq":25,"name":"read_file","args":{"path":"src/pricing.js"}}
+{"t":1787940648415,"type":"tool-call","seq":26,"name":"read_file","args":{"path":"src/coupons.js"}}
+{"t":1787940648415,"type":"tool-call","seq":27,"name":"read_file","args":{"path":"src/tax.js"}}
+{"t":1787940648415,"type":"tool-call","seq":28,"name":"read_file","args":{"path":"src/checkout.js"}}
+{"t":1787940648415,"type":"tool-result","seq":24,"name":"read_file","ok":true,"outputBytes":233}
+{"t":1787940648415,"type":"tool-result","seq":25,"name":"read_file","ok":true,"outputBytes":641}
+{"t":1787940648415,"type":"tool-result","seq":26,"name":"read_file","ok":true,"outputBytes":590}
+{"t":1787940648415,"type":"tool-result","seq":27,"name":"read_file","ok":true,"outputBytes":290}
+{"t":1787940648415,"type":"tool-result","seq":28,"name":"read_file","ok":true,"outputBytes":559}
+{"t":1787940648415,"driver":"execution","type":"turn-end","turn":3,"toolCalls":5}
+{"t":1787940648415,"driver":"execution","type":"turn-start","turn":4,"contextMessages":15}
+{"t":1787940655021,"type":"llm-response","roundTripMs":6605,"promptTokens":2840,"completionTokens":312,"cachedTokens":2176,"finishReason":"tool_calls"}
+{"t":1787940655021,"type":"tool-call","seq":29,"name":"read_file","args":{"path":"test/money.test.js"}}
+{"t":1787940655021,"type":"tool-call","seq":30,"name":"read_file","args":{"path":"test/pricing.test.js"}}
+{"t":1787940655021,"type":"tool-call","seq":31,"name":"read_file","args":{"path":"test/coupons.test.js"}}
+{"t":1787940655021,"type":"tool-call","seq":32,"name":"read_file","args":{"path":"test/checkout.test.js"}}
+{"t":1787940655022,"type":"tool-result","seq":29,"name":"read_file","ok":true,"outputBytes":515}
+{"t":1787940655022,"type":"tool-result","seq":30,"name":"read_file","ok":true,"outputBytes":970}
+{"t":1787940655022,"type":"tool-result","seq":31,"name":"read_file","ok":true,"outputBytes":976}
+{"t":1787940655022,"type":"tool-result","seq":32,"name":"read_file","ok":true,"outputBytes":1594}
+{"t":1787940655022,"driver":"execution","type":"turn-end","turn":4,"toolCalls":4}
+{"t":1787940655022,"driver":"execution","type":"turn-start","turn":5,"contextMessages":20}
+{"t":1787940666844,"type":"llm-response","roundTripMs":11822,"promptTokens":4515,"completionTokens":632,"cachedTokens":3072,"finishReason":"tool_calls"}
+{"t":1787940666844,"type":"tool-call","seq":33,"name":"write_file","args":{"path":"src/coupons.js","contentChars":561}}
+{"t":1787940666844,"type":"tool-result","seq":33,"name":"write_file","ok":true,"outputBytes":32}
+{"t":1787940666844,"driver":"execution","type":"turn-end","turn":5,"toolCalls":1}
+{"t":1787940666844,"driver":"execution","type":"turn-start","turn":6,"contextMessages":22}
+{"t":1787940699597,"type":"llm-response","roundTripMs":32750,"promptTokens":5169,"completionTokens":69,"cachedTokens":5120,"finishReason":"tool_calls"}
+{"t":1787940699597,"type":"tool-call","seq":34,"name":"run_command","args":{"command":"node --test --test-isolation=none"}}
+{"t":1787940699772,"type":"tool-result","seq":34,"name":"run_command","ok":true,"outputBytes":780,"exitCode":0,"output":"exit 0\n--- stdout ---\n✔ checkout: multi-line cart with 7% coupon totals exactly per spec (1.2964ms)\n✔ checkout: tax applies after coupon discount (0.1698ms)\n✔ checkout: cart without coupon (0.1217ms)\n✔ checkout: empty cart totals zero (0.1144ms)\n✔ coupons: discount is rounded once on the whole discounted subtotal, never per line (0.156ms)\n✔ coupons: null rate means no discount (0.1083ms)\n✔ money: rounds half up (0.1034ms)\n✔ money: rounds down below half (0.2038ms)\n✔ money: zero stays zero (0.1234ms)\n✔ pricing: bulk discount starts at qty 10 (0.6323ms)\n✔ pricing: no bulk discount below qty 10 (0.0984ms)\n✔ pricing: discounted subtotal sums line nets (0.0672ms)\nℹ tests 12\nℹ suites 0\nℹ pass 12\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 47.3483\n\n--- stderr ---"}
+{"t":1787940699772,"driver":"execution","type":"turn-end","turn":6,"toolCalls":1}
+{"t":1787940699772,"driver":"execution","type":"turn-start","turn":7,"contextMessages":24}
+{"t":1787940703732,"type":"llm-response","roundTripMs":3960,"promptTokens":5508,"completionTokens":281,"cachedTokens":5120,"finishReason":"tool_calls"}
+{"t":1787940703732,"type":"tool-call","seq":35,"name":"finish","args":{"summary":"Root cause: `src/coupons.js` `applyCoupon` computed the coupon discount per line — `sum of roundHalfUpCents(line.lineNet * rate / 100)` — rounding each line's share separately. The README (authoritative spec) requires the coupon discount to be computed exactly once on the whole discounted subtotal: `couponDiscount = roundHalfUpCents(discountedSubtotal * rate / 100)`, never per line and never rounded per line. This per-line rounding produced off-by-one results (e.g. 124 instead of 123) and failed the coupon and checkout tests.\n\nFix: rewrote `applyCoupon` in `src/coupons.js` to compute the coupon discount once on `priced.discountedSubtotal` and round once, in full conformance with the README. No exports changed, no new deps, only src/ modified. Verified with `node --test --test-isolation=none`: all 12 tests pass."}}
+{"t":1787940703732,"type":"tool-result","seq":35,"name":"finish","ok":true,"outputBytes":19}
+{"t":1787940703732,"driver":"execution","type":"turn-end","turn":7,"toolCalls":1}
+{"t":1787940703732,"driver":"execution","type":"driver-run-end","label":"execution","finishReason":"finish-tool","turns":7}

@@ -1,0 +1,22 @@
+{
+  "files": {
+    "package.json": "a19f2610a37bb503ca4c3e1b4d3ccc4b9dfaced28278f0ce3d996b5227c3101f",
+    "README.md": "bcaf25481e1da226489cb2afb5758f031830d2364a11a7011503e403926b1ccd",
+    "test/parse.test.js": "09cdfcbfcd2c68b861dab7c6994b57785ed1d33c9ed72f67c9b5fcae749c63e6",
+    "test/scheduler.test.js": "693140cf6df4fa3f3391de6af2637ae16ecf63ce2a8d473806654810f1b497e1"
+  },
+  "exports": {
+    "src/compare.js": [
+      "compare"
+    ],
+    "src/parse.js": [
+      "parseTask"
+    ],
+    "src/queue.js": [
+      "createQueue"
+    ],
+    "src/scheduler.js": [
+      "runOrder"
+    ]
+  }
+}

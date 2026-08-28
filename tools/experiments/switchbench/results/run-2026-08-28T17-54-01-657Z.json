@@ -1,0 +1,66 @@
+{
+  "architecture": "baseline (plain DSH, no Gungnir plugin)",
+  "model": "deepseek-v4-flash-0731 @ jiyuan-lvdong (https://tokenrhythm.studio/v1, openai-completions) — frozen",
+  "profile": "switchbench-base (hand-created: dsh-base + dsh-headless, agent-default-model -> frozen model)",
+  "runtimeNotes": {
+    "permissionMode": "workspace-write (platform default; write-confined to workspace + private temp; escalations would fail closed in headless — none expected for this task surface)",
+    "telemetry": "DSH_TELEMETRY_DISABLED=1",
+    "taskTimeoutMs": 300000,
+    "workspaceIsolation": "run workspaces materialized under os.tmpdir(), outside the repository (first killer run was voided for harness leakage; see results/void-*)",
+    "tokenMetering": "unavailable on plugin side (OPEN-5 open); Day 1 records wall-clock only; session logs kept under ~/.dsh/sessions for later Gate 2/3 scoring"
+  },
+  "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+  "runDir": "E:\\AI\\dsh-gungnir\\tools\\experiments\\switchbench\\results\\workspaces\\run-2026-08-28T17-54-01-657Z",
+  "rows": [
+    {
+      "taskId": "t01",
+      "killer": true,
+      "title": "checkout-totals: per-line coupon rounding violates the round-once pipeline rule",
+      "startedAt": "2026-08-28T17:54:01.672Z",
+      "elapsedMs": 157613,
+      "dshExitCode": 0,
+      "sessionId": "session-bcee8761-ab15-45f2-8031-f734e05955b3",
+      "workspace": "C:\\Users\\JonahWu\\AppData\\Local\\Temp\\switchbench-workspaces\\run-2026-08-28T17-54-01-657Z\\t01",
+      "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+      "verify": {
+        "verdict": "PASS",
+        "gates": {
+          "bugNotReproducible": {
+            "ok": true,
+            "exitCode": 0,
+            "output": "original bug not reproducible\n"
+          },
+          "trunkTestsPass": {
+            "ok": true,
+            "exitCode": 0,
+            "counts": {
+              "tests": 12,
+              "pass": 12,
+              "fail": 0
+            },
+            "tail": "TAP version 13\n# Subtest: checkout: multi-line cart with 7% coupon totals exactly per spec\nok 1 - checkout: multi-line cart with 7% coupon totals exactly per spec\n  ---\n  duration_ms: 1.3212\n  type: 'test'\n  ...\n# Subtest: checkout: tax applies after coupon discount\nok 2 - checkout: tax applies after coupon discount\n  ---\n  duration_ms: 0.2612\n  type: 'test'\n  ...\n# Subtest: checkout: cart without coupon\nok 3 - checkout: cart without coupon\n  ---\n  duration_ms: 0.1992\n  type: 'test'\n  ...\n# Subtest: checkout: empty cart totals zero\nok 4 - checkout: empty cart totals zero\n  ---\n  duration_ms: 0.1269\n  type: 'test'\n  ...\n# Subtest: coupons: discount is rounded once on the whole discounted subtotal, never per line\nok 5 - coupons: discount is rounded once on the whole discounted subtotal, never per line\n  ---\n  duration_ms: 0.9384\n  type: 'test'\n  ...\n# Subtest: coupons: null rate means no discount\nok 6 - coupons: null rate means no discount\n  ---\n  duration_ms: 0.1281\n  type: 'test'\n  ...\n# Subtest: money: rounds half up\nok 7 - money: rounds half up\n  ---\n  duration_ms: 0.8017\n  type: 'test'\n  ...\n# Subtest: money: rounds down below half\nok 8 - money: rounds down below half\n  ---\n  duration_ms: 0.1067\n  type: 'test'\n  ...\n# Subtest: money: zero stays zero\nok 9 - money: zero stays zero\n  ---\n  duration_ms: 0.0777\n  type: 'test'\n  ...\n# Subtest: pricing: bulk discount starts at qty 10\nok 10 - pricing: bulk discount starts at qty 10\n  ---\n  duration_ms: 1.0376\n  type: 'test'\n  ...\n# Subtest: pricing: no bulk discount below qty 10\nok 11 - pricing: no bulk discount below qty 10\n  ---\n  duration_ms: 0.1167\n  type: 'test'\n  ...\n# Subtest: pricing: discounted subtotal sums line nets\nok 12 - pricing: discounted subtotal sums line nets\n  ---\n  duration_ms: 0.0922\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 126.5814\n"
+          },
+          "integrity": {
+            "ok": true,
+            "violations": []
+          },
+          "exports": {
+            "ok": true,
+            "violations": []
+          }
+        },
+        "constraintsSatisfied": true
+      },
+      "srcFootprint": {
+        "changed": [
+          "/src/coupons.js"
+        ],
+        "added": [],
+        "deleted": []
+      },
+      "vgcrPass": true,
+      "outputTail": "o in `applyCoupon`, replace the per-line reduce with a single computation on `priced.discountedSubtotal`.\ndsh: reasoning:\nThe file was changed since it was read? That's odd. Let me re-read it.\ndsh: reasoning:\nThe file content is the same as before. The \"file changed since it was read\" might be a false positive from the harness (perhaps a timestamp touch from the test run). Let me retry the edit now that I've re-read it.\ndsh: reasoning:\nAll 12 tests pass now. Let me verify the fix conforms to the README:\n\n- Step 4: `couponDiscount = roundHalfUpCents(discountedSubtotal * rate / 100)` — computed exactly once on the whole discounted subtotal. ✓ Now the code does `roundHalfUpCents((priced.discountedSubtotal * ratePercent) / 100)`. ✓\n- Step 5: tax applies after coupon — already correct in tax.js/checkout.js. ✓\n- Step 6: total = discountedSubtotal - couponDiscount + tax. ✓\n\nConstraints check:\n1. Only modified src/coupons.js ✓\n2. No dependencies added ✓\n3. Exported names unchanged (applyCoupon still exported) ✓\n4. Tests untouched ✓\n5. Conforms to README ✓\n6. Worked strictly inside the directory ✓\n\nThe fix is complete. Let me also quickly verify the final state of the file for the summary.\n"
+    }
+  ],
+  "generatedAt": "2026-08-28T17:56:39.637Z"
+}

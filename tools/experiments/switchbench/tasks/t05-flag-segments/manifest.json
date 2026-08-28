@@ -1,0 +1,24 @@
+{
+  "files": {
+    "package.json": "457f513b9b0e5024feef135823728bf86d0eca1714af9b03106d7753184aa6ac",
+    "README.md": "77f0f8439219583ba6ad93ca42ef0ccbef3a5fa14fc34c37d3d760391bc4f512",
+    "test/flags.test.js": "3fec7f3514ce8b6b16177ca8c10adc25521a41c8ed5ab37b1bafe9c435e59a64",
+    "test/hash.test.js": "be71d6887e014a7715a345f5ce02d2f9897962c359df34659362a0ba6f93c0d4",
+    "test/segments.test.js": "b42c34345062cdbd0b4436c6df86a4b6315347e15f4d046d077f8dd255e09798"
+  },
+  "exports": {
+    "src/config.js": [
+      "loadFlags"
+    ],
+    "src/flags.js": [
+      "evaluate"
+    ],
+    "src/hash.js": [
+      "bucketFor",
+      "stableHash"
+    ],
+    "src/segments.js": [
+      "matchesAnySegment"
+    ]
+  }
+}

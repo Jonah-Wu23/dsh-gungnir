@@ -1,0 +1,22 @@
+{
+  "files": {
+    "package.json": "65488ea17fca9dd045180868b35a3e2518e2492033de4e0ae93827bfc225df2f",
+    "README.md": "356f1a65c30420d25df3c8aed2edd6e509ead2f813bd9c9d3de8d04c0d60cf98",
+    "test/cache.test.js": "bbe0c5d0e605fdacc82618e4032a1bcc5406ea8d02692b6f5fd3b825ce315837",
+    "test/keys.test.js": "4ec942fb7bec2f926fa6b9065a4681e5ecb50ab9c79979a30c45643b6800faa7"
+  },
+  "exports": {
+    "src/api.js": [
+      "readThrough"
+    ],
+    "src/cache.js": [
+      "createCache"
+    ],
+    "src/clock.js": [
+      "systemClock"
+    ],
+    "src/keys.js": [
+      "normalizeKey"
+    ]
+  }
+}

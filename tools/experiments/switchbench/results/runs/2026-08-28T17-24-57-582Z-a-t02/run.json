@@ -1,0 +1,126 @@
+{
+  "architecture": "a",
+  "taskId": "t02",
+  "killer": false,
+  "seed": 1001,
+  "runStamp": "2026-08-28T17-24-57-582Z",
+  "startedAt": "2026-08-28T17:24:57.593Z",
+  "endedAt": "2026-08-28T17:30:02.871Z",
+  "runError": null,
+  "timedOut": false,
+  "finishReason": "finish-tool",
+  "finishSummary": "Root cause: `src/keys.js` normalized keys with `.trim().toLowerCase()`, which made keys case-insensitive and collided 'Alpha'/'alpha'. This violated the README spec (\"Case is significant: two keys that differ only in case are two distinct entries\") and caused 3 test failures (2 in keys.test.js, 1 in cache.test.js).\n\nFix: changed `normalizeKey` to only trim surrounding whitespace (`return key.trim()`), dropping the `.toLowerCase()` call. The exported name `normalizeKey` is unchanged, and no other files were modified. Verified with `node --test --test-isolation=none`: 8/8 tests pass.",
+  "packet": null,
+  "telemetry": {
+    "phases": [
+      {
+        "phase": "enumerate",
+        "ms": 193792,
+        "hypotheses": 0,
+        "degraded": true
+      }
+    ],
+    "usage": {
+      "inputTokens": 39215,
+      "outputTokens": 2845,
+      "cachedTokens": 32512,
+      "requests": 15,
+      "retries": 3,
+      "errors": 1
+    }
+  },
+  "metrics": {
+    "wallMs": 305278,
+    "inputTokens": 39215,
+    "outputTokens": 2845,
+    "cachedTokens": 32512,
+    "llmRoundTrips": 15,
+    "llmErrors": 1,
+    "toolCalls": 28,
+    "ttfua": {
+      "seconds": 3.09,
+      "llmCallsBefore": 1,
+      "toolCallsBefore": 0
+    },
+    "waste": {
+      "ratio": 0.35714285714285715,
+      "wasted": 10,
+      "total": 28
+    },
+    "claimedCompletion": true,
+    "finishReason": "finish-tool",
+    "constraintViolations": {
+      "pathEscapes": [
+        ".",
+        ".",
+        "/tmp/switchbench-ws-V3nR5m/t02"
+      ],
+      "outsideSrcWrites": []
+    },
+    "tests": {
+      "executed": [
+        "cache: keys that differ only in case are distinct entries",
+        "cache: surrounding whitespace is trimmed on set and get",
+        "cache: entry expires at exactly ttlMs, not before",
+        "cache: overwriting does not change eviction order",
+        "cache: read-through caches the fetched value",
+        "keys: case is significant after trim",
+        "keys: trims surrounding whitespace",
+        "keys: empty key stays empty"
+      ],
+      "scores": {
+        "recall": 1,
+        "precision": 0.875,
+        "executedCount": 8,
+        "executedNecessaryCount": 7,
+        "necessaryTotal": 7,
+        "missedMust": [],
+        "executedIrrelevant": [
+          "keys: empty key stays empty"
+        ],
+        "unmatchedExecuted": []
+      }
+    }
+  },
+  "verify": {
+    "verdict": "PASS",
+    "gates": {
+      "bugNotReproducible": {
+        "ok": true,
+        "exitCode": 0,
+        "output": "original bug not reproducible\n"
+      },
+      "trunkTestsPass": {
+        "ok": true,
+        "exitCode": 0,
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0
+        },
+        "tail": "TAP version 13\n# Subtest: cache: keys that differ only in case are distinct entries\nok 1 - cache: keys that differ only in case are distinct entries\n  ---\n  duration_ms: 0.9999\n  type: 'test'\n  ...\n# Subtest: cache: surrounding whitespace is trimmed on set and get\nok 2 - cache: surrounding whitespace is trimmed on set and get\n  ---\n  duration_ms: 1.121\n  type: 'test'\n  ...\n# Subtest: cache: entry expires at exactly ttlMs, not before\nok 3 - cache: entry expires at exactly ttlMs, not before\n  ---\n  duration_ms: 0.1166\n  type: 'test'\n  ...\n# Subtest: cache: overwriting does not change eviction order\nok 4 - cache: overwriting does not change eviction order\n  ---\n  duration_ms: 0.1043\n  type: 'test'\n  ...\n# Subtest: cache: read-through caches the fetched value\nok 5 - cache: read-through caches the fetched value\n  ---\n  duration_ms: 0.1357\n  type: 'test'\n  ...\n# Subtest: keys: case is significant after trim\nok 6 - keys: case is significant after trim\n  ---\n  duration_ms: 0.8152\n  type: 'test'\n  ...\n# Subtest: keys: trims surrounding whitespace\nok 7 - keys: trims surrounding whitespace\n  ---\n  duration_ms: 0.1206\n  type: 'test'\n  ...\n# Subtest: keys: empty key stays empty\nok 8 - keys: empty key stays empty\n  ---\n  duration_ms: 0.0819\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 102.8682\n"
+      },
+      "integrity": {
+        "ok": true,
+        "violations": []
+      },
+      "exports": {
+        "ok": true,
+        "violations": []
+      }
+    },
+    "constraintsSatisfied": true
+  },
+  "srcFootprint": {
+    "changed": [
+      "/src/keys.js"
+    ],
+    "added": [],
+    "deleted": []
+  },
+  "vgcrPass": true,
+  "falseCompletion": false,
+  "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+  "model": "deepseek-v4-flash-0731 @ jiyuan-lvdong (frozen)",
+  "taskTimeoutMs": 300000
+}

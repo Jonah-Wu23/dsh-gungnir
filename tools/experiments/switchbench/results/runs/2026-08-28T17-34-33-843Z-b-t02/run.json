@@ -1,0 +1,170 @@
+{
+  "architecture": "b",
+  "taskId": "t02",
+  "killer": false,
+  "seed": 1001,
+  "runStamp": "2026-08-28T17-34-33-843Z",
+  "startedAt": "2026-08-28T17:34:33.856Z",
+  "endedAt": "2026-08-28T17:38:44.316Z",
+  "runError": null,
+  "timedOut": false,
+  "finishReason": "finish-tool",
+  "finishSummary": "Root cause: `src/keys.js` normalized keys with `key.trim().toLowerCase()`, but the README spec says case is significant — two keys differing only in case must be distinct entries, with normalization being trim-only. The lowercasing collapsed `'Alpha'`/`'alpha'` into one entry and mangled case in both keys tests and cache tests.\n\nFix: changed `normalizeKey` to trim surrounding whitespace only (`return key.trim()`), matching the authoritative README spec.\n\nVerified: ran `node --test --test-isolation=none` (the sandbox-required in-process mode) — all 8 tests pass, 0 failures. Public exports unchanged (`keys.normalizeKey`, `clock.systemClock`, `cache.createCache`, `api.readThrough`). Only `src/keys.js` was modified.",
+  "packet": {
+    "goal_spec": {
+      "goal": "make the repository's test suite pass, conforming to README.md as the authoritative spec",
+      "constraints": [
+        "only-src",
+        "no-new-deps",
+        "api-stable",
+        "stay-in-workspace"
+      ]
+    },
+    "goal_status": {
+      "phase": "branch-search-complete",
+      "hypotheses_investigated": 0,
+      "selection": "none"
+    },
+    "selected_hypothesis": "",
+    "verified_facts": [],
+    "evidence_refs": [],
+    "artifact_refs": [],
+    "unresolved_questions": [],
+    "recommended_next_action": "No hypothesis survived investigation. Investigate the failing suite directly, fix the root cause under src/, then run the suite."
+  },
+  "telemetry": {
+    "branch": {
+      "phases": [
+        {
+          "phase": "enumerate",
+          "ms": 90896,
+          "hypotheses": 0,
+          "degraded": true
+        },
+        {
+          "phase": "converge+handoff",
+          "ms": 90897,
+          "selected": null,
+          "packetBytes": 549
+        }
+      ],
+      "packetBytes": 549,
+      "totalMs": 90897,
+      "selectionReason": "no hypothesis confirmed or inconclusive after investigation"
+    },
+    "handoff": {
+      "packetBytes": 549,
+      "packetFields": [
+        "goal_spec",
+        "goal_status",
+        "selected_hypothesis",
+        "verified_facts",
+        "evidence_refs",
+        "artifact_refs",
+        "unresolved_questions",
+        "recommended_next_action"
+      ]
+    },
+    "usage": {
+      "inputTokens": 70382,
+      "outputTokens": 7225,
+      "cachedTokens": 63104,
+      "requests": 19,
+      "retries": 0,
+      "errors": 0
+    }
+  },
+  "metrics": {
+    "wallMs": 250460,
+    "inputTokens": 70382,
+    "outputTokens": 7225,
+    "cachedTokens": 63104,
+    "llmRoundTrips": 19,
+    "llmErrors": 0,
+    "toolCalls": 32,
+    "ttfua": {
+      "seconds": 13.08,
+      "llmCallsBefore": 1,
+      "toolCallsBefore": 0
+    },
+    "waste": {
+      "ratio": 0.3125,
+      "wasted": 10,
+      "total": 32
+    },
+    "claimedCompletion": true,
+    "finishReason": "finish-tool",
+    "constraintViolations": {
+      "pathEscapes": [
+        ".",
+        "."
+      ],
+      "outsideSrcWrites": []
+    },
+    "tests": {
+      "executed": [
+        "cache: keys that differ only in case are distinct entries",
+        "cache: surrounding whitespace is trimmed on set and get",
+        "cache: entry expires at exactly ttlMs, not before",
+        "cache: overwriting does not change eviction order",
+        "cache: read-through caches the fetched value",
+        "keys: case is significant after trim",
+        "keys: trims surrounding whitespace",
+        "keys: empty key stays empty"
+      ],
+      "scores": {
+        "recall": 1,
+        "precision": 0.875,
+        "executedCount": 8,
+        "executedNecessaryCount": 7,
+        "necessaryTotal": 7,
+        "missedMust": [],
+        "executedIrrelevant": [
+          "keys: empty key stays empty"
+        ],
+        "unmatchedExecuted": []
+      }
+    }
+  },
+  "verify": {
+    "verdict": "PASS",
+    "gates": {
+      "bugNotReproducible": {
+        "ok": true,
+        "exitCode": 0,
+        "output": "original bug not reproducible\n"
+      },
+      "trunkTestsPass": {
+        "ok": true,
+        "exitCode": 0,
+        "counts": {
+          "tests": 8,
+          "pass": 8,
+          "fail": 0
+        },
+        "tail": "TAP version 13\n# Subtest: cache: keys that differ only in case are distinct entries\nok 1 - cache: keys that differ only in case are distinct entries\n  ---\n  duration_ms: 0.9412\n  type: 'test'\n  ...\n# Subtest: cache: surrounding whitespace is trimmed on set and get\nok 2 - cache: surrounding whitespace is trimmed on set and get\n  ---\n  duration_ms: 1.106\n  type: 'test'\n  ...\n# Subtest: cache: entry expires at exactly ttlMs, not before\nok 3 - cache: entry expires at exactly ttlMs, not before\n  ---\n  duration_ms: 0.1073\n  type: 'test'\n  ...\n# Subtest: cache: overwriting does not change eviction order\nok 4 - cache: overwriting does not change eviction order\n  ---\n  duration_ms: 0.112\n  type: 'test'\n  ...\n# Subtest: cache: read-through caches the fetched value\nok 5 - cache: read-through caches the fetched value\n  ---\n  duration_ms: 0.1286\n  type: 'test'\n  ...\n# Subtest: keys: case is significant after trim\nok 6 - keys: case is significant after trim\n  ---\n  duration_ms: 0.5262\n  type: 'test'\n  ...\n# Subtest: keys: trims surrounding whitespace\nok 7 - keys: trims surrounding whitespace\n  ---\n  duration_ms: 0.0822\n  type: 'test'\n  ...\n# Subtest: keys: empty key stays empty\nok 8 - keys: empty key stays empty\n  ---\n  duration_ms: 0.0764\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 114.3243\n"
+      },
+      "integrity": {
+        "ok": true,
+        "violations": []
+      },
+      "exports": {
+        "ok": true,
+        "violations": []
+      }
+    },
+    "constraintsSatisfied": true
+  },
+  "srcFootprint": {
+    "changed": [
+      "/src/keys.js"
+    ],
+    "added": [],
+    "deleted": []
+  },
+  "vgcrPass": true,
+  "falseCompletion": false,
+  "promptSha256": "fb084c6092bd04295baad5edf7729e4bec8e921c998b3e866d59ca0ec9b598da",
+  "model": "deepseek-v4-flash-0731 @ jiyuan-lvdong (frozen)",
+  "taskTimeoutMs": 600000
+}

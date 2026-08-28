@@ -1,0 +1,13 @@
+{
+  "name": "@gungnir/switchbench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SwitchBench v0: A-vs-B agent-loop topology experiment benchmark (frozen tasks, deterministic Gate-1 verifier, baseline runner through plain DSH headless).",
+  "type": "module",
+  "scripts": {
+    "freeze": "node src/freeze.mjs",
+    "verify": "node src/verify.mjs",
+    "selfcheck": "node src/selfcheck.mjs",
+    "baseline": "node src/run-baseline.mjs"
+  }
+}

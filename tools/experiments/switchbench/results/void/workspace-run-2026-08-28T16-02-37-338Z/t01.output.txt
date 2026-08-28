@@ -1,0 +1,305 @@
+Done. Here's the summary:
+
+## Root cause
+
+`src/coupons.js`'s `applyCoupon` computed the coupon discount **per line**:
+
+```js
+priced.lines.reduce((sum, line) => sum + roundHalfUpCents((line.lineNet * ratePercent) / 100), 0)
+```
+
+This violates README step 4, the authoritative spec: the coupon discount must be computed **exactly once on the whole discounted subtotal** — `couponDiscount = roundHalfUpCents(discountedSubtotal * rate / 100)` — never per line and never rounded per line. For the test's cart (line nets 750 and 1010 at 7%), per-line rounding gives `round(52.5) + round(70.7) = 53 + 71 = 124`, while the spec gives `round(1760 * 7 / 100) = round(123.2) = 123`. The checkout test fails downstream too (per-line rounding lands on total 12296 instead of 12297).
+
+## Fix
+
+One-line change in `src/coupons.js` (the only file modified; everything else is untouched):
+
+```js
+const couponDiscount = roundHalfUpCents((priced.discountedSubtotal * ratePercent) / 100)
+```
+
+The `null`-rate (no coupon) branch and the rest of the pipeline (`money.js`, `pricing.js`, `tax.js`, `checkout.js`) already conform to the README — I verified each against the spec and tests.
+
+## Verification
+
+- `node --test --test-isolation=none` → **12/12 tests pass** (same test files, same runner).
+- Running each test file directly in-process (`node test/*.test.js`) → **12/12 pass**.
+- Plain `node --test` (default isolation) currently reports `spawn EPERM` for every test file — this is an environmental sandbox limitation, not a code failure: the runner spawns a child process per test file with piped stdio/IPC, and the workspace-write sandbox denies pipe creation before any `src/` code executes (the error originates in `node:internal/test_runner/runner` during `spawn`, identical before and after the fix). Escalating the command to a wider sandbox mode was rejected because no approval channel is available, so `--test-isolation=none` (in-process execution, no spawn) is the exact-equivalent way to run the suite here. The 12 tests that `node --test` would run all pass with the fix.
+
+dsh: reasoning:
+Let me start by exploring the repository structure to understand what we're working with.
+dsh: reasoning:
+Let me read all the files to understand the repository.
+dsh: reasoning:
+Now let me look at the tests to understand the expectations.
+dsh: reasoning:
+Now I understand the issue. Looking at the code:
+
+1. `money.js` - `roundHalfUpCents(x)` uses `Math.floor(x + 0.5)`. The tests expect:
+   - `roundHalfUpCents(2.5) === 3` ✓
+   - `roundHalfUpCents(52.5) === 53` ✓
+   - `roundHalfUpCents(2.4) === 2` ✓
+   - `roundHalfUpCents(857.01) === 857` ✓
+   - `roundHalfUpCents(910.88) === 911` ✓ (floor(911.38) = 911) ✓
+   - `roundHalfUpCents(0) === 0` ✓
+
+   Wait, so money.js seems fine for these cases. Let me check `910.88`: `Math.floor(910.88 + 0.5) = Math.floor(911.38) = 911`. OK.
+
+   But wait, floating point issues: `roundHalfUpCents(2.5)`: `2.5 + 0.5 = 3.0` → 3 ✓. But what about cases like `1.005`? `1.005 + 0.5 = 1.505` → floor = 1, but true rounding of 1.005 to nearest int is 1. OK.
+
+   The classic floating-point issue: `x + 0.5` might not be exact. For example, `roundHalfUpCents(2.675)` → `2.675 + 0.5 = 3.175` which in floating point is `3.1749999999999998` → floor = 3, but correct half-up would be... 2.675 rounds to 3 anyway (since 2.675 > 2.5). Hmm, the actual problem case is when the fractional part is exactly 0.5 in decimal but the binary representation is slightly below, e.g., `4.5` is exact, `0.5` is exact... `x.5` values where x is an integer: the .5 is always exactly representable in binary (0.5 = 2^-1). So `n + 0.5` where n is an integer is exact as long as n + 0.5 is representable. So `Math.floor(x + 0.5)` is fine for half cases.
+
+   The problematic case is when x is like `857.005`? No...
+
+   Actually the tests: `roundHalfUpCents(2.5)`, `52.5`, `2.4`, `857.01`, `910.88`, `0`. `Math.floor(x + 0.5)` handles all of those fine. So money.js might pass its tests.
+
+2. `pricing.js` - computes bulk discount: `roundHalfUpCents((lineGross * 10) / 100)`. For qty=10, unitPrice 100: gross=1000, `1000*10/100 = 100` → 100. OK. The tests look fine.
+
+3. `coupons.js` - This is the bug! Per README:
+   - Step 4: `couponDiscount = roundHalfUpCents(discountedSubtotal * rate / 100)` — computed **exactly once on the whole discounted subtotal**. Never per line, never rounded per line.
+
+   But the implementation does:
+   ```js
+   const couponDiscount = priced.lines.reduce(
+     (sum, line) => sum + roundHalfUpCents((line.lineNet * ratePercent) / 100),
+     0,
+   )
+   ```
+   This computes per-line! The test says:
+   - Line nets 750 and 1010. Whole-subtotal rule: round(1760 * 7 / 100) = round(123.2) = 123.
+   - A per-line implementation computes round(52.5) + round(70.7) = 53 + 71 = 124.
+   
+   So current code gives 124, expected 123. **This is the root cause of the coupon test failure.**
+
+4. `tax.js` - `roundHalfUpCents((amountAfterCoupon * 8) / 100)`. This looks correct per spec.
+
+5. `checkout.js` - calls priceLines, applyCoupon, applyTax. Looks correct per spec.
+
+Let me also double-check the floating point rounding in `roundHalfUpCents`. The check for `roundHalfUpCents(910.88)` → 911 works. But wait — where does 910.88 come from? In checkout test: `tax round((12243-857)*8/100)=round(910.88)=911`. So `(12243-857)*8/100 = 11386*8/100 = 91088/100 = 910.88`. In floating point: `91088 * 8 / 100`... Actually `11386 * 8 = 91088`, `91088 / 100 = 910.88` in floating point might be `910.8799999999999` or `910.8800000000001`. `Math.floor(910.88 + 0.5) = Math.floor(911.38)`. Even with a tiny error, floor(911.38) = 911 either way since the error is way below 0.5. Fine.
+
+But there's a subtle floating-point issue that might matter: `roundHalfUpCents(2.5)`: `2.5 + 0.5 = 3` exactly. `52.5 + 0.5 = 53` exactly. Fine.
+
+Hmm, but wait, are there potential issues with the money tests? Let me run the tests first to see what actually fails.
+
+Let me run `node --test` to see the failures.
+dsh: reasoning:
+The test runner itself is failing with `spawn EPERM` — this is a sandbox issue: `node --test` spawns child processes for each test file, and the sandbox blocks the spawn (named pipes / child process spawn with piped stdio fails under the confined mode). The pwsh tool docs say:
+
+"In both confined modes, programs cannot open named pipes, so a command that captures another program's output through piped stdio (Node.js `child_process.spawn`/`exec` with the default `stdio: 'pipe'`) fails with EPERM, while `stdio: 'inherit'` and `stdio: 'ignore'` spawns work and PowerShell's own pipelines are unaffected."
+
+So `node --test` spawns child processes with piped stdio, which fails under the sandbox. This is a documented boundary: "do not retry the command another way — escalate the exact command once or restructure it to avoid capturing output."
+
+Hmm, but actually the failure is in spawning the test file child processes. The `node --test` runner itself spawns children to run test files. That's inherent to how `node --test` works. Under the sandbox, that EPERM occurs.
+
+Options:
+1. Escalate the exact command with `sandbox_permissions: 'danger-full-access'` — but the sandbox mode for pwsh is currently... The current DSH file policy is workspace-write. The pwsh sandbox might be workspace-write, in which case spawn with pipes fails? Actually wait — the docs say "In both confined modes, programs cannot open named pipes". The workspace-write mode is a confined mode. So under workspace-write, `node --test` fails because the test runner spawns child processes with piped stdio.
+
+Actually, the tool result said the error is `spawn EPERM` from `ChildProcess.spawn` with `syscall: 'spawn'` — this is the Windows named-pipe / spawn restriction.
+
+So to run `node --test` I need to escalate pwsh to `danger-full-access`? The sandbox_permissions option for pwsh accepts `workspace-write` or `danger-full-access`. The current mode is workspace-write (from the file policy). But wait — is the pwsh sandbox the same as the DSH file policy? The context says "Current DSH file policy: workspace-write. Any available operation enforced by the DSH file sandbox may modify files under the session workspace."
+
+Hmm, so the pwsh command ran under workspace-write mode and the spawn was denied. To run `node --test`, I need a wider mode: `danger-full-access`. Per the instructions: "When a command is denied and a wider mode would let it succeed, escalate immediately in the same turn — the one sanctioned exception to a denial: retry the exact same command once with `sandbox_permissions` (the narrowest wider mode that suffices) plus a one-sentence `justification`."
+
+So I should retry `node --test` with `sandbox_permissions: 'danger-full-access'` and a justification. Actually wait — the denial here: is this a "sandbox: file access denied under <mode> mode" marker? No, it's not. The command ran and `node --test` itself failed with EPERM on spawn. This is the documented boundary behavior: "a command that captures another program's output through piped stdio ... fails with EPERM ... That EPERM is the documented boundary: do not retry the command another way — escalate the exact command once or restructure it to avoid capturing output."
+
+So the sanctioned path is to escalate the exact same command with a wider sandbox permission. `danger-full-access` should let spawn work. Let me do that.
+
+But also, before escalating, let me first identify the actual bug. I already spotted it:
+
+`coupons.js` computes the coupon discount per line:
+```js
+const couponDiscount = priced.lines.reduce(
+  (sum, line) => sum + roundHalfUpCents((line.lineNet * ratePercent) / 100),
+  0,
+)
+```
+
+But per README (and the test), it should be computed once on the whole discounted subtotal:
+```js
+const couponDiscount = roundHalfUpCents((priced.discountedSubtotal * ratePercent) / 100)
+```
+
+That's the fix. Let me also double check money.js and pricing.js are fine.
+
+money.js: `Math.floor(x + 0.5)` — tests: 2.5→3, 52.5→53, 2.4→2, 857.01→857, 910.88→911, 0→0. All pass with Math.floor(x+0.5). Let me verify 910.88: `910.88 + 0.5 = 911.38` → floor = 911 ✓. 857.01: `857.51` → 857 ✓. So money.js passes.
+
+But wait — is there a subtle floating point issue? `Math.floor(x + 0.5)` is the standard "round half up" but has floating-point edge cases: e.g., `x = 0.49999999999999994` + 0.5 = 0.9999999999999999 → floor 0 ✓. `x = 2.5` → 3 ✓. `x = -0.5` → 0, but README says negative not reachable. OK, money.js is fine.
+
+Actually, hold on. Let me reconsider: is there any floating point issue with the exact computations in the tests? Let me compute the checkout test with the fix:
+
+CART: a: 250*3=750 (qty 3, no discount), b: 1200*10=12000, qty 10 → discount round(12000*10/100) = 1200 → net 10800. c: 99*7=693 → net 693. discountedSubtotal = 750+10800+693 = 12243 ✓.
+
+coupon 7%: round(12243*7/100) = round(857.01) = 857 ✓ (floating: 12243*7 = 85701, /100 = 857.01 → floor(857.51) = 857 ✓).
+
+amountAfterCoupon = 12243 - 857 = 11386.
+
+tax = round(11386*8/100) = round(910.88) = 911 ✓.
+
+total = 11386 + 911 = 12297 ✓.
+
+Second checkout test: x: 10000*1=10000, qty 1, no discount. coupon 10%: round(10000*10/100) = 1000 ✓. amountAfterCoupon = 9000. tax = round(9000*8/100) = 720 ✓. total = 9720 ✓.
+
+Third: 333*2=666, null coupon → 0, amountAfterCoupon=666. tax = round(666*8/100) = round(53.28) = 53 ✓. total = 719 ✓.
+
+Fourth: empty cart: priceLines([]) → lines [], discountedSubtotal = 0. applyCoupon with null → couponDiscount 0, amountAfterCoupon 0. tax = round(0) = 0. total = 0 ✓.
+
+pricing tests: all fine with current implementation.
+
+coupons test 1: line nets 750, 1010 (250*3=750 qty 3; 202*5=1010 qty 5). discountedSubtotal = 1760. With fix: couponDiscount = round(1760*7/100) = round(123.2) = 123 ✓.
+
+coupons test 2: null rate → 0, amountAfterCoupon 1000 ✓.
+
+So the only real bug is in coupons.js. 
+
+Now, the test run itself failed with spawn EPERM due to the sandbox. I need to escalate to run `node --test`. Per the instructions, escalation requires justification and user approval. Approval policy is "ask" — "Operations that require approval may ask through the configured answerers; without an available answerer, the request fails closed."
+
+Let me first make the fix to coupons.js, then run `node --test` — first try normally, and if it fails with EPERM, escalate with sandbox_permissions. Actually, since I already know `node --test` fails with EPERM under the current sandbox, I can go straight to the escalation: "Attempting a command the sandbox may deny is safe and expected: run it and read the marker rather than assuming the denial." — I already ran it and got the marker. "escalate immediately in the same turn — the one sanctioned exception to a denial: retry the exact same command once with sandbox_permissions (the narrowest wider mode that suffices)".
+
+The narrowest wider mode that suffices: `danger-full-access` (there's no intermediate mode between workspace-write and danger-full-access for pwsh). Justification: running `node --test` requires spawning child test processes, which the workspace-write sandbox denies (EPERM).
+
+Let me make the fix first, then run the test with escalation.
+
+Actually, let me think about whether there could be more bugs. The task says "the test suite currently fails" and to find the root cause. The coupon per-line rounding is the obvious intentional bug. Let me double check that the current code's failure matches: with per-line rounding, couponDiscount = round(52.5) + round(70.7) = 53 + 71 = 124 ≠ 123. Yes, that's the failing test.
+
+Let me also verify money.js once more with the tests. Actually all money tests pass with Math.floor(x+0.5). Let me quickly compute 52.5: 52.5+0.5 = 53 exact ✓.
+
+Alright. Let me apply the fix to coupons.js.
+
+The fix:
+```js
+const couponDiscount = roundHalfUpCents((priced.discountedSubtotal * ratePercent) / 100)
+```
+
+Note the README says rate "may be null = no coupon" and the null branch is handled already. For ratePercent possibly undefined? The public API says applyCoupon(priced, ratePercent). The tests pass null or a number. Keep as is.
+
+Let me edit coupons.js.
+dsh: reasoning:
+Now run `node --test`. It will fail with EPERM under the sandbox, so I should escalate immediately in the same turn (the sanctioned exception). Actually, since the sandbox mode is workspace-write and spawn EPERM is the documented boundary, the narrowest wider mode that suffices is `danger-full-access`. Let me run it with the escalation directly — but the instructions say "When a command is denied and a wider mode would let it succeed, escalate immediately in the same turn — the one sanctioned exception to a denial: retry the exact same command once with sandbox_permissions". I already have a denial from the previous run of the exact same command. So retrying with escalation is sanctioned.
+
+Let me run `node --test` with `sandbox_permissions: 'danger-full-access'` and justification.
+dsh: reasoning:
+The escalation failed because there's no approval channel. Hmm. "Approval policy: ask. Operations that require approval may ask through the configured answerers; without an available answerer, the request fails closed."
+
+So I can't run `node --test` under the current sandbox with escalation because approval is unavailable. Let me reconsider.
+
+Wait — is `node --test` spawn really blocked under workspace-write? Let me re-read the tool docs:
+
+"In both confined modes, programs cannot open named pipes, so a command that captures another program's output through piped stdio (Node.js `child_process.spawn`/`exec` with the default `stdio: 'pipe'`) fails with EPERM, while `stdio: 'inherit'` and `stdio: 'ignore'` spawns work and PowerShell's own pipelines are unaffected. That EPERM is the documented boundary: do not retry the command another way — escalate the exact command once or restructure it to avoid capturing output."
+
+Hmm wait, but actually — `node --test` failed with spawn EPERM even though I didn't pipe output through stdio... Actually the failure is inside node's test runner: it spawns child processes to run test files, and those child processes communicate with the parent via IPC (which on Windows uses named pipes). The test runner uses `child_process.spawn` with `stdio: 'pipe'` for test files by default.
+
+Hmm, but wait — the tool description says "Under the Windows sandbox, read-only pwsh runs in PowerShell ConstrainedLanguage mode, while workspace-write stays in FullLanguage unless host policy says otherwise." So workspace-write is a confined mode for file access, but does it also block named pipes? The docs say "In both confined modes, programs cannot open named pipes". Workspace-write is one of the confined modes. So yes, `node --test` spawn fails.
+
+Options:
+1. Restructure to avoid capturing output? The docs say "restructure it to avoid capturing output" is an option. But `node --test` inherently spawns child processes with pipes for IPC. Hmm, is there a way to run tests without the runner spawning children? `node --test` has a `--test-concurrency` option, but it always spawns child processes per test file. There's `--experimental-test-isolation=none`? In newer Node versions, `node --test` runs each test file in a separate child process by default. There's an option `--test-isolation` (added in Node 22?) that can be `process` (default) or `none`. With `none`, test files run in the same process. But still the runner itself spawns... actually with isolation none, the runner may still spawn a child for the whole run? Let me think.
+
+Actually in Node 20/22, `node --test` spawns a child process per test file. The spawn EPERM happens at `node:internal/test_runner/runner:415` in `TestContext.<anonymous>` — the runner spawning the test file process.
+
+Hmm, alternatively I can run the test files directly: `node test/money.test.js`, `node test/pricing.test.js`, etc. Each test file uses `node:test` and `node:assert/strict`, and when run directly via `node file.js`, the tests run in the main process without spawning children. That's a "restructure to avoid capturing output" approach that doesn't touch the frozen test files — it just runs them directly.
+
+But wait, the EPERM is about "programs cannot open named pipes, so a command that captures another program's output through piped stdio (Node.js child_process.spawn/exec with the default stdio: 'pipe')". Running `node test/money.test.js` directly — does that open named pipes? The test runner `node:test` when run in-process doesn't spawn child processes. The output goes through PowerShell's own pipeline (which is fine). So `node test/money.test.js` should work.
+
+But hold on — is running test files directly an acceptable verification of `node --test`? The goal is "make `node --test` pass". The test files themselves are frozen and I can't modify them. Running each test file directly runs the same tests in-process. That verifies the logic passes. But it doesn't literally run `node --test`.
+
+Hmm, but the constraint is that `node --test` must pass. The tests fail under the sandbox because of spawn EPERM, which is an environment limitation, not a code issue. Let me think about how to actually run `node --test` in a way that works.
+
+Wait, actually — let me reconsider. Maybe the EPERM is caused by something else. Let me look at the error again:
+
+```
+Error: spawn EPERM
+    at ChildProcess.spawn (node:internal/child_process:421:11)
+    at spawn (node:child_process:796:9)
+    at TestContext.<anonymous> (node:internal/test_runner/runner:415:19)
+```
+
+This is the test runner spawning the test file subprocess. The spawn uses stdio pipes for IPC.
+
+Options to make `node --test` work under the sandbox:
+1. Set the environment so the runner doesn't use pipes? Not possible.
+2. Node has `NODE_OPTIONS`... no.
+
+Actually, wait. Let me re-read the docs again: "programs cannot open named pipes, so a command that captures another program's output through piped stdio (Node.js `child_process.spawn`/`exec` with the default `stdio: 'pipe'`) fails with EPERM, while `stdio: 'inherit'` and `stdio: 'ignore'` spawns work".
+
+Hmm, this is about the *pwsh command* capturing another program's output through piped stdio. My pwsh command was `node --test 2>&1`. The `2>&1` redirect in PowerShell — does that create a named pipe? No, PowerShell handles redirection internally. The EPERM is inside node's own child_process.spawn.
+
+So the node test runner's spawn with default stdio 'pipe' fails. Is there any way to make the runner use inherit/ignore? Looking at node source... The test runner spawns test files with `stdio: ['pipe', 'pipe', 'pipe', 'ipc']` roughly, using IPC. IPC on Windows uses named pipes. So blocked.
+
+Hmm, wait — maybe under workspace-write, named pipes for IPC are actually allowed? The EPERM we saw was real. The docs say both confined modes block named pipes. So `node --test` cannot run under workspace-write.
+
+What about running `node --test` with `--test-isolation=none`? Let me check Node version first. In Node 22.0+, there's `--experimental-test-isolation` flag; in Node 22.8 it became `--test-isolation`. With `isolation: 'none'`, all test files run in the same process — no child processes spawned? Actually, I recall that even with isolation none, the runner still spawns a child for the test files? No wait — with `--test-isolation=none`, the runner does NOT spawn child processes; it runs the test files in the main process (via dynamic import / require). Let me check.
+
+Actually, I recall the implementation: in `node:internal/test_runner/runner`, when isolation is 'process', it spawns a child per file. When isolation is 'none', it uses `runTestFile` in-process? Hmm, actually I think with isolation 'none', it runs each file in the same process sequentially via a worker-like mechanism without spawning.
+
+Hmm, but I'm not 100% sure. Let me check the Node version and try.
+
+Alternatively — maybe I should just try running the tests directly per file and also try `node --test --test-isolation=none`. Let me check node version first.
+
+Actually wait, let me reconsider the sandbox situation. The DSH file policy is workspace-write. The pwsh tool's sandbox mode... When I ran `node --test` the first time (without sandbox_permissions), it ran under... the default mode, which corresponds to the current DSH file policy workspace-write. The spawn EPERM occurred.
+
+Let me try `node --version` and check if `--test-isolation=none` is supported. Also try running `node --test --test-isolation=none`. That might avoid spawning child processes.
+
+Let me also verify the fix works by running test files directly:
+- `node test/money.test.js`
+- `node test/pricing.test.js`
+- `node test/coupons.test.js`
+- `node test/checkout.test.js`
+
+Each of these runs in-process (the node:test module runs tests in the current process when the file is executed directly). These should not spawn children. Let me try that first to validate the fix, then figure out `node --test`.
+dsh: reasoning:
+Node v24.14.0 supports `--test-isolation`. Let me try `node --test --test-isolation=none`. With isolation none, the runner doesn't spawn child processes for test files (they run in the same process). Let me try that.
+dsh: reasoning:
+All 12 tests pass with `--test-isolation=none`. 
+
+Now, the goal is to make `node --test` pass. The plain `node --test` fails under this sandbox because the runner spawns child processes with piped stdio (EPERM). That's an environment restriction, not a code issue. But I should double-check: is the spawn EPERM a genuine sandbox limitation or could it be fixed by code? It's clearly environmental — the spawn happens inside node's test runner before any of my code runs (at FileTest.start → spawn of the test file). No src/ change can affect that.
+
+But wait — maybe I should try plain `node --test` once more now, to be thorough. The earlier failure was at spawn, and nothing about the environment changed. Let me try it once to confirm the current state... Actually I already know it will fail with the same EPERM. Hmm, but let me be careful: is there any chance the first failure was because of something else, e.g. a transient state? The error was deterministic spawn EPERM at runner:415. Retrying won't change the sandbox policy.
+
+Let me think about whether there's a way to make plain `node --test` work under workspace-write. The sandbox blocks named pipes. Node's test runner spawns test file children with IPC. Is there any way to tell the runner to use inherit stdio? There's no such flag for the test runner itself.
+
+Hmm, what about running with `--test-concurrency=1`? Doesn't change the spawn mechanism.
+
+What about `NODE_OPTIONS`? No.
+
+Actually, wait — could I write a small wrapper in src/ that... no, `node --test` discovers test files by convention; the spawn happens regardless.
+
+Alternatively, is the sandbox actually applied to node's spawn only when output is captured through pipes? The docs say "programs cannot open named pipes, so a command that captures another program's output through piped stdio (Node.js child_process.spawn/exec with the default stdio: 'pipe') fails with EPERM". The node test runner uses stdio pipes for its children — that's inherent. So plain `node --test` cannot run under this sandbox.
+
+Given the constraint "verify with `node --test`", I've verified with `node --test --test-isolation=none` which is the same test runner and same test files, just with in-process isolation to avoid the sandbox's spawn restriction. All 12 tests pass.
+
+Hmm, but let me double check the `--test-isolation=none` mode runs the same tests. Yes — it discovered the same 4 test files, ran 12 tests (money 3, pricing 3, coupons 2, checkout 4 = 12). All pass.
+
+Let me also try plain `node --test` once more to be thorough and to document the state. Actually, I ran it before the fix and it failed at spawn (environment). The fix doesn't affect spawning. Running again would fail identically. But for due diligence, let me run it once more and capture — it's cheap. Actually, it's deterministic; but let me run it to be able to report accurately, since the task says "verify with `node --test` before finishing". Let me try it once more.
+
+Actually, wait. Maybe there's a subtlety: the first run failed because pwsh captured node's output through `2>&1`? No — the EPERM is inside node itself spawning its test children, independent of how pwsh captures node's stdout. The pwsh pipeline redirect `2>&1` merges stderr into stdout, handled by PowerShell itself, not a named pipe.
+
+Let me try plain `node --test` one more time to confirm the environmental limitation persists, then also run each test file directly to triple-verify the fix.
+
+Actually, let me also consider: could the spawn EPERM be caused by something in the environment I can influence? E.g., anti-virus? No. It's the documented sandbox boundary ("Under the Windows sandbox ... programs cannot open named pipes"). It's environmental.
+
+One more idea: `node --test` with `--experimental-test-isolation=none` is the supported way. Also, there's `--test-reporter` etc. — not relevant.
+
+OK here's my plan:
+1. Confirm the fix with plain `node --test` (expect environmental EPERM — document it).
+2. Verify all test files pass in-process (done via `--test-isolation=none`; also run each file directly for extra confidence).
+3. Report.
+
+Actually, running plain `node --test` again will just show the EPERM. But it's worth one final attempt to be able to say definitively. Let me do it, plus run the individual files directly in the same command... no wait, individual file runs: `node test/checkout.test.js` etc. Each spawns nothing. Let me run them sequentially in one pwsh command.
+dsh: reasoning:
+Confirmed:
+1. Plain `node --test` fails with `spawn EPERM` — this is an environmental sandbox limitation: the test runner spawns a child process per test file with piped stdio/IPC, and the sandbox denies named-pipe/pipe creation. This happens before any of my code runs, so no src/ change can affect it. The escalation to danger-full-access was rejected because no approval channel is available.
+2. The same test suite run through the same `node --test` runner with `--test-isolation=none` (no child spawn) passes 12/12.
+3. Each test file run directly (in-process, no spawn) also passes 12/12.
+
+The fix: `src/coupons.js` now computes the coupon discount once on the whole discounted subtotal instead of per line, per README step 4.
+
+Let me view the final coupons.js to confirm, and then summarize. Also verify I didn't touch anything else. I only modified src/coupons.js.
+dsh: reasoning:
+Everything is done. Let me write the final summary.
+
+Summary:
+- Root cause: `src/coupons.js` `applyCoupon` computed the coupon discount per line (rounding each line's share separately), violating the README spec step 4 which requires the coupon discount to be computed exactly once on the whole discounted subtotal: `roundHalfUpCents(discountedSubtotal * rate / 100)`.
+- Fix: one-line change — compute `roundHalfUpCents((priced.discountedSubtotal * ratePercent) / 100)`.
+- Verification:
+  - `node --test --test-isolation=none`: 12/12 pass.
+  - Each test file run directly: 12/12 pass.
+  - Plain `node --test` fails with `spawn EPERM` — environmental sandbox limitation (the runner spawns a child process per test file with piped stdio/IPC, which the sandbox denies before any src code runs). Escalation to wider sandbox was rejected (no approval channel). No code change can affect this; it's the documented sandbox boundary.
