@@ -1,6 +1,6 @@
 # @gungnir/core
 
-Gungnir 的纯域函数包：GoalSpec / ledger 事件 / verdict 的 zod schema、fold（strict replay）、Reconciler 决策表、Verifier 契约。**零 DSH 依赖**——fold/replay 与决策全部是可脱离 harness 全量单测的纯函数，这是"从 ledger 重建可信"的前提。
+Gungnir 的纯域函数包：GoalSpec / ledger 事件 / verdict 的 zod schema、fold（strict replay）、Reconciler 决策表、Verifier 契约；二阶段起增加 Loop Strategy 与路由规则的纯函数定义（Adaptive Loop Runtime 的决策核心，ADR-0012）。**零 DSH 依赖**——fold/replay 与决策全部是可脱离 harness 全量单测的纯函数，这是"从 ledger 重建可信"的前提。
 
 ## Contract
 
@@ -15,11 +15,11 @@ Gungnir 的纯域函数包：GoalSpec / ledger 事件 / verdict 的 zod schema�
 
 - 不 import 任何 DSH/cordis 模块；不做 IO（node:crypto 仅用于确定性 digest）。
 - 不决定"如何执行"——投影与 action 的作者是模型，裁决只依据事件流。
-- 不实现 verifier 本体、不管理 native goal、不渲染任何 UI 文本。
+- 不实现 verifier 本体、不持有 driver 实例、不管理 native goal、不渲染任何 UI 文本。
 
 ## Known Limitations
 
-- `gungnir/loop-state` / `gungnir/loop-transition` 仅为三阶段占位命名空间（ADR-0005）：schema 可 parse，fold 遇到即抛 `reserved`。
+- `gungnir/loop-state` / `gungnir/loop-transition` 当前为占位命名空间（ADR-0005）：schema 可 parse，fold 遇到即抛 `reserved`。二阶段 Adaptive Loop Spike 起接入并放开拦截（ADR-0012）。
 - REVALIDATING 中"全部满足但无 L1/L2 佐证"的 COMPLETE 拒绝分支是防御性守卫：在现行 effectiveOutcome 规则下结构性不可达（L4 PASS 必然降级），保留作 defense-in-depth。
 - `roundsNoImprovement` 只在离开 VERIFYING（轮末）时结算；REVALIDATING 的进出不重复计数。
 - 一阶段 L3 external-state 与 L5 human 无 verifier 实现：human 谓词 criterion 只能经 NEEDS_HUMAN 出口。

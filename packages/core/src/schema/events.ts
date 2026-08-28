@@ -229,7 +229,7 @@ export interface NewEventInput {
 }
 
 /** 事件构造辅助：统一打 v:1 信封。 */
-export function makeEvent<T extends { type: GungnirEventType }>(type: T, ts: number): T & { v: 1 } {
+export function makeEvent<T extends { type: GungnirEventType }>(type: T, ts: number): T & { v: 1; ts: number } {
   return { ...type, v: 1 as const, ts }
 }
 

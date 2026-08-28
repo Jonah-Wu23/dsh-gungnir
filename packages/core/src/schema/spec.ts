@@ -57,6 +57,12 @@ export const LlmRubricPredicateSchema = z.object({
   rubric: z.string().min(1),
   /** 0–1 阈值；LLM rubric 永远标记低可信（见 ladder 强制规则） */
   passThreshold: z.number().min(0).max(1).default(0.8),
+  /**
+   * 待评审成果的 workspace 相对路径（经 VerifyContext.readFile 的 fence 读取）。
+   * 缺省 = 评审对象不可定位：verifier 一律返回 INCONCLUSIVE（fail loud），
+   * 绝不凭空对“空气”打分、也绝不把这种无对象裁决当成证据。
+   */
+  subjectPath: z.string().min(1).optional(),
 })
 
 export const HumanPredicateSchema = z.object({

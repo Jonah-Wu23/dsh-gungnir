@@ -187,7 +187,7 @@ export function verdictEvent(options: {
   criterionId: string
   round: number
   kind: VerifierKind
-  level: VerifierLevel
+  level: 1 | 2 | 4
   outcome: VerdictOutcome
   errorSignature?: string
   detailRef?: string

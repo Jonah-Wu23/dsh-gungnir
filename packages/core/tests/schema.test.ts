@@ -104,7 +104,7 @@ describe('event schemas', () => {
   })
 
   it('makeEvent stamps the v:1 envelope', () => {
-    const event = makeEvent({ type: 'gungnir/claim', round: 1 } as never, ts())
+    const event = makeEvent({ type: 'gungnir/claim', round: 1 } as { type: 'gungnir/claim'; round: number }, ts())
     expect(event.v).toBe(1)
     expect(typeof event.ts).toBe('number')
   })
