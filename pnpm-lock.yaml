@@ -8,12 +8,21 @@ importers:
 
   .:
     devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: ^4.0.1
+        version: 4.0.1
+      '@deepseek-ai/dsh-storage':
+        specifier: 0.1.1-rc.2
+        version: 0.1.1-rc.2(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.1-rc.2(@deepseek-ai/cordis@4.0.1))
+      '@deepseek-ai/schemastery':
+        specifier: ^3.18.1
+        version: 3.18.1
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
       '@vitest/coverage-v8':
         specifier: ^3.2.4
-        version: 3.2.7(vitest@3.2.7(@types/node@24.13.3))
+        version: 3.2.7(vitest@3.2.7(@types/node@24.13.3)(yaml@2.9.0))
       eslint:
         specifier: ^9.30.0
         version: 9.39.5
@@ -25,13 +34,35 @@ importers:
         version: 8.68.0(eslint@9.39.5)(typescript@5.9.3)
       vitest:
         specifier: ^3.2.4
-        version: 3.2.7(@types/node@24.13.3)
+        version: 3.2.7(@types/node@24.13.3)(yaml@2.9.0)
 
   packages/core:
     dependencies:
       zod:
         specifier: ^3.25.76
         version: 3.25.76
+
+  packages/dsh-plugin:
+    dependencies:
+      '@gungnir/core':
+        specifier: workspace:*
+        version: link:../core
+      yaml:
+        specifier: ^2.8.0
+        version: 2.9.0
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: ^4.0.1
+        version: 4.0.1
+      '@deepseek-ai/dsh-storage':
+        specifier: 0.1.1-rc.2
+        version: 0.1.1-rc.2(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.1-rc.2(@deepseek-ai/cordis@4.0.1))
+      '@deepseek-ai/schemastery':
+        specifier: ^3.18.1
+        version: 3.18.1
 
 packages:
 
@@ -59,6 +90,35 @@ packages:
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
+
+  '@deepseek-ai/cordis@4.0.1':
+    resolution: {integrity: sha512-YBdskTU2Po1kru3GgcUWUbkTsPMA9LkSQDAY8rBkFJeajdgcQad3QPJZE26JyK99Xb6HaASvoXg2DSUTeN/0Nw==}
+    hasBin: true
+    peerDependencies:
+      '@deepseek-ai/cordis-plugin-include': ^1.0.6
+      '@deepseek-ai/cordis-plugin-loader': ^1.0.2
+    peerDependenciesMeta:
+      '@deepseek-ai/cordis-plugin-include':
+        optional: true
+      '@deepseek-ai/cordis-plugin-loader':
+        optional: true
+
+  '@deepseek-ai/cosmokit@1.8.2':
+    resolution: {integrity: sha512-muBOKtSrUKU5m/xpq8ZXWL6hQ/jgd4PhU2PqH97bcxIiLEJfNwZOGQEx4t/aS/GgxRAR+ra9pMHPMtTHU4sqqA==}
+
+  '@deepseek-ai/dsh-invariants@0.1.1-rc.2':
+    resolution: {integrity: sha512-l+1Om/EDFyMjhgSuEx2WDLLA2fia/+ga9mBTCoT/MMslsnWaK5G0/lWwbwlTBSaJ6OfmYc3DuBgox8DbgIGHRQ==}
+    peerDependencies:
+      '@deepseek-ai/cordis': ^4.0.1
+
+  '@deepseek-ai/dsh-storage@0.1.1-rc.2':
+    resolution: {integrity: sha512-ptJ1ss8spF+Y2VXjsMV37Qh1+hviYWZylDvXtfEBXjLbPi/BP3dktT4B6OMIAD1rRN+0A4HdTqJBgLk7Gp1rig==}
+    peerDependencies:
+      '@deepseek-ai/cordis': ^4.0.1
+      '@deepseek-ai/dsh-invariants': ^0.1.1-rc.2
+
+  '@deepseek-ai/schemastery@3.18.1':
+    resolution: {integrity: sha512-Qn0FCSwCQnpnj6SB31I6i2sIKgKWnkbJM8O0EU91Gv2UsYVvtZTl6IA0sCwk2e2MZf5S8w5hpq9QkeVvK9qwxg==}
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -443,6 +503,9 @@ packages:
     resolution: {integrity: sha512-hncn90N4sOky0L2LKE5oESKLbxCPeVo4eLA2LSMoDzM+879ml4WSr+Rr4DWknNIVVvS1Hirkc9hx02W6YxS8rQ==}
     cpu: [x64]
     os: [win32]
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -1196,6 +1259,11 @@ packages:
     resolution: {integrity: sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ==}
     engines: {node: '>=12'}
 
+  yaml@2.9.0:
+    resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
@@ -1224,6 +1292,28 @@ snapshots:
       '@babel/helper-validator-identifier': 7.29.7
 
   '@bcoe/v8-coverage@1.0.2': {}
+
+  '@deepseek-ai/cordis@4.0.1':
+    dependencies:
+      '@deepseek-ai/cosmokit': 1.8.2
+      '@standard-schema/spec': 1.1.0
+
+  '@deepseek-ai/cosmokit@1.8.2': {}
+
+  '@deepseek-ai/dsh-invariants@0.1.1-rc.2(@deepseek-ai/cordis@4.0.1)':
+    dependencies:
+      '@deepseek-ai/cordis': 4.0.1
+      '@deepseek-ai/schemastery': 3.18.1
+
+  '@deepseek-ai/dsh-storage@0.1.1-rc.2(@deepseek-ai/cordis@4.0.1)(@deepseek-ai/dsh-invariants@0.1.1-rc.2(@deepseek-ai/cordis@4.0.1))':
+    dependencies:
+      '@deepseek-ai/cordis': 4.0.1
+      '@deepseek-ai/dsh-invariants': 0.1.1-rc.2(@deepseek-ai/cordis@4.0.1)
+
+  '@deepseek-ai/schemastery@3.18.1':
+    dependencies:
+      '@deepseek-ai/cosmokit': 1.8.2
+      '@standard-schema/spec': 1.1.0
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
@@ -1471,6 +1561,8 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.63.0':
     optional: true
 
+  '@standard-schema/spec@1.1.0': {}
+
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -1577,7 +1669,7 @@ snapshots:
       '@typescript-eslint/types': 8.68.0
       eslint-visitor-keys: 5.0.1
 
-  '@vitest/coverage-v8@3.2.7(vitest@3.2.7(@types/node@24.13.3))':
+  '@vitest/coverage-v8@3.2.7(vitest@3.2.7(@types/node@24.13.3)(yaml@2.9.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 1.0.2
@@ -1592,7 +1684,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.2
       tinyrainbow: 2.0.0
-      vitest: 3.2.7(@types/node@24.13.3)
+      vitest: 3.2.7(@types/node@24.13.3)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -1604,13 +1696,13 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@3.2.7(vite@7.3.6(@types/node@24.13.3))':
+  '@vitest/mocker@3.2.7(vite@7.3.6(@types/node@24.13.3)(yaml@2.9.0))':
     dependencies:
       '@vitest/spy': 3.2.7
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.6(@types/node@24.13.3)
+      vite: 7.3.6(@types/node@24.13.3)(yaml@2.9.0)
 
   '@vitest/pretty-format@3.2.7':
     dependencies:
@@ -2190,13 +2282,13 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vite-node@3.2.4(@types/node@24.13.3):
+  vite-node@3.2.4(@types/node@24.13.3)(yaml@2.9.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.3.6(@types/node@24.13.3)
+      vite: 7.3.6(@types/node@24.13.3)(yaml@2.9.0)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -2211,7 +2303,7 @@ snapshots:
       - tsx
       - yaml
 
-  vite@7.3.6(@types/node@24.13.3):
+  vite@7.3.6(@types/node@24.13.3)(yaml@2.9.0):
     dependencies:
       esbuild: 0.28.2
       fdir: 6.5.0(picomatch@4.0.7)
@@ -2222,12 +2314,13 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.13.3
       fsevents: 2.3.3
+      yaml: 2.9.0
 
-  vitest@3.2.7(@types/node@24.13.3):
+  vitest@3.2.7(@types/node@24.13.3)(yaml@2.9.0):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.7
-      '@vitest/mocker': 3.2.7(vite@7.3.6(@types/node@24.13.3))
+      '@vitest/mocker': 3.2.7(vite@7.3.6(@types/node@24.13.3)(yaml@2.9.0))
       '@vitest/pretty-format': 3.2.7
       '@vitest/runner': 3.2.7
       '@vitest/snapshot': 3.2.7
@@ -2245,8 +2338,8 @@ snapshots:
       tinyglobby: 0.2.17
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.3.6(@types/node@24.13.3)
-      vite-node: 3.2.4(@types/node@24.13.3)
+      vite: 7.3.6(@types/node@24.13.3)(yaml@2.9.0)
+      vite-node: 3.2.4(@types/node@24.13.3)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.13.3
@@ -2286,6 +2379,8 @@ snapshots:
       ansi-styles: 6.2.3
       string-width: 5.1.2
       strip-ansi: 7.2.0
+
+  yaml@2.9.0: {}
 
   yocto-queue@0.1.0: {}
 
