@@ -18,3 +18,4 @@ out/
 tools/experiments/results/experiment-*
 tools/experiments/results/prompt-*
 tools/experiments/switchbench/results/workspaces/
+*.shape.json

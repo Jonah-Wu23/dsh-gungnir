@@ -12,7 +12,6 @@
  * 退出码 0 = 形态一致；1 = 存在差异（差异明细打到 stderr）。
  */
 import { decodeSessionLog } from '../experiments/switchbench/src/baseline-log.mjs'
-import { writeFileSync } from 'node:fs'
 
 const CHUNKY = new Set(['assistant/chunk'])
 
