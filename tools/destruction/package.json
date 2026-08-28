@@ -1,0 +1,21 @@
+{
+  "name": "@gungnir/destruction",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gungnir destruction harness: first-class destruction-test matrix (stage-1 plan §9.2). Offline cases drive the real engine/ledger/verifiers without LLM credentials; online cases (D-3 live tool failure, 20-task experiment) run in the headless profile.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "pnpm --filter dsh-gungnir build && vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src tests"
+  },
+  "dependencies": {
+    "@gungnir/core": "workspace:*",
+    "dsh-gungnir": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "vitest": "^3.2.4"
+  }
+}
