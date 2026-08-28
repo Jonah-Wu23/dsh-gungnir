@@ -35,5 +35,7 @@ export function buildDirective(state: GungnirState): string | null {
 }
 
 export function directiveApplicable(state: GungnirState, step: number): boolean {
-  return step === 0 && buildDirective(state) !== null
+  // 实测（0.1.1-rc.2，headless）：step 从 1 起，且单 turn 内可能完成全部工作——
+  // 在 SPEC_COMMITTED/EXECUTING 期间逐 step 注入（协议压力），COMPLETE 等终态自然停止。
+  return step >= 1 && buildDirective(state) !== null
 }

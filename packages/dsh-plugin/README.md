@@ -1,8 +1,12 @@
 # dsh-gungnir
 
-> Declare it. Gungnir never misses.
+**Gungnir —— DeepSeek Harness 的自适应目标导引系统。** 将"一切皆插件"的理念贯彻到底——首个动态调整底层 agent loop 的 DSH 插件。
 
-Gungnir 的 DSH 适配层：把 `@gungnir/core` 的证据驱动 reconcile 循环接进 DeepSeek Harness 的树外 cordis 插件。基于 `@deepseek-ai/dsh@0.1.1-rc.2` 接缝实测（见 `docs/context/dsh-interface.md`）。
+**Gungnir — the adaptive goal-guidance system for DeepSeek Harness.** "Everything is a plugin" carried all the way down — the first DSH plugin that dynamically adapts the underlying agent loop.
+
+> **Lock the goal. Adapt the loop. Prove the hit.**（言出必行。）
+
+本包是 Gungnir 的 Prove 层：把 `@gungnir/core` 的证据驱动 reconcile 循环接进 DeepSeek Harness 的树外 cordis 插件。Adapt 层（替换默认 agent-loop 的 Adaptive Loop Runtime）由姐妹包 `@gungnir/agent-loop` 承担（二阶段，ADR-0012）。DSH 基线 = `v0.1.2-alpha.1` 源码构建（ADR-0011；v0.1.2 适配三件套在二阶段 M0 落地），接缝事实见 `docs/context/dsh-interface.md`。
 
 ## Contract
 
@@ -18,9 +22,9 @@ Gungnir 的 DSH 适配层：把 `@gungnir/core` 的证据驱动 reconcile 循环
 
 **不做什么**
 
-- 不修改/替换 `agent-loop` 与任何 DSH 核心包；不 fork。
+- 不修改 DSH 任何核心包的源码、不 fork。替换默认 agent-loop 由姐妹包 `@gungnir/agent-loop`（二阶段）经官方组合接缝完成，本包不承担 loop 职责。
 - 不代模型调用 `update_goal`（complete/blocked 都由模型在 goal round 内自行调用）；不冒充 human authority。
-- 不提供 `propose_loop_transition`（三阶段）；不管理多 goal / 跨 session goal。
+- 不提供 loop 策略切换与 `propose_loop_transition`（属 `@gungnir/agent-loop`，二阶段起）；不管理多 goal / 跨 session goal。
 - 不私开进程执行命令（沙箱 authority 归 DSH 原 owner）。
 
 ## Composition
@@ -40,8 +44,7 @@ inject：`commands / tools / storage`；运行时另按需访问 `goals / llm / 
 
 ## Known Limitations
 
-- **ExitCodeVerifier 未接线**：harness 命令执行器接缝留待 M4 实测（沙箱 authority 边界，不私开进程）；当前 `runCommand` 一律抛错 → L1 verdict 为 INCONCLUSIVE。一阶段的可完成目标请用 artifact 谓词（或 L4 + L1/L2 组合会在阶梯规则下受阻）。
-- `ctx.storage` KvFacet 的解析按多路径尝试（`backend.get/resolve/open("json")`、`storage.kv`），均失败则加载失败——KvUnit 打开协议在 0.1.1-rc.2 上未实测。
+- **v0.1.2 适配三件套未落地**（二阶段 M0 先行项，ADR-0011）：插件 patch 的 storage 插入行与 v0.1.2 base 自带冲突（boot 失败，适配点③）；`defineTool` 须补显式 `additionalProperties`（适配点①）；verifier 终判时序须复核 wrapup 行为（适配点②）。
 - `agent/turn-stopping` 的 payload 形状按 `agent?.id` 防御式取值；llm stream chunk 的文本抽取兼容 `block.text / text / delta` 三种形状——两者均待真实 profile 冒烟确认。
 - 事件载体为共享 KV unit（按 agentId 前缀隔离）；ledger 无 compaction，事件只增。
-- L3 external-state verifier、spec 编译器（苏格拉底澄清）、自适应 Loop 均为后续阶段。
+- L3 external-state verifier、L5 human、spec 编译器（苏格拉底澄清）为三阶段内容（原二阶段 Proof-Carrying，ADR-0012 后并入三阶段）；自适应 Loop 由 `@gungnir/agent-loop` 承担（二阶段 spike）。

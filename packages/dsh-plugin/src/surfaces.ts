@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import { parse as parseYaml } from 'yaml'
+import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { GungnirState } from '@gungnir/core'
 import type { ReconcileEngine } from './engine.ts'
 import type { LedgerDirectory } from './engine.ts'
@@ -41,16 +42,8 @@ export interface CommandsView {
 }
 
 export interface ToolsView {
-  register(definition: {
-    name: string
-    description: string
-    parameters: Record<string, unknown>
-    output: {
-      schema: Record<string, unknown>
-      render(args: Record<string, unknown>, value: unknown): Array<{ type: string; text?: string }>
-    }
-    execute(args: Record<string, unknown>, exec: { agent?: AgentView }): Promise<unknown>
-  }): () => void
+  /** 接收 defineTool 产出的 ToolDefinition；schema 编译由 defineTool 负责（裸 DSL 不是 JSON Schema）。 */
+  register(definition: unknown): () => void
 }
 
 export interface UserQuestionsView {
@@ -62,6 +55,8 @@ export interface SurfaceDeps {
   ledgers: LedgerDirectory
   goals: GoalsView
   userQuestions: UserQuestionsView | null
+  /** headless/实验模式：跳过 ask-user，启动者即授权人 */
+  autoApproveSpec: boolean
   maxGoalRounds: number
   log(level: 'info' | 'warn' | 'error', message: string, detail?: unknown): void
   /** 冷重建并缓存该 agent 的 ledger（engine 事件面全部依赖它先就位） */
@@ -125,7 +120,7 @@ export function registerCommands(commands: CommandsView, deps: SurfaceDeps): voi
               type: 'text',
               text: [
                 `Objective from the human: ${raw}`,
-                'Draft a GoalSpec for it: a short objective, 1-5 concrete successCriteria (predicates: exit_code | artifact | llm_rubric | human; prefer the lowest verifier level that can prove it), optional constraints/nonGoals/assumptions/budget.maxRounds.',
+                'Draft a GoalSpec for it: a short objective, 1-5 concrete successCriteria (predicates: exit_code | artifact | llm_rubric | human; prefer the lowest verifier level that can prove it; an llm_rubric predicate MUST set subjectPath naming the workspace-relative artifact to judge), optional constraints/nonGoals/assumptions/budget.maxRounds.',
                 'Then call the gungnir_submit_spec tool with the complete spec object. Wait for human confirmation through that tool.',
               ].join('\n'),
             },
@@ -179,43 +174,54 @@ export function registerCommands(commands: CommandsView, deps: SurfaceDeps): voi
 
 /** 模型侧工具注册（claim 永远只是 claim）。 */
 export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
-  tools.register({
+  tools.register(defineTool({
     name: 'gungnir_submit_spec',
     description: 'Submit a drafted GoalSpec for one-shot human confirmation. On approval Gungnir commits it and arms the native goal.',
     parameters: {
-      spec: { type: 'any', required: true, description: 'Complete GoalSpec object (specId, version, objective, successCriteria[] with predicate+verifierLevel, constraints, nonGoals, assumptions, budget)' },
+      spec: { type: 'object', additionalProperties: true, required: true, description: 'Complete GoalSpec object (specId, version, objective, successCriteria[] each {id, description, predicate{kind,...}, verifierLevel}, constraints, nonGoals, assumptions, budget). predicate kinds: exit_code(L1) | artifact(L2) | llm_rubric(L4, REQUIRES subjectPath naming the artifact to judge) | human(L5)' },
     },
     output: {
-      schema: { type: 'object' },
+      schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
     },
     async execute(args, exec) {
       const agent = exec.agent
       if (agent === undefined) throw new Error('gungnir_submit_spec requires an agent context')
-      if (deps.userQuestions === null) throw new Error('userQuestions service unavailable: use /ultragoal --spec <path> for unattended flows')
-      const answer = await deps.userQuestions.ask({
-        questions: [
-          {
-            type: 'confirm',
-            label: 'Commit this GoalSpec?',
-            description: JSON.stringify(args['spec']).slice(0, 2000),
-          },
-        ],
-        agent,
-      })
-      const approved = Object.values(answer).some((value) => value === true || value === 'yes' || value === 'confirm')
+      let approved = deps.autoApproveSpec
+      let approvalNote = 'auto-approved (autoApproveSpec: launcher consent)'
+      if (!approved) {
+        if (deps.userQuestions === null) throw new Error('userQuestions service unavailable and autoApproveSpec is off: use /ultragoal --spec <path> or enable autoApproveSpec for headless flows')
+        const answer = await deps.userQuestions.ask({
+          questions: [
+            {
+              type: 'confirm',
+              label: 'Commit this GoalSpec?',
+              description: JSON.stringify(args['spec']).slice(0, 2000),
+            },
+          ],
+          agent,
+        })
+        approved = Object.values(answer).some((value) => value === true || value === 'yes' || value === 'confirm')
+        approvalNote = 'approved by human'
+      }
       if (!approved) {
         return { status: 'rejected', message: 'Human did not confirm; revise the spec if asked again.' }
       }
       await deps.ensureLedger(agent.id)
       const { specId } = await deps.engine.commitSpec(agent.id, args['spec'])
       const spec = args['spec'] as { objective?: string }
-      deps.goals.create(agent, { objective: spec.objective ?? specId, maxGoalRounds: deps.maxGoalRounds })
-      return { status: 'committed', specId }
+      // 模型可能已通过 tool-goal 自建 goal（headless 路径）：已有 goal 则不重复创建
+      const existing = deps.goals.get(agent)
+      if (existing === undefined) {
+        deps.goals.create(agent, { objective: spec.objective ?? specId, maxGoalRounds: deps.maxGoalRounds })
+      } else {
+        deps.log('info', `native goal already present (${existing.id}); keeping it armed for the committed spec`)
+      }
+      return { status: 'committed', specId, approval: approvalNote }
     },
-  })
+  }))
 
-  tools.register({
+  tools.register(defineTool({
     name: 'gungnir_plan',
     description: 'Submit a rolling-horizon projection. The harness commits the first actionable step as this round\'s single action.',
     parameters: {
@@ -223,11 +229,21 @@ export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
       steps: {
         type: 'array',
         required: true,
-        description: 'Ordered steps: [{ id, summary, targetsCriteria: string[], expectedEvidence?: string[] }]',
+        description: 'Ordered steps; the harness commits the first one with unsatisfied targets.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            id: { type: 'string', required: true, description: 'Stable step id, e.g. s1' },
+            summary: { type: 'string', required: true, description: 'Imperative one-liner for the committed round' },
+            targetsCriteria: { type: 'array', required: true, items: { type: 'string' }, description: 'Success criterion ids this step aims to satisfy' },
+            expectedEvidence: { type: 'array', items: { type: 'string' }, description: 'Evidence hints (paths/commands)' },
+          },
+        },
       },
     },
     output: {
-      schema: { type: 'object' },
+      schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
     },
     async execute(args, exec) {
@@ -238,18 +254,18 @@ export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
       const result = await deps.engine.commitPlan(agent.id, steps, String(args['rationale'] ?? ''))
       return { ...result, message: 'Execute the committed action this round, then call gungnir_report.' }
     },
-  })
+  }))
 
-  tools.register({
+  tools.register(defineTool({
     name: 'gungnir_report',
     description: 'Report your outcome for the committed action. This is a CLAIM — verdicts come only from harness-verified evidence.',
     parameters: {
       summary: { type: 'string', required: true, description: 'What you did and observed' },
       asserted_outcome: { type: 'string', required: true, description: 'done | partial | failed | blocked' },
-      evidence_refs: { type: 'array', description: 'evidenceIds you believe support the claim' },
+      evidence_refs: { type: 'array', items: { type: 'string' }, description: 'evidenceIds you believe support the claim' },
     },
     output: {
-      schema: { type: 'object' },
+      schema: { type: 'object', additionalProperties: true },
       render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
     },
     async execute(args, exec) {
@@ -267,5 +283,5 @@ export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
       })
       return { recorded: true, note: 'Claim recorded. The verifier issues verdicts from evidence at round end.' }
     },
-  })
+  }))
 }

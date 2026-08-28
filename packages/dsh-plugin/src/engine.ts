@@ -37,6 +37,11 @@ function newEvidenceId(prefix: string, unique: string): string {
 }
 
 export class ReconcileEngine {
+  /** 本轮已有 claim / 证据才允许轮末验证（防止对未执行的动作误判）；已验证过的轮不重复结算 */
+  private readonly roundsWithClaim = new Set<number>()
+  private readonly roundsWithEvidence = new Set<number>()
+  private readonly roundsVerified = new Set<number>()
+
   constructor(
     private readonly ledgers: LedgerDirectory,
     private readonly verifyContext: VerifyContext,
@@ -61,6 +66,7 @@ export class ReconcileEngine {
       newEvidenceId('ev', `${view.callId}`),
     )
     await this.appendEvidence(ledger, input)
+    this.roundsWithEvidence.add(state.currentRound)
   }
 
   private async appendEvidence(ledger: AgentLedger, input: NewEvidenceInput): Promise<void> {
@@ -83,7 +89,24 @@ export class ReconcileEngine {
     if (ledger === undefined) throw new Error(`no gungnir ledger for agent ${agentId}`)
     const state = ledger.current
     if (state.spec === null) throw new Error('no active spec; submit a spec first')
+    // 一轮一 action：上一轮还没验证完，不允许新投影/新提交（防模型在轮中途重规划）
+    if (state.currentAction !== null && state.verdictsInCurrentRound === 0) {
+      throw new Error(
+        `round ${state.currentRound} already has committed action "${state.currentAction.actionId}" awaiting verification; execute it and call gungnir_report instead of re-planning`,
+      )
+    }
     const specId = state.spec.specId
+    // API 边界预校验：给出模型可自我纠正的错误（合法 id 列表），坏输入不落账
+    const validIds = new Set(Object.keys(state.criteria))
+    const seenStepIds = new Set<string>()
+    for (const step of steps) {
+      if (seenStepIds.has(step.id)) throw new Error(`duplicate step id "${step.id}" in projection`)
+      seenStepIds.add(step.id)
+      const unknown = step.targetsCriteria.filter((id) => !validIds.has(id))
+      if (unknown.length > 0) {
+        throw new Error(`projection step "${step.id}" targets unknown criteria [${unknown.join(', ')}]; valid criterion ids: ${[...validIds].join(', ')}`)
+      }
+    }
     const projectionSteps: ProjectionStep[] = steps.map((step) => ({
       id: step.id,
       summary: step.summary,
@@ -115,7 +138,7 @@ export class ReconcileEngine {
     return { committed: pending.id }
   }
 
-  /** gungnir_report：模型 claim，落账不裁决。 */
+  /** gungnir_report：模型 claim，落账不裁决；报告即触发轮末验证（存储仍存活的时机）。 */
   async recordClaim(agentId: string, claim: { summary: string; assertedOutcome: 'done' | 'partial' | 'failed' | 'blocked'; evidenceRefs?: string[] }): Promise<void> {
     const ledger = this.ledgers.get(agentId)
     if (ledger === undefined) throw new Error(`no gungnir ledger for agent ${agentId}`)
@@ -130,6 +153,9 @@ export class ReconcileEngine {
       assertedOutcome: claim.assertedOutcome,
       evidenceRefs: claim.evidenceRefs ?? [],
     })
+    this.roundsWithClaim.add(state.currentRound)
+    // 报告即轮末：headless 收尾会关闭 storage，turn-stopping 兜底时机已不可靠
+    await this.runRoundEnd(agentId)
   }
 
   /** 轮末处理：turn-stopping 时调用。幂等性由 phase 门卫保证（非 EXECUTING/REVALIDATING 直接返回）。 */
@@ -138,11 +164,18 @@ export class ReconcileEngine {
     if (ledger === undefined) return
     let state = ledger.current
     if (state.spec === null) return
+    this.hooks.log('info', `round-end entered: phase=${state.phase} round=${state.currentRound} claims=${[...this.roundsWithClaim]} evidence=${[...this.roundsWithEvidence]}`)
     if (state.phase === 'REVALIDATING') {
       await this.finishRevalidation(agentId, ledger)
       return
     }
     if (state.phase !== 'EXECUTING' || state.currentAction === null) return
+
+    // 防误触发（必须在任何落账之前）：本轮必须有过 claim 或证据采集才结算；
+    // 已结算过的轮不重复进入 VERIFYING（ADVANCE 后的 turn-stopping 空轮在此被挡下）
+    const pendingAction = state.currentAction
+    if (this.roundsVerified.has(pendingAction.round)) return
+    if (!this.roundsWithClaim.has(pendingAction.round) && !this.roundsWithEvidence.has(pendingAction.round)) return
 
     const specId = state.spec.specId
     const round = state.currentRound
@@ -202,6 +235,7 @@ export class ReconcileEngine {
       await ledger.append(verdict)
       roundVerdicts.push(verdict as VerdictEvent)
     }
+    this.roundsVerified.add(round)
 
     state = ledger.current
     await this.decideAndRecord(agentId, ledger, roundVerdicts, { revalidating: false })

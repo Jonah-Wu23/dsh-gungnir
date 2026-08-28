@@ -1,5 +1,4 @@
 import {
-  FoldError,
   foldEvent,
   foldEvents,
   type GungnirEvent,
@@ -91,8 +90,9 @@ export class AgentLedger {
   }
 
   /**
-   * 追加事件：先落 KV（持久成功才推进内存），再增量 fold。
-   * v/ts envelope 由本方法统一加盖（ts 可显式覆盖，默认 Date.now()）。
+   * 追加事件：先干跑 fold（纯函数、零副作用），通过才落 KV 并推进内存。
+   * 坏事件在 API 边界被拒（不写存储、不毒化账本），调用方（模型工具）可纠正重试；
+   * 落盘失败则内存不推进，同样可重试。v/ts envelope 由本方法统一加盖。
    */
   async append(event: { type: string } & Record<string, unknown>): Promise<GungnirState> {
     if (this.poisoned !== null) {
@@ -100,16 +100,11 @@ export class AgentLedger {
     }
     const seq = this.nextSeq
     const stamped = { ...event, v: 1, ts: typeof event['ts'] === 'number' ? event['ts'] : Date.now() } as unknown as GungnirEvent
+    // dry-run：fold 是纯函数，同态同事件结果确定——通过才允许落盘
+    const next = foldEvent(this.state, stamped, seq)
     await this.kv.putRecord('events', recordKey(this.agentId, seq), stamped)
-    try {
-      this.state = foldEvent(this.state, stamped, seq)
-      this.nextSeq = seq + 1
-    } catch (error: unknown) {
-      if (error instanceof FoldError) {
-        this.poisoned = `event #${seq}: ${error.message}`
-      }
-      throw error
-    }
+    this.state = next
+    this.nextSeq = seq + 1
     return this.state
   }
 }

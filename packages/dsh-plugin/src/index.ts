@@ -25,7 +25,7 @@ import { LlmRubricVerifier } from './verifiers/llm-rubric.ts'
 
 export const name = 'gungnir'
 
-export const inject = ['agents', 'commands', 'goals', 'llm', 'storage', 'tools', 'userQuestions']
+export const inject = ['agents', 'commands', 'goals', 'llm', 'shell', 'storage', 'tools', 'userQuestions']
 
 export interface Config {
   workspaceRoot?: string
@@ -33,6 +33,8 @@ export interface Config {
   rubricProvider?: string
   rubricModel?: string
   rubricTimeoutMs?: number
+  /** headless/实验模式：gungnir_submit_spec 跳过 ask-user 直接提交（启动者即授权人） */
+  autoApproveSpec?: boolean
 }
 
 export const Config: z<Config> = z.object({
@@ -41,6 +43,7 @@ export const Config: z<Config> = z.object({
   rubricProvider: z.string().default('deepseek'),
   rubricModel: z.string().default('deepseek-chat'),
   rubricTimeoutMs: z.number().default(60_000),
+  autoApproveSpec: z.boolean().default(false),
 })
 
 // ---- 窄结构访问辅助（unknown-only，接缝形状见 dsh-interface.md） -------------------
@@ -98,7 +101,8 @@ export function resolveKvChannel(ctx: Context): KvChannel {
       const kvFacet = kv as { open(descriptor: unknown): Promise<Dict> }
       let unit: Promise<Dict> | null = null
       const getUnit = (): Promise<Dict> => {
-        unit ??= kvFacet.open({ name: 'gungnir-ledger', version: 1, tables: ['events'], hasGlobal: true }) as Promise<Dict>
+        // UNIT_NAME_RE = /^[a-z][a-z0-9_]*$/（dsh-storage 实测，2026-08-28）：不允许连字符
+        unit ??= kvFacet.open({ name: 'gungnir_ledger', version: 1, tables: ['events'], hasGlobal: true }) as Promise<Dict>
         return unit
       }
       const call = async (method: string, ...args: unknown[]): Promise<unknown> => {
@@ -133,6 +137,40 @@ function makePluginMessage(text: string): unknown {
   }
 }
 
+/** 调用 ctx.shell harness 执行器（pwsh-sandbox）跑命令，绝不私开进程。
+ * 将 ShellRunResult 映射为 verifier 需要的 CommandObservation；
+ * 信号/启动失败折叠为 exitCode=1 并保留 stderr 原貌，让 ExitCodeVerifier 如实 FAIL。
+ */
+async function runShellCommand(ctx: Context, command: string, timeoutMs: number): Promise<CommandObservation> {
+  const shell = service(ctx, 'shell', true)
+  const resolveFn = shell['resolve']
+  if (typeof resolveFn !== 'function') throw new Error('ctx.shell.resolve unavailable')
+  const runFn = shell['run']
+  if (typeof runFn !== 'function') throw new Error('ctx.shell.run unavailable')
+  const spec = (resolveFn as (r: unknown) => unknown).call(shell, { command, timeoutMs })
+  const result = await (runFn as (s: unknown) => Promise<unknown>).call(shell, spec)
+  const resultDict = asDict(result)
+  if (resultDict === null) throw new Error('ctx.shell.run returned non-object')
+
+  // sandbox 事实：denied / runnerFailed 是策略拒绝或执行器故障，不是命令本身失败。
+  // 抛错 → ExitCodeVerifier 落 INCONCLUSIVE（fail loud），绝不伪装成 FAIL/PASS。
+  const sandbox = asDict(resultDict['sandbox'])
+  if (sandbox !== null && (sandbox['denied'] === true || sandbox['runnerFailed'] === true)) {
+    throw new Error(
+      `sandbox blocked the command: mode=${String(sandbox['mode'])} denied=${String(sandbox['denied'])} runnerFailed=${String(sandbox['runnerFailed'])} enforcement=${String(sandbox['enforcement'])}`,
+    )
+  }
+  const sandboxNote = sandbox === null ? '' : `sandbox mode=${String(sandbox['mode'])} denied=false enforcement=${String(sandbox['enforcement'])}\n`
+  const exitCode = typeof resultDict['exitCode'] === 'number' ? resultDict['exitCode'] : null
+  const stdout = asDict(resultDict['stdout'])?.['text'] ?? ''
+  const stderr = asDict(resultDict['stderr'])?.['text'] ?? ''
+  if (exitCode === null) {
+    const signal = resultDict['signal']
+    return { exitCode: 1, stdout: String(stdout), stderr: `${sandboxNote}signal=${String(signal)} ${String(stderr)}`.trim() }
+  }
+  return { exitCode, stdout: String(stdout), stderr: sandboxNote + String(stderr) }
+}
+
 // ---- apply ----------------------------------------------------------------------
 
 export function apply(ctx: Context, config: Config): void {
@@ -165,9 +203,8 @@ export function apply(ctx: Context, config: Config): void {
   const workspaceRoot = config.workspaceRoot ?? process.cwd()
   const verifyContext: VerifyContext = {
     workspaceRoot,
-    async runCommand(command: string, _timeoutMs: number): Promise<CommandObservation> {
-      // 沙箱 authority 归 DSH 原 owner；harness 执行器接缝在 M4 实测前不私开进程。
-      throw new Error(`command execution not wired (stage-1): "${command.slice(0, 80)}". Use artifact criteria or wait for the harness executor seam.`)
+    async runCommand(command: string, timeoutMs: number): Promise<CommandObservation> {
+      return runShellCommand(ctx, command, timeoutMs)
     },
     async readFile(path: string) {
       const { readFile } = await import('node:fs/promises')
@@ -219,6 +256,7 @@ export function apply(ctx: Context, config: Config): void {
     ledgers: directory,
     goals: service(ctx, 'goals', true) as unknown as GoalsView,
     userQuestions: service(ctx, 'userQuestions', false) as unknown as UserQuestionsView | null,
+    autoApproveSpec: config.autoApproveSpec === true,
     maxGoalRounds: config.maxGoalRounds ?? 64,
     log,
     ensureLedger,
@@ -287,6 +325,7 @@ export function apply(ctx: Context, config: Config): void {
   onAny(ctx, 'agent/pre-step', async (...args: unknown[]) => {
     const payload = asDict(args[0]) as { agent?: unknown; messages?: unknown[]; turn?: number; step?: number } | null
     const next = args[1] as () => Promise<{ kind: string; messages?: unknown[] }>
+    log('info', `pre-step observed: turn=${String(payload?.turn)} step=${String(payload?.step)} msgs=${Array.isArray(payload?.messages) ? payload.messages.length : 'n/a'}`)
     const decision = await next()
     if (payload === null || decision.kind !== 'enter' || !Array.isArray(decision.messages)) return decision
     const agent = asDict(payload.agent)

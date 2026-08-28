@@ -83,6 +83,17 @@ export class ArtifactVerifier implements Verifier {
       preview: content.slice(0, 200),
     }
 
+    // mustExist:false 的语义是"该路径必须缺席"：文件存在即确定性违背判据。
+    // （修复前的实现会在文件存在且无其他谓词时落到 PASS —— 一条真实的假验收通道。）
+    if (!predicate.mustExist) {
+      return {
+        outcome: 'FAIL',
+        errorSignature: `artifact-present:${predicate.path}`,
+        detailRef: `path:${predicate.path} exists but the criterion requires it to be absent`,
+        evidence,
+      }
+    }
+
     if (predicate.sha256 !== undefined && predicate.sha256 !== digest) {
       return { outcome: 'STALE', errorSignature: `artifact-drift:${predicate.path}`, detailRef: `path:${predicate.path} sha256 mismatch`, evidence }
     }
