@@ -4,10 +4,10 @@ rows: tools/experiments/stage2/results/stage2-2026-08-28T22-42-03-997Z/rows.json
 
 | 组 | success | wall 中位 | round-trips 中位 | tool calls 中位 | tokens in/out 中位（下界估计） | wasted steps | violations |
 |---|---|---|---|---|---|---|---|
-| standard | 6/6 | 14281ms | 4.5 | 5.5 | 6113/1003.5 | 1 | 0 |
-| ptc | 6/6 | 15068.5ms | 4 | 3 | 5884.5/1032.5 | 1 | 0 |
+| standard | 6/6 | 14281ms | 4.5 | 5.5 | 6113/1003.5 | 0 | 0 |
+| ptc | 6/6 | 15068.5ms | 4 | 3 | 5884.5/1032.5 | 0 | 0 |
 | workflow | 6/6 | 16479ms | 4 | 5.5 | 6121/998 | 0 | 0 |
-| gungnir | 6/6 | 102449ms | 13.5 | 14.5 | 9449.5/12220 | 8 | 0 |
+| gungnir | 6/6 | 102449ms | 13.5 | 14.5 | 9449.5/12220 | 1 | 0 |
 
 ## 冻结门判定（Gungnir vs Code-PTC）
 
@@ -15,7 +15,7 @@ rows: tools/experiments/stage2/results/stage2-2026-08-28T22-42-03-997Z/rows.json
 - input tokens ↓≥20%：-60.6%（阈值 20%）→ 未达标
 - LLM round-trips ↓≥25%：-237.5%（阈值 25%）→ 未达标
 - latency ↓≥15%：-579.9%（阈值 15%）→ 未达标
-- 重复无效步骤 ↓≥30%：-700.0%（阈值 30%）→ 未达标
+- 重复无效步骤 ↓≥30%：n/a（阈值 30%）→ 未达标
 
 达标项数：0/4；**判定：FAIL**
 

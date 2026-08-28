@@ -5,6 +5,7 @@
  * 输出：逐组统计 + Gungnir vs Code-PTC 门判定（PASS/FAIL）+ Markdown 报告写到同目录 report.md。
  */
 import { readFileSync, writeFileSync } from 'node:fs'
+// 注：wastedSteps 口径修正（sum → median）为 task-verifier 验收发现的 MINOR 对齐，阈值不变
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -33,7 +34,8 @@ for (const group of GROUPS) {
     medianToolCalls: median(groupRows.map(row => row.toolCalls)),
     medianInputTokens: median(groupRows.map(row => row.inputTokensEstimate)),
     medianOutputTokens: median(groupRows.map(row => row.outputTokensEstimate)),
-    wastedSteps: sum(groupRows.map(row => row.loopRepetitions + row.validationFailures)),
+    // 预注册 §4：组间统计一律中位数（每 run 的 wasted = loopRepetitions + validationFailures）
+    wastedSteps: median(groupRows.map(row => row.loopRepetitions + row.validationFailures)),
     instructionViolations: sum(groupRows.map(row => row.instructionViolations)),
     recoveryCount: sum(groupRows.map(row => row.recoveryCount)),
   }

@@ -97,9 +97,6 @@ const decode = (label, path) => {
 const shapeA = shape(decode('A', pathA))
 const shapeB = shape(decode('B', pathB))
 
-writeFileSync(pathA.replace(/[\\/:]/g, '_') + '.shape.json', JSON.stringify(shapeA.vocabulary, null, 2))
-writeFileSync(pathB.replace(/[\\/:]/g, '_') + '.shape.json', JSON.stringify(shapeB.vocabulary, null, 2))
-
 const problems = []
 for (const [name, s] of [['A', shapeA], ['B', shapeB]]) {
   if (s.invariants.violations.length > 0) problems.push(`${s === shapeA ? 'A' : 'B'} invariants: ${s.invariants.violations.join('; ')}`)
