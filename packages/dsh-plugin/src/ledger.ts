@@ -57,6 +57,9 @@ export class AgentLedger {
   private state: GungnirState
   private nextSeq: number
   private poisoned: string | null = null
+  // append 串行队列：dry-run fold → 落 KV → 推进内存必须对并发调用方互斥，
+  // 否则两个 append 会取到同一个 seq / 同一个 dry-run 基线（loop 事件并发落账的真实场景）
+  private appendQueue: Promise<unknown> = Promise.resolve()
 
   constructor(
     readonly agentId: string,
@@ -93,8 +96,40 @@ export class AgentLedger {
    * 追加事件：先干跑 fold（纯函数、零副作用），通过才落 KV 并推进内存。
    * 坏事件在 API 边界被拒（不写存储、不毒化账本），调用方（模型工具）可纠正重试；
    * 落盘失败则内存不推进，同样可重试。v/ts envelope 由本方法统一加盖。
+   * 并发调用按到达序串行执行（每 ledger 一条队列）。
    */
-  async append(event: { type: string } & Record<string, unknown>): Promise<GungnirState> {
+  append(event: { type: string } & Record<string, unknown>): Promise<GungnirState> {
+    const run = this.appendQueue.then(() => this.appendNow(event), () => this.appendNow(event))
+    this.appendQueue = run.then(() => undefined, () => undefined)
+    return run
+  }
+
+  /**
+   * loop-state 快照专用通道：transitionsCount 必须在串行队列内读取 fold 派生值
+   * （单一真理）。调用方在入队前读 count 会读到 transition 尚未推进的旧值。
+   */
+  appendLoopState(anchor: { mode: string; turn: number; step: number }): Promise<GungnirState> {
+    const run = this.appendQueue.then(
+      () => this.appendNow({
+        type: 'gungnir/loop-state',
+        mode: anchor.mode,
+        turn: anchor.turn,
+        step: anchor.step,
+        transitionsCount: this.state.loopTransitions.length,
+      }),
+      () => this.appendNow({
+        type: 'gungnir/loop-state',
+        mode: anchor.mode,
+        turn: anchor.turn,
+        step: anchor.step,
+        transitionsCount: this.state.loopTransitions.length,
+      }),
+    )
+    this.appendQueue = run.then(() => undefined, () => undefined)
+    return run
+  }
+
+  private async appendNow(event: { type: string } & Record<string, unknown>): Promise<GungnirState> {
     if (this.poisoned !== null) {
       throw new Error(`gungnir ledger for ${this.agentId} is poisoned (${this.poisoned}); refusing further appends`)
     }

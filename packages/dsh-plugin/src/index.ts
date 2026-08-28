@@ -3,10 +3,14 @@ import z from '@deepseek-ai/schemastery'
 import {
   type CommandObservation,
   type VerifyContext,
+  GUNGNIR_ADAPTIVE_SERVICE,
+  routerInputsOf,
+  type GungnirAdaptiveService,
+  type LoopRouterInputs,
 } from '@gungnir/core'
 import { AgentLedger, type KvChannel } from './ledger.ts'
 import { ReconcileEngine } from './engine.ts'
-import { buildDirective, directiveApplicable } from './prestep.ts'
+import { buildDirective, buildVerifyDirective, directiveApplicable } from './prestep.ts'
 import { registerCommands, registerTools, type AgentView, type CommandsView, type GoalsView, type SurfaceDeps, type ToolsView, type UserQuestionsView } from './surfaces.ts'
 import { ExitCodeVerifier } from './verifiers/exit-code.ts'
 import { ArtifactVerifier } from './verifiers/artifact.ts'
@@ -193,12 +197,21 @@ export function apply(ctx: Context, config: Config): void {
 
   const kv = resolveKvChannel(ctx)
   const ledgerMap = new Map<string, AgentLedger>()
-  const ensureLedger = async (agentId: string): Promise<AgentLedger> => {
+  const ledgerOpening = new Map<string, Promise<AgentLedger>>()
+  // 并发去重：loop 事件/agent 生命周期/工具面会同时触发 open——
+  // 必须共享同一个 in-flight promise，否则会出现双实例（各自 seq 计数）导致 fold 分叉
+  const ensureLedger = (agentId: string): Promise<AgentLedger> => {
     const existing = ledgerMap.get(agentId)
-    if (existing !== undefined) return existing
-    const ledger = await AgentLedger.open(agentId, kv)
-    ledgerMap.set(agentId, ledger)
-    return ledger
+    if (existing !== undefined) return Promise.resolve(existing)
+    const opening = ledgerOpening.get(agentId)
+    if (opening !== undefined) return opening
+    const created = AgentLedger.open(agentId, kv).then((ledger) => {
+      ledgerMap.set(agentId, ledger)
+      ledgerOpening.delete(agentId)
+      return ledger
+    })
+    ledgerOpening.set(agentId, created)
+    return created
   }
   const directory = { get: (agentId: string) => ledgerMap.get(agentId) }
 
@@ -266,6 +279,69 @@ export function apply(ctx: Context, config: Config): void {
 
   registerCommands(service(ctx, 'commands', true) as unknown as CommandsView, surfaceDeps)
   registerTools(service(ctx, 'tools', true) as unknown as ToolsView, surfaceDeps)
+
+  // ---- Adaptive Loop 服务（Adapt 层 driver 经 ctx.get 读取；服务缺席 = 原生路径） ----
+  const nativeInputs: LoopRouterInputs = {
+    hasActiveSpec: false,
+    hasCommittedAction: false,
+    claimRecordedThisRound: false,
+    machineVerifiableOutstanding: false,
+  }
+  const adaptiveService: GungnirAdaptiveService = {
+    routerInputs(agentId: string): LoopRouterInputs {
+      const ledger = directory.get(agentId)
+      if (ledger === undefined) return nativeInputs
+      return routerInputsOf(ledger.current)
+    },
+    // resume 场景：新 driver 实例从账本现值起步（不重发 from=null 的初始选定）
+    currentLoopMode(agentId: string) {
+      const ledger = directory.get(agentId)
+      if (ledger === undefined) return null
+      return ledger.current.loopMode
+    },
+  }
+  const provide = pick(ctx, 'provide')
+  if (typeof provide !== 'function') throw new Error('ctx.provide unavailable: not a cordis context?')
+  ;(provide as (key: string, value: unknown) => void).call(ctx, GUNGNIR_ADAPTIVE_SERVICE, adaptiveService)
+
+  const loopEventAgentId = (payload: unknown): string | null => {
+    const agent = asDict(pick(asDict(payload), 'agent'))
+    const agentId = typeof pick(agent, 'id') === 'string' ? (pick(agent, 'id') as string) : null
+    return agentId
+  }
+
+  // loop 事件落账（ADR-0005 命名空间放开；driver 发 local 事件，Prove 层持有存储）
+  onAny(ctx, 'gungnir-loop/transition', (...args: unknown[]) => {
+    const payload = asDict(args[0])
+    const agentId = loopEventAgentId(payload)
+    if (agentId === null || payload === null) return
+    void (async () => {
+      const ledger = await ensureLedger(agentId)
+      await ledger.append({
+        type: 'gungnir/loop-transition',
+        from: (pick(payload, 'from') as string | null) ?? null,
+        to: String(pick(payload, 'to')),
+        turn: Number(pick(payload, 'turn') ?? 0),
+        step: Number(pick(payload, 'step') ?? 0),
+        rule: String(pick(payload, 'rule')),
+      })
+    })().catch((error: unknown) => log('error', 'loop-transition append failed (ledger stays at last consistent event)', error))
+  })
+
+  onAny(ctx, 'gungnir-loop/state', (...args: unknown[]) => {
+    const payload = asDict(args[0])
+    const agentId = loopEventAgentId(payload)
+    if (agentId === null || payload === null) return
+    void (async () => {
+      const ledger = await ensureLedger(agentId)
+      // transitionsCount 由 ledger 在串行队列内按 fold 派生值盖章（单一真理）
+      await ledger.appendLoopState({
+        mode: String(pick(payload, 'mode')),
+        turn: Number(pick(payload, 'turn') ?? 0),
+        step: Number(pick(payload, 'step') ?? 0),
+      })
+    })().catch((error: unknown) => log('error', 'loop-state append failed (ledger stays at last consistent event)', error))
+  })
 
   // 事件面：工具结果捕获 / 轮末 reconcile / goal 不一致报警 / pre-step 注入
   onAny(ctx, 'agent/created', (...args: unknown[]) => {
@@ -339,7 +415,6 @@ export function apply(ctx: Context, config: Config): void {
   onAny(ctx, 'agent/pre-step', async (...args: unknown[]) => {
     const payload = asDict(args[0]) as { agent?: unknown; messages?: unknown[]; turn?: number; step?: number } | null
     const next = args[1] as () => Promise<{ kind: string; messages?: unknown[] }>
-    log('info', `pre-step observed: turn=${String(payload?.turn)} step=${String(payload?.step)} msgs=${Array.isArray(payload?.messages) ? payload.messages.length : 'n/a'}`)
     const decision = await next()
     if (payload === null || decision.kind !== 'enter' || !Array.isArray(decision.messages)) return decision
     const agent = asDict(payload.agent)
@@ -349,6 +424,18 @@ export function apply(ctx: Context, config: Config): void {
     if (ledger === undefined) return decision
     const state = ledger.current
     const step = typeof payload.step === 'number' ? payload.step : 0
+    // FAST（无 goal 工作在途）：零 Gungnir 注入——Baseline-Preserving（Default-to-cheap）。
+    // driver 未接入 router 的旧 agent（无 currentMode）按 undefined 处理，保持旧行为。
+    const mode = pick(agent, 'currentMode')
+    if (mode === 'FAST') {
+      log('info', `pre-step FAST: no injection (turn ${String(payload.turn)} step ${String(step)})`)
+      return decision
+    }
+    const verify = mode === 'VERIFY' ? buildVerifyDirective(state) : null
+    if (verify !== null) {
+      log('info', `injecting VERIFY directive into agent ${agentId} (turn ${String(payload.turn)} step ${String(step)})`)
+      return { kind: 'enter', messages: [...decision.messages, makePluginMessage(verify)] }
+    }
     if (!directiveApplicable(state, step)) return decision
     const directive = buildDirective(state)
     if (directive === null) return decision

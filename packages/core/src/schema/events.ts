@@ -10,8 +10,8 @@ import { GoalSpecSchema, type GoalSpec } from './spec.ts'
  *
  * envelope：{ v: 1, ts, type, ...payload }。ts 为 epoch 毫秒，envelope 是唯一时间权威
  * （一阶段计划表中 payload 内的 ts 收敛进 envelope，避免双时间源）。
- * gungnir/loop-state、gungnir/loop-transition 为三阶段预留命名空间（ADR-0005）：
- * schema 在此占位，fold 遇到即抛错（strict replay 不猜）。
+ * gungnir/loop-state、gungnir/loop-transition 为 ADR-0005 预留命名空间，
+ * 二阶段 M1 起接入（本文件定义事件形状；fold 见 fold.ts）。
  */
 
 export const EventEnvelopeFieldsSchema = z.object({
@@ -180,18 +180,35 @@ export const StatusEventSchema = EventEnvelopeFieldsSchema.extend({
   decision: DecisionKindSchema.optional(),
 })
 
-// ---- 三阶段预留（ADR-0005）：schema 占位，fold 拒绝 -------------------------------
+// ---- gungnir/loop-state / gungnir/loop-transition（二阶段 M1 接入，ADR-0005 预留放开） ----
+//
+// 语义（ADR-0014/0015）：
+// - loop-transition：模式发生真实切换（含首次选定 from=null）时落账；rule 是命中的
+//   router 决策规则标识（可审计）；hysteresis 预算耗尽的保持不落 transition（没有
+//   切换就没有事件），保持行为由后续 loop-state 的 mode 快照体现。
+// - loop-state：模式快照锚点（切换后必落；turn 边界由 driver 补锚）。快照必须与
+//   fold 派生的当前模式一致（单一真理，同 status 快照纪律）。
 
-export const ReservedLoopEventPayloadSchema = z.record(z.unknown())
+export const LoopModeSchema = z.enum(['FAST', 'EXECUTE', 'VERIFY'])
+export type LoopMode = z.infer<typeof LoopModeSchema>
 
 export const LoopStateEventSchema = EventEnvelopeFieldsSchema.extend({
   type: z.literal('gungnir/loop-state'),
-  payload: ReservedLoopEventPayloadSchema,
+  mode: LoopModeSchema,
+  turn: z.number().int().nonnegative(),
+  step: z.number().int().nonnegative(),
+  /** 已发生的 transition 总数（fold 派生校验） */
+  transitionsCount: z.number().int().nonnegative(),
 })
 
 export const LoopTransitionEventSchema = EventEnvelopeFieldsSchema.extend({
   type: z.literal('gungnir/loop-transition'),
-  payload: ReservedLoopEventPayloadSchema,
+  from: LoopModeSchema.nullable(),
+  to: LoopModeSchema,
+  turn: z.number().int().nonnegative(),
+  step: z.number().int().nonnegative(),
+  /** 命中的 router 规则（router.ts LoopRouteDecision['rule']；hysteresis 保持不落账） */
+  rule: z.string().min(1),
 })
 
 // ---- union --------------------------------------------------------------------

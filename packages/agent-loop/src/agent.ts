@@ -37,15 +37,47 @@ import { canonicalHeader, headerEquals } from '@deepseek-ai/dsh-session'
 import { joinContextSections, renderContextSections, renderPrompt } from '@deepseek-ai/dsh-system-prompt'
 import type { PromptAssembly } from '@deepseek-ai/dsh-system-prompt'
 import type { Context } from '@deepseek-ai/cordis'
+import {
+  GUNGNIR_ADAPTIVE_SERVICE,
+  routeLoopMode,
+  type GungnirAdaptiveService,
+  type LoopMode,
+  type LoopRouterInputs,
+} from '@gungnir/core'
 import { RuntimeContextProjection } from './runtime-context.ts'
 import { executeToolCalls } from './tool-calls.ts'
 
+declare module '@deepseek-ai/cordis' {
+  interface Events {
+    /**
+     * Loop Strategy 发生真实切换（含首次选定 from=null）时由 driver 发出；
+     * gungnir 插件监听后落账 `gungnir/loop-transition`（durable）。
+     */
+    'gungnir-loop/transition'(payload: { agent: AdaptiveLoopAgent; from: LoopMode | null; to: LoopMode; turn: number; step: number; rule: string }): void
+    /**
+     * 模式快照（切换后与 turn 边界锚点）；gungnir 插件监听后落账
+     * `gungnir/loop-state`（快照字段以插件侧 fold 派生值为准，防 driver/ledger 计数漂移）。
+     */
+    'gungnir-loop/state'(payload: { agent: AdaptiveLoopAgent; mode: LoopMode; turn: number; step: number }): void
+  }
+}
+
 /**
- * Loop Strategy（认知策略；WAIT 是运行状态，不算策略）。v0 只有 EXECUTE：
- * 与默认 driver 完全等价的基线模式（Baseline-Preserving，ADR-0013 修订第 7 条）。
- * FAST / VERIFY 由二阶段 M1 的 router v0 接入。
+ * Loop Strategy（认知策略；WAIT 是运行状态，不算策略）。类型权威在
+ * @gungnir/core（router.ts / schema/events.ts）。
  */
-export type LoopMode = 'FAST' | 'EXECUTE' | 'VERIFY'
+export type { LoopMode } from '@gungnir/core'
+
+/** 每turn模式切换预算（hysteresis 最小件，M1 冻结值，ADR-0015）。 */
+export const MAX_MODE_TRANSITIONS_PER_TURN = 4
+
+/** 无 Gungnir 插件时的 router 输入（全 false → FAST 原生路径）。 */
+const NATIVE_INPUTS: LoopRouterInputs = {
+  hasActiveSpec: false,
+  hasCommittedAction: false,
+  claimRecordedThisRound: false,
+  machineVerifiableOutstanding: false,
+}
 
 type Phase =
   | { kind: 'idle'; lastTurn: number }
@@ -100,7 +132,11 @@ export class AdaptiveLoopAgent implements Agent {
    * 当前步进的 Loop Strategy。v0 恒为 EXECUTE（原生等价）；M1 起由
    * meta-controller 依据证据切换，loop 事件落账（gungnir/loop-transition）。
    */
-  private mode: LoopMode = 'EXECUTE'
+  /**
+   * 当前 Loop Strategy；null = 尚未走第一个 pre-step（语义上等价 FAST 原生路径）。
+   * 首次 selectMode 是"初始选定"（from=null），不占 hysteresis 预算。
+   */
+  private mode: LoopMode | null = null
 
   constructor(
     private loopCtx: Context,
@@ -123,16 +159,67 @@ export class AdaptiveLoopAgent implements Agent {
 
   /** M1 挂钩：读取当前 Loop Strategy（meta-controller 与观测面消费）。 */
   get currentMode(): LoopMode {
-    return this.mode
+    return this.mode ?? 'FAST'
   }
 
+  /** 本 turn 内已发生的模式切换数（hysteresis 预算计量）。 */
+  private transitionsThisTurn = 0
+
   /**
-   * Loop Strategy 选择点（每步进一次）。v0 返回常量 EXECUTE —— 基线保持原则：
-   * router 判定不介入时，Gungnir 的行为必须与普通 DSH 无法区分（B3 回归基线）。
-   * M1 将此替换为 core 的确定性 router（决策表全单测），并落 loop 事件。
+   * Loop Strategy 选择点（每步进一次）。确定性 router（core 纯函数）+ hysteresis：
+   * 每turn切换预算耗尽后保持当前模式（保持不落 transition 事件——没有切换就没有
+   * 切换事件；快照事件如实反映保持后的模式）。gungnir 插件缺席时退化为原生路径
+   * （FAST，零注入）——Baseline-Preserving（ADR-0013 修订第 7 条）。
    */
-  protected selectMode(_turn: number, _step: number): LoopMode {
-    return 'EXECUTE'
+  protected selectMode(turn: number, step: number): LoopMode {
+    if (step === 1) this.transitionsThisTurn = 0
+    const adaptive = this.loopCtx.get(GUNGNIR_ADAPTIVE_SERVICE) as GungnirAdaptiveService | undefined
+    const inputs = adaptive?.routerInputs(this.id) ?? NATIVE_INPUTS
+    let decision = routeLoopMode(inputs)
+    if (this.mode === null) {
+      // resume 场景：账本轨迹已在（新 driver 实例从账本现值起步，不重发初始选定）；
+      // 仅当账本也没有轨迹时才是真正的初始选定（from=null）。
+      const ledgerMode = adaptive?.currentLoopMode?.(this.id) ?? null
+      if (ledgerMode !== null) {
+        this.mode = ledgerMode
+        if (decision.mode !== ledgerMode) {
+          this.emitTransition(ledgerMode, decision, turn, step)
+        } else if (step === 1) {
+          this.loopCtx.emit('gungnir-loop/state', { agent: this, mode: decision.mode, turn, step })
+        }
+      } else {
+        this.loopCtx.emit('gungnir-loop/transition', {
+          agent: this, from: null, to: decision.mode, turn, step, rule: decision.rule,
+        })
+        this.loopCtx.emit('gungnir-loop/state', { agent: this, mode: decision.mode, turn, step })
+      }
+    } else if (decision.mode !== this.mode) {
+      if (this.transitionsThisTurn >= MAX_MODE_TRANSITIONS_PER_TURN) {
+        // hysteresis：预算耗尽即保持，不振荡（D-12 的守卫对象）
+        decision = { mode: this.mode, rule: 'hysteresis-hold' }
+      } else {
+        this.transitionsThisTurn++
+        this.emitTransition(this.mode, decision, turn, step)
+      }
+    } else if (step === 1) {
+      // turn 边界锚点：模式未变也留快照（冷重建的轨迹分辨率）
+      this.loopCtx.emit('gungnir-loop/state', { agent: this, mode: decision.mode, turn, step })
+    }
+    this.mode = decision.mode
+    return decision.mode
+  }
+
+  /** 发切换 + 快照事件（预算已在调用方扣除；快照由插件按 fold 派生值盖章）。 */
+  private emitTransition(
+    from: LoopMode,
+    decision: { mode: LoopMode; rule: string },
+    turn: number,
+    step: number,
+  ): void {
+    this.loopCtx.emit('gungnir-loop/transition', {
+      agent: this, from, to: decision.mode, turn, step, rule: decision.rule,
+    })
+    this.loopCtx.emit('gungnir-loop/state', { agent: this, mode: decision.mode, turn, step })
   }
 
   get status(): AgentStatus {

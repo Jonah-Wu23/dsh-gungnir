@@ -158,6 +158,25 @@ Harness 长期只信任 GoalSpec，不信任长 Plan；Plan 是 rolling-horizon 
 
 **未取代任何 ADR**；是 ADR-0012 第 2 条的机制落地、ADR-0013 第 7 条（Baseline-Preserving）的 v0 实现（EXECUTE 恒等模式）。
 
+### ADR-0015 Adaptive Loop v0 形态冻结：三模式语义、router v0 决策表与 hysteresis 阈值（accepted，2026-08-29）
+
+**背景**：二阶段计划 §3 要求三模式与最小防振荡（"单任务模式切换预算上限 + 同模式最少 dwell 一轮，具体阈值 M1 冻结并进 ADR"）。
+
+**决定**：
+
+1. **三模式 v0 语义**（全部确定性、可落账）：
+   - `FAST` = 原生路径：零 Gungnir 注入（无 reconcile/verify 指令），工具面与模型档不变——Default-to-cheap 的 v0 兑现形态是"不叠加认知负担"而非削能力；模型/成本轴（cheap model、low reasoning）按 dsh-interface §15 新能力归口三阶段 model 轴。
+   - `EXECUTE` = goal 工作轮：原生工具面 + Gungnir reconcile 指令（规划/执行纪律）。
+   - `VERIFY` = 验证优先轮：action 已被 claim 且目标里仍有未满足的 L1/L2 谓词时，注入 deterministic-check-first 指令（证明的优先序不能反）。
+2. **router v0 决策表**（有序先命中；实现在 `@gungnir/core` router.ts，纯函数，决策表全单测）：VERIFY（claim+机器谓词未满足）→ EXECUTE（action 在途未 claim）→ EXECUTE（活跃 spec）→ FAST（其余）。输入全部来自 fold 状态派生（routerInputsOf），无文本语义嗅探。
+3. **hysteresis 最小件（本 ADR 冻结阈值）**：单 turn 模式切换预算 `MAX_MODE_TRANSITIONS_PER_TURN = 4`（常量在 `packages/agent-loop/src/agent.ts`）；预算耗尽保持当前模式（保持不落 transition 事件，快照如实反映）；初始选定（from=null）与 resume 后从账本现值起步不计预算。完整 hysteresis 五件套（dwell/cooldown/evidence threshold/budget/circuit breaker）仍归三阶段。
+4. **loop 事件落账契约**：driver 发本地事件 `gungnir-loop/transition|state`，dsh-gungnir 插件落账 `gungnir/loop-state|loop-transition`（ADR-0005 命名空间放开，fold strict replay 校验快照一致性与 turn/step 单调）；transitionsCount 由 ledger 按 fold 派生值盖章；resume 后新 driver 实例从账本现值起步（经 `GungnirAdaptiveService.currentLoopMode`），绝不重发 from=null 初始选定。
+5. **依赖方向**：`agent-loop → core`（router/类型）与 `agent-loop ← dsh-gungnir`（经 ctx 可选服务 `gungnirAdaptive` 反向供数）均不破坏 `dsh-plugin → core`、`agent-loop → core` 单向纪律；driver 在插件缺席时退化为原生路径。
+
+**依据**：core 决策表/loop-fold 单测（101 用例）；确定性探针三件（真实 DSH 栈 + 脚本化模型：② wrapup 时序、D-12 振荡预算、D-13 resume 轨迹续写，`tools/destruction/tests/loop-driver.probe.test.ts`）；真实 profile 全链路（FAST/EXECUTE/VERIFY 三模式轨迹冷重建，state.md 工作块记录）；B3 双 driver 事件语义对照 PASS（router 活跃后复验）。
+
+**未取代任何 ADR**；细化 ADR-0012 第 2/5 条与 ADR-0013 修订第 6/7 条的 v0 落地口径。
+
 ## 决策模板
 
 新增决策时使用：标题、状态、日期、背景（为什么必须选）、决定、依据（文档章节/实测数据）、被取代的 ADR（如有）。

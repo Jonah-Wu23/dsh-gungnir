@@ -593,4 +593,5 @@ function resolveMaxParallelToolCalls(value: number | undefined): number {
 }
 
 export { DEFAULT_MAX_PARALLEL_TOOL_CALLS }
+export { MAX_MODE_TRANSITIONS_PER_TURN } from './agent.ts'
 export default GungnirLoop

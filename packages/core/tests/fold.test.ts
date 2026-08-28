@@ -435,9 +435,9 @@ describe('fold: status guards', () => {
     expectFoldError(rniOutside, 'snapshot')
   })
 
-  it('rejects reserved loop events and unknown schemas loudly', () => {
-    const events: unknown[] = [specEvent(makeSpec()), { type: 'gungnir/loop-state', v: 1, ts: 1, payload: {} }]
-    expectFoldError(events, 'reserved', 'gungnir/loop-state')
+  it('rejects orphan loop-state anchors and unknown schemas loudly (stage-2: loop events fold)', () => {
+    const events: unknown[] = [specEvent(makeSpec()), { type: 'gungnir/loop-state', v: 1, ts: 1, mode: 'FAST', turn: 1, step: 1, transitionsCount: 0 }]
+    expectFoldError(events, 'orphan-state', 'gungnir/loop-state')
     expectFoldError([{ type: 'gungnir/unknown', v: 1, ts: 1 }], 'schema')
     expectFoldError([{ type: 'gungnir/spec', v: 1, ts: 1, spec: { nope: true } }], 'schema', 'gungnir/spec')
   })

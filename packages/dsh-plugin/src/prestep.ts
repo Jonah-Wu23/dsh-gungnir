@@ -34,6 +34,28 @@ export function buildDirective(state: GungnirState): string | null {
   return lines.join('\n')
 }
 
+/**
+ * VERIFY 模式指令（router 规则 verify-machine-verifiable）：action 已被 claim 且
+ * 目标里还有未满足的 L1/L2 谓词——deterministic check 先行，证明的优先序不能反。
+ */
+export function buildVerifyDirective(state: GungnirState): string | null {
+  if (state.spec === null || state.currentAction === null) return null
+  const outstanding: string[] = []
+  for (const criterionId of state.currentAction.targetsCriteria) {
+    const criterionState = state.criteria[criterionId]
+    if (criterionState === undefined) continue
+    if (!criterionState.satisfied && criterionState.criterion.verifierLevel <= 2) {
+      outstanding.push(`${criterionId} (${criterionState.criterion.predicate.kind}/L${criterionState.criterion.verifierLevel})`)
+    }
+  }
+  if (outstanding.length === 0) return null
+  return [
+    `[Gungnir VERIFY] Machine-verifiable checks are outstanding for action ${state.currentAction.actionId}: ${outstanding.join(', ')}.`,
+    'Verification before conclusion: run each exit_code predicate command yourself and re-check each artifact predicate (path/content) with your tools NOW; do not end this turn with unverified claims.',
+    'The harness verifier re-checks every criterion from evidence at round end — a claim without deterministic backing will FAIL. If a check cannot pass, say so in gungnir_report with asserted_outcome=failed or blocked instead of claiming done.',
+  ].join('\n')
+}
+
 export function directiveApplicable(state: GungnirState, step: number): boolean {
   // 实测（0.1.1-rc.2，headless）：step 从 1 起，且单 turn 内可能完成全部工作——
   // 在 SPEC_COMMITTED/EXECUTING 期间逐 step 注入（协议压力），COMPLETE 等终态自然停止。

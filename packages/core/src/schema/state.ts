@@ -1,6 +1,7 @@
 import type { GoalSpec, SuccessCriterion } from './spec.ts'
 import type {
   ClaimEvent,
+  LoopMode,
   Phase,
   PlanProjectionEvent,
   ProgressSnapshot,
@@ -42,6 +43,18 @@ export interface CommittedAction {
   retried: number
 }
 
+/** loop 模式轨迹的单条记录（冷重建 Loop Strategy 历史的原子）。 */
+export interface LoopTrajectoryEntry {
+  /** 切换前模式（首次选定 = null） */
+  fromMode: LoopMode | null
+  mode: LoopMode
+  turn: number
+  step: number
+  /** 命中的 router 决策规则标识 */
+  rule: string
+  ts: number
+}
+
 export interface GungnirState {
   /** null = 尚未提交过 spec */
   spec: GoalSpec | null
@@ -74,6 +87,14 @@ export interface GungnirState {
   /** 最近一条 claim（advisory；fold 不参与决策） */
   lastClaim: ClaimEvent | null
   claimsCount: number
+  /** 当前 Loop Strategy（null = 尚无 loop 事件；FAST/EXECUTE/VERIFY） */
+  loopMode: LoopMode | null
+  /** Loop Strategy 轨迹（append-only，冷重建模式历史的唯一权威） */
+  readonly loopTransitions: readonly LoopTrajectoryEntry[]
+  /** 内部簿记：最近一条 loop 事件的 turn（-1 = 尚无；单调性守卫用） */
+  loopLastTurn: number
+  /** 内部簿记：最近一条 loop 事件的 step */
+  loopLastStep: number
   /** 簿记 */
   eventsFolded: number
   lastEventTs: number | null
@@ -98,6 +119,10 @@ export function emptyState(): GungnirState {
     blocker: '',
     lastClaim: null,
     claimsCount: 0,
+    loopMode: null,
+    loopTransitions: [],
+    loopLastTurn: -1,
+    loopLastStep: -1,
     eventsFolded: 0,
     lastEventTs: null,
   }

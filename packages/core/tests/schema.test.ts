@@ -98,9 +98,12 @@ describe('event schemas', () => {
     expect(() => GungnirEventSchema.parse({ ...event, v: 2 })).toThrow()
   })
 
-  it('parses reserved loop events (fold decides policy)', () => {
-    const parsed = GungnirEventSchema.parse({ type: 'gungnir/loop-state', v: 1, ts: 1, payload: { x: 1 } })
-    expect(parsed.type).toBe('gungnir/loop-state')
+  it('parses loop events (stage-2 schema: mode/turn/step fields, no payload bag)', () => {
+    const parsedState = GungnirEventSchema.parse({ type: 'gungnir/loop-state', v: 1, ts: 1, mode: 'EXECUTE', turn: 1, step: 1, transitionsCount: 1 })
+    expect(parsedState.type).toBe('gungnir/loop-state')
+    const parsedTransition = GungnirEventSchema.parse({ type: 'gungnir/loop-transition', v: 1, ts: 1, from: null, to: 'FAST', turn: 1, step: 1, rule: 'fast-no-goal-work' })
+    expect(parsedTransition.type).toBe('gungnir/loop-transition')
+    expect(() => GungnirEventSchema.parse({ type: 'gungnir/loop-state', v: 1, ts: 1, mode: 'IDLE', turn: 1, step: 1, transitionsCount: 0 })).toThrow()
   })
 
   it('makeEvent stamps the v:1 envelope', () => {

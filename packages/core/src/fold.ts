@@ -5,6 +5,8 @@ import {
   type CommitEvent,
   type EvidenceEvent,
   type GungnirEvent,
+  type LoopTransitionEvent,
+  type LoopStateEvent,
   type Phase,
   type PlanProjectionEvent,
   type SpecEvent,
@@ -83,10 +85,6 @@ export function foldEvent(state: GungnirState, raw: unknown, index = 0): Gungnir
     throw new FoldError(index, rawType, 'schema', detail)
   }
 
-  if (event.type === 'gungnir/loop-state' || event.type === 'gungnir/loop-transition') {
-    throw new FoldError(index, event.type, 'reserved', 'event namespace reserved for stage 3 (ADR-0005); stage-1 fold must not consume it')
-  }
-
   switch (event.type) {
     case 'gungnir/spec':
       return foldSpec(state, event, index)
@@ -102,6 +100,91 @@ export function foldEvent(state: GungnirState, raw: unknown, index = 0): Gungnir
       return foldVerdict(state, event, index)
     case 'gungnir/status':
       return foldStatus(state, event, index)
+    case 'gungnir/loop-state':
+      return foldLoopState(state, event, index)
+    case 'gungnir/loop-transition':
+      return foldLoopTransition(state, event, index)
+  }
+}
+
+// ---- gungnir/loop-state / gungnir/loop-transition（二阶段 M1，ADR-0005 放开） ----
+
+/** loop 事件与 goal 事件无关（无 spec 的会话也有模式轨迹），但 turn/step 必须单调。 */
+function checkLoopMonotonic(
+  state: GungnirState,
+  turn: number,
+  step: number,
+  index: number,
+  eventType: string,
+): void {
+  if (state.loopLastTurn === -1) return
+  if (turn < state.loopLastTurn) {
+    throw new FoldError(index, eventType, 'loop-order', `loop event turn ${turn} is older than last recorded ${state.loopLastTurn}`)
+  }
+  if (turn === state.loopLastTurn && step < state.loopLastStep) {
+    throw new FoldError(index, eventType, 'loop-order', `loop event step ${step} is older than last recorded ${state.loopLastStep} in turn ${turn}`)
+  }
+}
+
+function foldLoopTransition(state: GungnirState, event: LoopTransitionEvent, index: number): GungnirState {
+  checkLoopMonotonic(state, event.turn, event.step, index, event.type)
+  if (event.from !== state.loopMode) {
+    throw new FoldError(
+      index,
+      event.type,
+      'loop-transition',
+      `transition.from ${JSON.stringify(event.from)} does not match current mode ${JSON.stringify(state.loopMode)}`,
+    )
+  }
+  if (event.from === event.to) {
+    throw new FoldError(index, event.type, 'loop-transition', `no-op transition ${event.from} -> ${event.to} (changes only)`)
+  }
+  const entry = {
+    fromMode: event.from,
+    mode: event.to,
+    turn: event.turn,
+    step: event.step,
+    rule: event.rule,
+    ts: event.ts,
+  }
+  return {
+    ...state,
+    loopMode: event.to,
+    loopTransitions: [...state.loopTransitions, entry],
+    loopLastTurn: event.turn,
+    loopLastStep: event.step,
+    eventsFolded: state.eventsFolded + 1,
+    lastEventTs: event.ts,
+  }
+}
+
+function foldLoopState(state: GungnirState, event: LoopStateEvent, index: number): GungnirState {
+  checkLoopMonotonic(state, event.turn, event.step, index, event.type)
+  if (state.loopMode === null) {
+    throw new FoldError(index, event.type, 'orphan-state', 'loop-state anchor before any loop-transition (driver must select a mode first)')
+  }
+  if (event.mode !== state.loopMode) {
+    throw new FoldError(
+      index,
+      event.type,
+      'snapshot',
+      `loop-state.mode ${JSON.stringify(event.mode)} does not match derived ${JSON.stringify(state.loopMode)}`,
+    )
+  }
+  if (event.transitionsCount !== state.loopTransitions.length) {
+    throw new FoldError(
+      index,
+      event.type,
+      'snapshot',
+      `loop-state.transitionsCount ${event.transitionsCount} does not match derived ${state.loopTransitions.length}`,
+    )
+  }
+  return {
+    ...state,
+    loopLastTurn: event.turn,
+    loopLastStep: event.step,
+    eventsFolded: state.eventsFolded + 1,
+    lastEventTs: event.ts,
   }
 }
 
