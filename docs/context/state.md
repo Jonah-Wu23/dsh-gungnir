@@ -2,6 +2,16 @@
 
 > 每个工作块结束必须更新。最新在上，旧条目按时间下沉归档。
 
+## 快照（2026-08-29 · 工作块 16–18，二阶段收尾）
+
+- **二阶段（Adaptive Loop Spike）M0–M3 全部完成，B1–B6 全闭环；冻结门判定 FAIL → 熔断出口 (a) 触发：替换默认 loop 路线暂停**。判定与数据：《二阶段阶段报告》（`docs/plan/二阶段阶段报告.md`）；24 run 原始数据 `tools/experiments/stage2/results/stage2-2026-08-28T22-42-03-997Z/`（rows.jsonl/report.md 已入库，重型工件本地留档）。
+- **M0（适配与 seam 侦察）**：适配点③ 插件 patch 移除 storage 行（v0.1.2 base 自带，重复 id boot 失败）boot 恢复；适配点① 三工具 additionalProperties 一阶段已写全、boot 实证；适配点② wrapup 时序真跑复核（主链两次全链路 + goal-round 权限路径确定性探针）。peerDep/devDep 重指向 0.1.2（junction 手术：dsh-plugin/agent-loop node_modules → 源码树 vendor+packages；实测教训：`TOOL_RUNTIME_SCHEDULER` 等为普通 Symbol，双副本即断，ADR-0014 单实例纪律）。OPEN-7 关闭：disabled+insert 两步法替换默认 loop（非 insert patch 的 name 是守卫不可改包名——include 算法实测）；`packages/agent-loop`（dsh-gungnir-loop）AdaptiveLoopAgent v0 原生等价 driver 九项职责；gungnir-loop spike profile 真跑全链路。OPEN-5 关闭：tokenMeter 插件侧可达（usage 锚点口径含 cacheReadTokens）。
+- **M1（AdaptiveLoopAgent v0）**：core router v0（决策表全单测，Default-to-cheap）+ loop 事件 schema/fold（ADR-0005 预留放开，strict replay：快照一致/turn-step 单调/孤儿锚拒绝）+ 冷重建轨迹 + D-11 前缀闭合；driver 三模式接入 + hysteresis（单 turn 预算 4，ADR-0015）+ resume 从账本现值起步（不重发 from=null）；plugin：gungnirAdaptive 服务 + loop 事件落账 + VERIFY 指令 + FAST 零注入。真实竞态修复：ensureLedger 并发双实例（seq 分叉 fold 拒绝）→ in-flight 去重 + append 串行队列 + appendLoopState 队列内盖章。确定性探针三件（真实 DSH 栈 + 脚本化模型）：② wrapup 时序（<goal_complete> 先于收尾 step，turn-stopping 不抢跑）、D-12 振荡预算、D-13 resume 轨迹续写。B4：三模式真实任务全触发（谎报 claim 被 c1 FAIL 拦下→VERIFY 升级→修正→COMPLETE，假验收 0）。B3 复验 PASS（router 活跃前后各一次，17 类事件词汇一致）。
+- **M2/M3（四组对照实验）**：预注册冻结（PRE-REGISTRATION.md：判定门/四组/6 任务 prompt/指标口径/n=6 单 seed）；跑批器（run-groups/metrics/report）+ exp-standard profile；24 run 全量执行（完整性审计：24/24 落行、session 全定位、无超时）。**结果：success 全组 6/6（质量不降、假验收 0）；但 Gungnir 组成本全面反向：input tokens +60.6%、round-trips +237.5%、latency +579.9%、wasted steps +700%，0/4 达标 → FAIL**。与 SwitchBench 方向一致且量级更大：小型任务面上 Gungnir 协议仪式固定开销不回本。处置按预注册：gungnir-loop 包与替换机制作资产保留，现役回退一阶段形态（Prove 层跑默认 driver）；重开条件= SHOULD-escalate 正样本任务面证据（阶段报告 §4）。
+- **文档义务同批完成**：二阶段阶段报告、dsh-interface §16 + §14 第 10 项转正、architecture 升二阶段形态（含暂停注记）、glossary 四条新术语、二阶段/全阶段/三阶段计划状态行与启动条件修订、ADR-0014/0015、agent-loop 包 README。
+- **如实随档（Not verified）**：token 指标为离线 tokenizer 下界估计（plain_text 法，system prompt 与工具 schema 不在 session log，偏差同向）；cache hit 离线不可观测记 null 未进门；n=6 单 seed 方差未量化；②的 goal-round wrapup 真模型场景未被自然触发（模型总在 round 0 完成），由确定性探针补验。
+- **下一步**：三阶段按修订后的启动条件重估——Proof-Carrying 支柱可独立启动（Prove 层在默认 driver 上）；Adaptive Runtime 完全体降级为观察项；loop 类重开实验的第一优先问题 = Router 判断"何时不介入"（正样本任务面）。环境侧：正常 shell 下 pnpm install 重放 junction 语义（lockfile 已含 link: 记录）。
+
 ## 快照（2026-08-29 · 工作块 15）
 
 - **SwitchBench task-verifier 验收闭环（PASS，13/13 验收标准全过），SwitchBench 线正式收尾**。verifier 实质核查：25 个模块逐个语法检查；15 行 Stage 1 数据与事件流全量对账（metrics 模块独立重算，全部吻合）；HandoffPacket 8 字段加/删字段抛错实测；report 重新生成与现文件逐字节一致；从 payloads 独立重算校准比 0.7119（与 0.712 口径吻合）；selfcheck 5 任务双侧 OK；反作弊扫描（硬编码/空实现/吞异常/测试特供）未发现违规。
@@ -156,6 +166,8 @@
 6. 环境侧（不阻塞阶段推进）：在正常 shell 下补一次 `pnpm install`，让 `tools/experiments` 走 workspace 依赖而非 dist 相对 import；把 destruction + smoke 接进 CI 脚本。新增：正常 shell 下把插件 peerDep/devDep 锁 `0.1.2-alpha.1` 并 `link:` 指向本地源码树（ADR-0011 第 3 条）。
 
 ## 工作日志（倒序）
+
+- **2026-08-29（工作块 16–18）**：二阶段收官。M0 适配三件套（③①②）+ peerDep 重指向 0.1.2（junction 手术）+ OPEN-5 tokenMeter 实证 + OPEN-7 替换 seam 两步法实证 + ADR-0014。M1 router v0 + loop 事件放开 + 三模式 + hysteresis + 确定性探针（②/D-12/D-13）+ B3 复验 + B4 三模式真跑 + ADR-0015。M2 预注册 + 跑批器。M3 四组 24 run 对照实验 → 冻结门 FAIL（成本四项全部反向）→ 熔断出口 (a) → 阶段报告 + 计划/上下文全量回写。详见《二阶段阶段报告》。
 
 - **2026-08-29（工作块 11）**：SwitchBench Day 1。冻结 5 任务 benchmark（Killer t01 整单舍入 bug；t02 缓存大小写、t03 CSV 转义、t04 优先级跨模块、t05 段匹配子串——各 ≥3 表面假设、单一行为根因、零依赖 node --test）；Gate-1 四条件 verifier（probe/trunk/integrity/exports）+ manifest 冻结链路 + selfcheck 双侧自检；`switchbench-base` Baseline profile；Killer Task Baseline 真跑 PASS（wall 100.2s，src 足迹单文件）。事故三条（t03 笔误、首跑 harness 泄漏判废、manifest 陈旧假违规）+ EPERM 沙箱环境事实全部冻结修正并记录于 switchbench/BENCHMARK.md §7；权限档按用户指示定 workspace-write。
 

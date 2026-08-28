@@ -32,9 +32,10 @@ packages/core        @gungnir/core      纯域函数：schema / fold(strict repl
                                          可全量单测，是"从 ledger 重建可信"的前提
 packages/dsh-plugin  dsh-gungnir         Prove 层 cordis 插件：命令 / 工具 / 事件监听 /
                                          ledger append / verifier 实现 / LLM 调用
-packages/agent-loop  @gungnir/agent-loop 【二阶段新增】Adaptive Loop Runtime：实现 Agent contract
-                                         的稳定 driver，内嵌 LoopStrategy 集合与 meta-controller；
-                                         经组合接缝替换 dsh-agent-loop（发布名候选 dsh-gungnir-loop）
+packages/agent-loop  @gungnir/agent-loop 【二阶段建成；当前暂停启用（阶段报告 FAIL）】
+                                         Adaptive Loop Runtime：实现 Agent contract 的 driver，
+                                         三模式 FAST/EXECUTE/VERIFY + 确定性 router；经组合
+                                         接缝替换 dsh-agent-loop（ADR-0014 两步法）
 tools/               destruction/        破坏注入 harness
                      experiments/        实验跑批（一阶段 20 任务生死实验；二阶段四组对照实验）
 ```
@@ -55,7 +56,9 @@ tools/               destruction/        破坏注入 harness
   → 继续 / 终止（COMPLETE 前必须 GOAL_REVALIDATION 全量重验）
 ```
 
-### 3.2 目标（二阶段起，Adaptive Loop 形态）
+### 3.2 Adaptive Loop 形态（二阶段已建成并实证；当前按熔断判定暂停启用）
+
+> **2026-08-29 状态**：AdaptiveLoopAgent v0（FAST/EXECUTE/VERIFY + 确定性 router + loop 事件落账）已建成并经四组对照实验实证——冻结门判定 FAIL（小型任务面成本不回本），替换默认 loop 路线按预注册熔断暂停（ADR-0015、《二阶段阶段报告》）。本层代码与替换机制（ADR-0014 两步法）作为资产保留；**现役运行形态回退为 §3.1（Prove 层跑在默认 driver 上）**。重开条件见阶段报告 §4。
 
 ```text
 用户输入 / goal round

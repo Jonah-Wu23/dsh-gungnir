@@ -24,6 +24,9 @@
 | **Meta-controller / Router** | 依 state + observations + goal + budget + risk 决定下一策略的裁决器。event-driven，简单信号走确定性规则，只有真正模糊的转换才请 meta-model。 |
 | **Adaptive Cognitive Scheduling** | 本项目的研究对象：给 Agent 一个认知调度器，按任务状态选控制算法（操作系统按任务类型换 scheduling policy 的同构）。 |
 | **Loop Thrashing** | 策略振荡：meta-loop 在模式间来回跳，自己开始烧 token。动态 loop 的头号敌人；hysteresis 五件套防它。 |
+| **Baseline-Preserving Adaptive Runtime** | （ADR-0013 修订第 7 条）方案 A 的重定义：平时与普通 DSH 一样轻快、只有遇到确凿困难证据才自动升档；Router 判定不介入时性能应接近普通 DSH（回归基线）。 |
+| **Router v0（二阶段实现）** | 确定性决策表 router（`@gungnir/core` router.ts）：VERIFY（claim+机器谓词未满足）→ EXECUTE（action 在途/活跃 spec）→ FAST（其余）。输入全部来自 fold 状态派生，无文本语义嗅探；单 turn 切换预算 4（ADR-0015）。 |
+| **协议仪式成本** | （二阶段阶段报告 §5）Gungnir 流程的 spec/plan/report/verdict 循环本身即每任务固定开销；小型任务面上不回本（四组对照实测 round-trips +237.5%）。任何 loop 类重开实验的对照组必须包含 Prove 层跑在默认 driver 上的形态。 |
 | **机制/策略分离** | 机制层稳定（contract、ledger、安全、取消、持久化、可观测），策略层允许激进变化（projection、model、budget、工具执行策略、branching、retry、stop 条件等）。 |
 | **Context Projection** | "删除致错上下文"的正确做法：ledger 不动，换模型可见的投影视图（summary / fork boundary），错误事件留在账本里但不再当 authoritative context。 |
 | **LoopPolicyVector / Transition Guard** | （原三阶段 seam 方案概念，ADR-0012 后并入 meta-controller 设计）策略向量与转换裁决器；其"propose/authorize + hysteresis"思想由 Adaptive Loop Runtime 继承。seam-only 形态降级为方案 B 退路。 |
