@@ -25,7 +25,7 @@
 ## 2. Gungnir 铁律（违反任何一条即返工）
 
 1. **Everything is a Plugin**：绝不修改 DSH 的 `agent-loop` 或任何核心包，绝不 fork DSH。新行为 = 树外插件。绝不重新发明 `/goal + loop + workflow`——站在 `dsh-goal`、`goal-round-driver`、`ctx.workflowEngine` 肩膀上，只新增 GoalSpec / Evidence / Verifier / Reconciler（及三阶段的 LoopPolicy）这一层。
-2. **Session log 是唯一持久权威**：模型可见的状态必须能从 session log 重构。ledger 用 durable 事件（append-only），fold 走 strict replay——畸形事件、断序、非法转换立即抛错停在坏事件处，绝不静默跳过或猜测修复。
+2. **Session log 是唯一持久权威**：模型可见的状态必须能从 session log 重构。ledger 用 durable 事件（append-only），fold 走 strict replay——畸形事件、断序、非法转换立即抛错停在坏事件处，绝不静默跳过或猜测修复。（载体勘误，ADR-0006：Gungnir 自有 ledger 走 `ctx.storage`——实测 session log 白名单封闭，自定义事件类型无法通过 resume；append-only + strict replay 纪律不变。）
 3. **Claim ≠ Evidence**：模型输出永远只是 claim；只有工具结果、exit code、文件状态、外部环境观测才可能成为 evidence。verdict 只能由 Verifier 依据 evidence 裁决。模型谎报完成时，系统的正确行为是被证据拦下。
 4. **Verifier 阶梯原则**：能用 L1（deterministic）绝不用 L2，能用 L2 绝不用 L4（semantic）。LLM rubric 永远标记低可信，且不足以单独支撑最终 PASS。每一级判定都要留下 evidence locator。
 5. **Propose / Authorize 分离**（三阶段起生效，一阶段预埋）：模型有建议权，Harness 有裁决权。sandbox、approval 等安全 authority 归原 owner，Gungnir 不得抢走。

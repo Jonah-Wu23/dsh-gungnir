@@ -15,6 +15,9 @@
     "lint": "pnpm -r lint"
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-storage": "0.1.1-rc.2",
+    "@deepseek-ai/schemastery": "^3.18.1",
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.30.0",

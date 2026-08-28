@@ -12,8 +12,14 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "cordis.patch.yml"
   ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "echo \"integration tests live in real-profile smoke (see docs/plan)\" && exit 0",

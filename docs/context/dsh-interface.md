@@ -36,6 +36,9 @@
     "@deepseek-ai/cordis": "^4.0.1"
   }
   ```
+- **bundle 入层机制〔CLI/实现实测 2026-08-28 工作块 3〕**：树外插件 package.json 声明 `"dsh": {"bundle": {"patch": "./cordis.patch.yml"}}` 后，`dsh plugin add` 的 reconcile 会自动把它加进 profile 的 `dsh.profile.bundles` 层栈；无此声明只是普通依赖、不激活（CLI 有一次性警告）。patch 文件为 insert 行式：`- insert: [{id, name, config?, disabled?}]`，`config` 行内支持 `!!js` 表达式（dsh-base 用 `dshHomePath('...')` 与 `process.env.*`）。
+- **inject 强制〔boot 实测〕**：cordis 运行时对未在插件 `inject` 数组声明的 ctx 服务键访问直接抛 `cannot get property "<key>" without inject`——按需访问的服务也必须全部声明（Gungnir 声明 7 个）。
+- **dsh-storage 挂载〔boot 实测〕**：dsh-base 不含 storage 行；挂 `@deepseek-ai/dsh-storage` + `@deepseek-ai/dsh-storage-json` 需自备 config `root`（缺省抛 `$.root missing required value`），实测 `root: !!js dshHomePath('storage')` 可用。
 
 ## 3. 服务目录（ctx key）〔README 汇总〕
 

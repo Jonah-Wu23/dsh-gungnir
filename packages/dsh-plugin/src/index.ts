@@ -25,7 +25,7 @@ import { LlmRubricVerifier } from './verifiers/llm-rubric.ts'
 
 export const name = 'gungnir'
 
-export const inject = ['commands', 'tools', 'storage']
+export const inject = ['agents', 'commands', 'goals', 'llm', 'storage', 'tools', 'userQuestions']
 
 export interface Config {
   workspaceRoot?: string

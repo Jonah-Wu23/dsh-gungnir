@@ -1,0 +1,18 @@
+# dsh-gungnir bundle patch: mount the storage hub (the Gungnir ledger rides on
+# ctx.storage per ADR-0006 — session log durable events cannot pass the resume
+# whitelist) and then the Gungnir plugin itself. Rows are addressed by id; the
+# user's profile cordis.patch.yml wins last write per row.
+
+- insert:
+    - id: storage
+      name: '@deepseek-ai/dsh-storage'
+
+    - id: storage-json
+      name: '@deepseek-ai/dsh-storage-json'
+      config:
+        root: !!js dshHomePath('storage')
+
+    - id: gungnir
+      name: dsh-gungnir
+      config:
+        maxGoalRounds: 64

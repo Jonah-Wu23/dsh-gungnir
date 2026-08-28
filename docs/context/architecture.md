@@ -43,6 +43,7 @@ tools/               destruction/        破坏注入 harness
 ```
 
 事件全集与 fold 规则见《一阶段实施详细计划》§4；状态机守卫见 §6。
+**事件载体（ADR-0006）**：所有 `gungnir/*` 事件写入 `ctx.storage` 的 KV ledger（`gungnir-ledger` unit，append-only，按 agentId+seq 键控），**不写 session log**——DSH persistence 白名单封闭，自定义 durable 事件类型会被 resume 拒载（dsh-interface.md §4）。
 
 ## 4. 关键边界
 
