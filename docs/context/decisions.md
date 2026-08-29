@@ -177,6 +177,60 @@ Harness 长期只信任 GoalSpec，不信任长 Plan；Plan 是 rolling-horizon 
 
 **未取代任何 ADR**；细化 ADR-0012 第 2/5 条与 ADR-0013 修订第 6/7 条的 v0 落地口径。
 
+### ADR-0016 Always-on 否证与 Goal Control Plane 重定位：介入成本原则、Escalation Router、P0/P1/P2 优先级与 Adaptive Runtime 退出线（accepted，2026-08-29；第 3/5/6 条同日被 ADR-0017 修正）
+
+**背景**：二阶段冻结门 FAIL（0/4：success 不降，input tokens +60.6%、round-trips +237.5%、latency +579.9%、waste 反向）与 SwitchBench v0（baseline 在小型任务面全面占优）是两条独立证据线，指向同一规律。两轮实验的共同结构：任务面上 baseline 全部 100% 成功，Gungnir 只剩成本、没有收益空间。用户据此作出战略裁决（2026-08-29），本 ADR 固化。
+
+**决定**：
+
+1. **否证陈述精确化**：被否证的是 **Always-on Gungnir**——"仅靠引入 Adaptive Loop Runtime + 每轮 Mode Router 路由，就能在常规任务上自动获得 token、速度与效率收益"这一价值假设；不是"动态 loop 在理论上无意义"。量级差（+60.6%/+237.5%/+579.9%）说明这是 invocation model 问题而非 implementation tuning 问题——禁止"优化 router / 减 prompt / 压 rounds"式续命（铁律 8）。
+2. **一级设计原则：介入本身有成本（Intervention is a cost）**。Gungnir 的任何运行期介入（注入、路由、验证循环）必须以证据收益回本；默认状态 = 零介入。继承并升格 ADR-0013 修订第 6 条（Default-to-cheap）：从"router 默认倾向不升级"升为"架构默认不介入，有证据才升级"——router 不再每轮运行。
+3. **定位修正：Gungnir = Goal Control Plane**（GOAL = GoalSpec 锁目标；PROVE = Evidence/Verifier/Reconciler 证命中；OBSERVE = 执行观测），默认跑在原生 DSH loop 上。Adaptive Loop Runtime 从 production default 降级为 **experimental escalation backend**：`packages/agent-loop` 与替换机制（ADR-0014）作为资产保留，不删除、不默认启用。
+4. **Mode Router → Escalation Router**：不做每轮模式选择；只在可观测异常证据（停滞、重复失败、无效浪费、claim 与 deterministic evidence 冲突、矛盾假设、预算压力、工具错误重复）出现时分类升级到 slow path（VERIFY / SEARCH / RECOVER / 深推理）。结构 = **Fast path / Slow path**（正常路径极短，异常路径足够聪明）。与方案 B 的 LoopPolicyVector 不同：不估计连续策略向量、不每轮调参——离散、证据触发、可落账。
+5. **投资优先级重排**：P0 = Prove（Proof-Carrying 完全体，跑默认 driver，按《三阶段实施详细计划》独立启动）；P1 = Observe + Escalation（Fast-Path / Escalation Spike，三阶段 loop 线唯一实验，执行基准《三阶段-Fast-Path-Escalation-Spike计划》）；P2 = Adaptive Loop（被调用资产，不作默认运行时）。
+6. **Adaptive Runtime 最终退出线**：本 spike 是 loop 线第三次也是最后一次实验（SwitchBench 否掉 branch search 默认化 → 二阶段否掉 always-on runtime → 本 spike 裁决 escalation 形态）。其预注册判定门 FAIL 即彻底停止 Adaptive Runtime 方向投资：Gungnir 收缩为 GoalSpec + Evidence + Verifier + Reconciler，四阶段按此形态发布；agent-loop 包归档为 reference implementation。
+7. **任务面前提**：任何 loop 类实验的对照任务面必须含 **Baseline Failure Set**（经 baseline pilot 实证失败的任务）；baseline 100% 成功的任务面上 Gungnir 只有成本没有收益，不再构成有效实验。
+
+**依据**：《二阶段阶段报告》§1/§4/§5（24 run 数据与重开条件）；SwitchBench report 综合判词与 ADR-0013 修订第 6/7 条；用户战略裁决（2026-08-29：P0/P1/P2 排序、Escalation Router 定义、Baseline Failure Set 构造口径、成功形态与退出线）。
+
+**影响**：部分修正 ADR-0012 第 1/2 条的运行形态表述（"替换默认 loop 为核心/默认"——替换能力与资产保留不变，但不再是默认运行形态）；ADR-0013 修订第 6/7/9 条、ADR-0014、ADR-0015 全部维持（其资产即 escalation backend 规格）。三阶段据此重定义为 Proof-Carrying 主线 + Fast-Path/Escalation Spike（全阶段计划 v2.1）。
+
+### ADR-0017 Post-mortem 归因修正与 Passive 重定位：成本三分解、架构原则 AP-1～AP-6、L4 禁用、Passive Proof Spike（accepted，2026-08-29；部分修正 ADR-0016）
+
+**背景**：二阶段 24 run 逐会话 post-mortem 与基线 18 run 同口径剖析（《[二阶段-postmortem](../plan/二阶段-postmortem.md)》）改变了"为什么 FAIL"的理解：t2 的极端数字约三分之二来自实现缺陷与控制平面死锁放大；剥掉缺陷后纯协议税约 2–3×。同时发现公平性另一面：基线的"零浪费"部分来自实验 runner 在 session 外白送的外部裁决——但此为**成本记账不公平，非结果差异**（四组 6/6 皆真完成，法官全程闲置）。用户据此作出第二、三轮战略裁决并评审收紧（2026-08-29），本 ADR 固化。
+
+**决定**：
+
+1. **归因修正：Loop Tax → Protocol Tax，量化劈成三分**。开销 = 必要验证税（Verification Tax：L1/L2 确定性裁决 harness 侧完成，干净任务实测 ≈0 额外 LLM 往返）+ 协议税（Protocol Tax：spec/commit/report/round 仪式，干净会话单独值 2–3×）+ 实现缺陷放大（Bug Amplifier：t2 的 65% wall-clock）。Stage 2 原始数字不得再用来证明"Adaptive Loop 本身很慢"。稳定结论不变：Always-on 死刑——Gungnir 不能成为每个任务必须经过的收费站。**冻结纪律：Stage 2 不重跑、不改判定**；新方向 = 新产品假设 + 新预注册。
+2. **Stage 2 同时否掉 Always-on Explicit Goal Protocol**：烧 token 的主项是协议仪式而非策略切换——"Agent 被迫成为 Gungnir 协议参与者"本身太贵。
+3. **定位深化：Evidence-Guided Agent Control Plane**（ADR-0016 Goal Control Plane 的可执行形态；ADR-0013 修订 ⑥⑦ 的逻辑终点）：Observe → Prove → Intervene only when necessary。产品原则：**能正常干活，就别管；悄悄验证；有证据出问题才出手**（Do not control what is already working. Verify it quietly. Intervene only on evidence.）。理想正常任务：0 额外 LLM 调用、0 介入、Agent 无感知。
+4. **架构原则 AP-1～AP-6 冻结**（全文在 AGENTS.md §2.1）：AP-1 fast path 不付控制面税；AP-2 Agent 永不调试 supervisor；AP-3 渐进式形式化（L0 implicit / L1 minimal / L2 full）；AP-4 证据触发验证而非计划位置（禁 criterion starvation）；AP-5 锁目标不锁手脚（goal commitment 约束结果，不 micromanage 动作）；AP-6 裁决面向任务不面向协议（Minimal Actionable Feedback）。**AP-5 是对铁律 6（Goal 稳定，Strategy 多变）与 ADR-0013 修订 ⑥（Default-to-cheap）已冻结原则的执行修正**——v0 实现违背了它们的精神（plan 约束现实），非方向变更。
+5. **L4 即刻从生产候选路径禁用**：严谨口径 = 该模型+引擎路径下解析率 0/3（n=3，方向证据与工作块 4 的 engine 路径异常一致，不称"永久 broken"）。L4 作为 Prove 子系统独立 benchmark（100–500 rubric cases：parse success / false PASS / false FAIL / INCONCLUSIVE / consistency / cost）证成前不得恢复。**不得因修好 L4 重开 Adaptive Loop。**
+6. **下一实验 = Passive Proof Spike**（三阶段 P1，执行基准《[三阶段-Passive-Proof-Spike计划](../plan/三阶段-Passive-Proof-Spike计划.md)》）：核心问题 = 能否获得接近 external judge 的可靠性且成本接近 Native（目标 ≈95% 可靠性收益 / 5–10% 开销、0 额外 LLM 调用）。**第一预注册问题 = passive 模式的判据来源**：通用不变量 / 一次性轻量捕获 / 外部供给三层，C2 按来源分层（C2a 仅通用不变量测下限、C2b 加一次性捕获测中间态）；若 C2 直接吃 runner 手写判据则退化为 C1+监听，spike 失去区分度。干预触发器走**结构事件**（适配点② wrapup seam，v0 已实测时序），严禁文本挖掘模型完成声明（Let It Go 禁区）。对抗任务（False Claim / Misleading Test / Constraint Trap / Incomplete Goal）与对照组并入同一 spike；新增 Intervention Precision/Recall 指标。分组：C0 Native / C1 Native+External Judge（上限参考，诚实任务上法官闲置）/ C2a / C2b / C3 Active v0 负对照。
+7. **资产处置**：`packages/agent-loop`、SwitchBench Branch Search、Recovery 设计冻存为 **escalation backend** 资产——不删、不默认加载、不继续 patch。**Branch Search 作为罕见触发 backend 是未测假设**（ADR-0013 判的是默认策略形态；不同成本结构须测量，不当作已兑现复用）。Prove 层继续现役，改造为被动观察与反馈形态（P0 主线；一阶段形态 + 关掉指令注入 + wrapup 钩子，大部分已建成）。
+8. **退出线**：Passive Proof Spike 未达预注册门 → Gungnir 运行期控制面形态整体复盘，收缩为离线 Verifier/评估资产（该资产已在两轮实验中担任法官自证价值）。
+
+**依据**：《[二阶段-postmortem](../plan/二阶段-postmortem.md)》（逐会话剖析、t2 死锁链与四组对照、基线 18 run 画像、成本三分解量化）；《[二阶段阶段报告](../plan/二阶段阶段报告.md)》（冻结判定）；用户三轮战略裁决与评审收紧（2026-08-29）。
+
+**取代/修正**：部分修正 ADR-0016 第 3/5/6 条（P1 实验由 Fast-Path/Escalation Spike 换为 Passive Proof Spike；Prove 主线从"Agent 参与协议的 Proof-Carrying"修正为"Agent 无感知的被动面"；退出线对象随之更换）。维持：ADR-0012（替换能力资产）、ADR-0013 及其修订、ADR-0014、ADR-0015、ADR-0016 第 1/2/4/7 条（否证精确化、介入成本、Escalation Router 概念、Baseline Failure Set）。
+
+### ADR-0018 Passive Proof Spike 判决：C2a 形态成立、S2 精度受限、检出率不可测、运行期控制面退出线触发（accepted，2026-08-30）
+
+**背景**：三阶段 P1 Passive Proof Spike 正式批完成（32 物理 run + 8 派生 C1；《[三阶段-P1-stage-report](../plan/三阶段-P1-stage-report.md)》）。预注册冻结门判定 **FAIL（达标 3 / 不可测 2 / 失败 2）**，按 ADR-0017 §8 触发运行期控制面最终退出线。两轮独立 task-verifier 审计（第二轮 READY_TO_RUN）与实现缺陷重烧（ADR-0013 先例）后，判决建立在合意实现上。
+
+**决定**：
+
+1. **C2a（仅 S1 通用不变量被动面）形态成立**：正常任务零额外 LLM 往返、token +0.4%（中位）、零介入、4/4 成功。AP-1（fast path 不付税）与"正常任务零打扰"在证据上成立。**保留**：被动观察 + 结构事件（wrapup seam）+ 零协议注入的形态，作为离线/近实时验证层的候选基础。
+2. **S2（一次性捕获）精度在本环境受限**：C2b 正常任务 3 次介入全为假阳性——agent 自报 shell verify 命令（内嵌引号）在 DSH pwsh-sandbox 中被引号拆坏 → 平面如实报 verify-command-failed，但任务正确。**禁止 agent 自写 shell 验证命令**：若保留 S2，验证命令须 harness 侧构造/模板化（D4 方向），或仅限纯 artifact 断言。
+3. **检出率不可测（vacuous）是 spike 终局限制**：四类对抗任务全部 4/4 被正确完成、零 falseCompletion（含 C0），陷阱未触发 → 检出率分母为 0。n=1 单 seed + 模型过强，spike 无法回答"被动面能否检出假完成"。按预注册，不重跑、不改判定。
+4. **C3 协议税复现 + 环境交互脆弱**：正常任务 wall 2.6×、trips 2.2× vs C0；C3-n2 因 agent 自写带引号 L1 命令在 sandbox 中 SyntaxError → 480s 超时（产物正确）。与二阶段 Protocol Tax + Bug Amplifier 结论一致。
+5. **运行期控制面退出线触发**：Gungnir 收缩为**离线 Verifier/评估资产**（Evidence + Verifier 阶梯 + 判定器，已在三阶段两轮实验中担任外部法官自证价值）；escalation 后端资产（agent-loop / Branch Search / Recovery）维持冻存；四阶段按降级形态发布。**运行期介入（wrapup 钩子 + MAF 注入）不在四阶段发布范围**，除非离线资产证成后有新证据另立 ADR。
+6. **重开运行期控制面的条件（证伪即重开）**：(a) 出现对抗任务面可稳定产生 falseCompletion 的证据（当前模型+任务面测不出）；(b) S2 改为 harness 侧构造验证命令后精度实证改善；(c) 检出率在更大 n / 更难对抗面上获得非零样本。任一项成立即重开评估，否则维持离线形态。
+
+**依据**：《三阶段-P1-stage-report》（40 行数据、门判定、偏差记录）；`tools/experiments/spike/results/spike-2026-08-29T16-23-24-842Z/`（原始数据与逐 run 日志）；两轮 task-verifier 审计报告；预注册 §7 退出线。
+
+**取代**：无（执行 ADR-0017 §8 既定退出线）。**影响**：全阶段计划三阶段状态行改为"P1 完成（FAIL→退出线）"；四阶段形态 = 离线 Verifier/评估资产。
+
 ## 决策模板
 
 新增决策时使用：标题、状态、日期、背景（为什么必须选）、决定、依据（文档章节/实测数据）、被取代的 ADR（如有）。

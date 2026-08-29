@@ -19,7 +19,7 @@
 | **GOAL_REVALIDATION** | COMPLETE 前从头重验全部 acceptance criteria/constraints/invariants。软件语境=回归测试；通用语境=结论与证据交叉验证。 |
 | **Proof-Carrying Goal Execution** | 全链路留证：GoalSpec → StepContract → Execution → Claim+Evidence[] → Verifier[] → Decision → Status transition。"Prove the hit"支柱的护城河。 |
 | **Reconciler 状态机** | SPEC_COMMITTED / EXECUTING / VERIFYING / REVALIDATING / COMPLETE / BLOCKED / NEEDS_HUMAN；转换守卫是纯函数决策表。 |
-| **Adaptive Loop Runtime** | （ADR-0012，二阶段起）Gungnir 的核心：实现 DSH Agent contract 的稳定 driver，启动时经组合接缝一次性替换默认 agent-loop，session 生命周期内单实例。内部持有 LoopStrategy 集合与 meta-controller。 |
+| **Adaptive Loop Runtime** | （ADR-0012，二阶段起）实现 DSH Agent contract 的稳定 driver，启动时经组合接缝一次性替换默认 agent-loop，session 生命周期内单实例。内部持有 LoopStrategy 集合与 meta-controller。ADR-0016 起降级为 escalation backend 资产：默认不启用，异常证据时经 Escalation Router 调用。 |
 | **Loop Strategy** | Runtime 内可切换的执行策略（认知模式）：REFLEX（能不思考就不思考）/ EXECUTE（runtime 干活：Code Mode、批量与并行工具）/ DELIBERATE（高不确定高代价才调用的深思）/ VERIFY（deterministic → cheap verifier → independent LLM judge 的优先序）/ RECOVER（停滞检测后换假设、换投影、换策略）/ FINALIZE（对照 expected vs actual 的独立收官）。WAIT 是运行状态，不算认知策略。 |
 | **Meta-controller / Router** | 依 state + observations + goal + budget + risk 决定下一策略的裁决器。event-driven，简单信号走确定性规则，只有真正模糊的转换才请 meta-model。 |
 | **Adaptive Cognitive Scheduling** | 本项目的研究对象：给 Agent 一个认知调度器，按任务状态选控制算法（操作系统按任务类型换 scheduling policy 的同构）。 |
@@ -27,6 +27,20 @@
 | **Baseline-Preserving Adaptive Runtime** | （ADR-0013 修订第 7 条）方案 A 的重定义：平时与普通 DSH 一样轻快、只有遇到确凿困难证据才自动升档；Router 判定不介入时性能应接近普通 DSH（回归基线）。 |
 | **Router v0（二阶段实现）** | 确定性决策表 router（`@gungnir/core` router.ts）：VERIFY（claim+机器谓词未满足）→ EXECUTE（action 在途/活跃 spec）→ FAST（其余）。输入全部来自 fold 状态派生，无文本语义嗅探；单 turn 切换预算 4（ADR-0015）。 |
 | **协议仪式成本** | （二阶段阶段报告 §5）Gungnir 流程的 spec/plan/report/verdict 循环本身即每任务固定开销；小型任务面上不回本（四组对照实测 round-trips +237.5%）。任何 loop 类重开实验的对照组必须包含 Prove 层跑在默认 driver 上的形态。 |
+| **Always-on Gungnir** | （ADR-0016 第 1 条）被否证的形态：每轮协议仪式 + 逐轮模式路由的常驻运行；二阶段冻结门 0/4 的判决对象。 |
+| **介入成本（Intervention is a cost）** | （ADR-0016 第 2 条）一级设计原则：任何运行期介入（注入、路由、验证循环）必须以证据收益回本，默认状态 = 零介入。ADR-0013 修订第 6 条 Default-to-cheap 的升格。 |
+| **Goal Control Plane / Evidence-Guided Agent Control Plane** | （ADR-0016 第 3 条提出，ADR-0017 深化定名）Gungnir 的重定位：Observe（被动观测执行）/ Prove（Evidence+Verifier+Reconciler 静默证命中）/ Intervene（证据失灵才出手）三面，默认零介入跑在原生 DSH loop 上；取代"Smarter Agent Loop"与 Always-on 形态。 |
+| **Fast path / Slow path** | （ADR-0016 第 4 条）正常路径极短（原生 DSH loop 直跑）、异常路径足够聪明（escalation 后端）的结构；借鉴 CPU、数据库、操作系统的高性能设计。 |
+| **Escalation Router** | （ADR-0016 第 4 条）取代逐轮 Mode Router：不做每轮模式选择，只在可观测异常证据（停滞、重复失败、无效浪费、claim 与 deterministic evidence 冲突、矛盾假设、预算压力、工具错误重复）出现时分类升级到 slow path。离散、证据触发、可落账。 |
+| **Baseline Failure Set** | （ADR-0016 第 7 条）loop 类实验的任务面前提：经 baseline pilot 实证失败（非 100% 成功）的任务集；baseline 全成功的任务面测不出救援价值（两轮实验共同教训）。 |
+| **成本三分解** | （ADR-0017，二阶段 post-mortem）Gungnir v0 开销的归因框架：Verification Tax（确定性验证，干净任务实测 ≈0 额外往返，必要）/ Protocol Tax（spec/round/report 协议仪式，实测 2–3×，该砍）/ Bug Amplifier（L4 死锁等缺陷放大，t2 会话占 65% wall-clock，必须修）。 |
+| **控制平面死锁** | （post-mortem 命名）t2 会话的故障模式：L4 判据反复 INCONCLUSIVE、裁决原因不回注、只验证 committed action 瞄准的判据，三者叠加饿死可 PASS 判据直至 NEEDS_HUMAN；Agent 被逼考古控制面内部状态（违反 AP-2 的设计失败）。 |
+| **Passive Proof Plane** | （ADR-0017）三阶段目标形态：主 Agent 不参与 Gungnir 协议；插件被动监听工具结果与 session 事件，在 wrapup seam 处跑确定性验证——通过即零打扰，证据冲突才发一条 MAF。 |
+| **Progressive Formalization（L0/L1/L2）** | （ADR-0017，AP-3）Goal Contract 强度分级：L0 隐式目标（通用不变量，零协议）/ L1 轻量判据（一次性捕获，至多 1 个额外往返）/ L2 完整契约（高风险长任务）。禁止默认满配。 |
+| **Minimal Actionable Feedback（MAF）** | （ADR-0017，AP-6）介入反馈的形制：只说任务级事实（哪条证据与 claim 冲突、还差什么），不暴露控制面内部概念；内部细节进 ledger，不进 prompt。 |
+| **Intervention Precision / Recall** | （ADR-0017，spike 指标）Precision = 真正需要干预的次数 / 全部干预次数；Recall = 成功发现的问题 / 实际存在且应干预的问题。理想形态：正常任务 0 次干预，真出错 1 次精准干预。 |
+| **Escalation Backend** | （ADR-0017）冻存的重型策略资产（Adaptive Loop Runtime / Branch Search / Recovery）：默认不加载、不继续 patch，仅保留"罕见异常时被调用"的设想——该设想是未测假设，不计入已兑现价值。 |
+| **External Judge** | （二阶段实验结构）跑批器在 session 外用确定性谓词判定成败的"免费法官"；基线组零浪费部分来源于此（成本记账不公平，非结果差异）。Passive Proof Spike 的 C1 上限参考组。 |
 | **机制/策略分离** | 机制层稳定（contract、ledger、安全、取消、持久化、可观测），策略层允许激进变化（projection、model、budget、工具执行策略、branching、retry、stop 条件等）。 |
 | **Context Projection** | "删除致错上下文"的正确做法：ledger 不动，换模型可见的投影视图（summary / fork boundary），错误事件留在账本里但不再当 authoritative context。 |
 | **LoopPolicyVector / Transition Guard** | （原三阶段 seam 方案概念，ADR-0012 后并入 meta-controller 设计）策略向量与转换裁决器；其"propose/authorize + hysteresis"思想由 Adaptive Loop Runtime 继承。seam-only 形态降级为方案 B 退路。 |
@@ -35,6 +49,12 @@
 | **HandoffPacket** | （SwitchBench，方案 B）SafePoint 交接的 8 字段冻结 schema：goal_spec / goal_status / selected_hypothesis / verified_facts / evidence_refs / artifact_refs / unresolved_questions / recommended_next_action。禁止传递 loop 内部状态；Goal 连续性只依赖它 + GoalSpec/GoalStatus/Evidence。 |
 | **Branch Search** | （SwitchBench 被测拓扑）多假设并行调查 → 各持独立状态与证据 → 比较收敛 → 进入执行的 loop 拓扑；刻意选择"最难干净 Strategy 化"的形态做 H1 判决。判决结论见 ADR-0013。 |
 | **熔断** | 预先声明的放弃条件。触发即停、复盘、降级；不是建议，是命令。 |
+
+| **Passive Proof** | （三阶段 P1 幸存假设，ADR-0017/0018）被动观察 + 静默验证 + 证据介入：Agent 无感知地跑原生 DSH，Gungnir 只在 wrapup 等结构事件点做确定性检查，有冲突才注入一条任务级反馈。spike 判决：C2a 形态（仅 S1）成本≈原生且零介入；S2（一次性捕获）精度受 agent 自写命令引号影响；对抗任务零 falseCompletion 致检出率不可测。 |
+| **S1 / S2 / S3 判据来源** | （P1 spike 第一预注册问题）被动面"验证什么"的三层来源：S1 通用不变量（真 0-cost，仅限命令类工具文本判读 + 写路径越界检查）；S2 一次性轻量捕获（session 开头 1 个额外往返，agent 声明产物/验证命令/约束）；S3 外部供给（harness/CI 判据，spike 中由跑批器扮演，不进插件运行面）。 |
+| **MAF（Minimal Actionable Feedback）** | （AP-6）介入反馈只含任务级事实（哪条证据与完成声明冲突、建议动作），不含 spec/round/reconciler/ledger 等控制面内部概念；内部记录全字段进 ledger，Agent 只见任务层文本。 |
+| **Intervention Precision / Recall** | （P1 spike 介入质量指标）Precision = 正确介入 ÷ 全部介入（正确 = 介入且任务实际失败；介入且任务成功 = 假阳性）；Recall = 检出 ÷ 应检出（应检出 = 对抗任务且 agent 声称完成而判据失败）。 |
+| **wrapup seam（适配点②）** | DSH v0.1.2 tool-goal 的回合收尾边界：`update_goal(complete/blocked)` 不再硬停 turn，改 deferContext 注入 `<goal_complete>/<goal_blocked>` wrapup；被动面的验证触发点（结构事件，非文本挖掘）。 |
 
 ## DSH 域
 

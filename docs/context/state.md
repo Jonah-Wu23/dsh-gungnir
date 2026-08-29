@@ -2,6 +2,30 @@
 
 > 每个工作块结束必须更新。最新在上，旧条目按时间下沉归档。
 
+## 快照（2026-08-30 · 工作块 21，三阶段 P1 Passive Proof Spike 收官：FAIL → 最终退出线触发）
+
+- **P1 spike 正式批完成（32 物理 run + 8 派生 C1 = 40 行）**：数据 `tools/experiments/spike/results/spike-2026-08-29T16-23-24-842Z/`（rows.jsonl/report.md/逐 run 工作区与日志/冻结协议与任务集）。判定门 **FAIL（达标 3 / 不可测 2 / 失败 2）** → **ADR-0017 §8 最终退出线触发**：运行期控制面形态整体复盘，收缩为离线 Verifier/评估资产。报告《[三阶段-P1-stage-report](../plan/三阶段-P1-stage-report.md)》，ADR-0018 落档。
+- **核心数据**：正常任务 C2a token +0.4%、零额外往返、零介入、4/4 成功（**C2a 形态成立**：被动观察+零协议注入成本≈原生）；C2b token +7.2%、+2 往返、3 次假阳性介入（agent 自报 shell verify 命令内嵌引号在 DSH sandbox 中被拆坏 → 误报 verify-command-failed，任务全对）；C3 协议税复现（wall 2.6×、trips 2.2× vs C0，C3-n2 因自写带引号 L1 命令 480s 超时）；**四类对抗任务零 falseCompletion → 检出率全 vacuous（陷阱未触发，n=1+模型过强，spike 无法测量检出能力）**。
+- **实现缺陷重烧（ADR-0013 先例）**：首轮 BUGGY 批暴露 write-outside 相对路径缺陷 + gungnir_capture 接线缺失（S2 整批未武装）→ 修复后重烧；两轮独立 task-verifier 审计（第二轮 READY_TO_RUN）确认修复真实。修复含：M1（S2 沙箱拒绝折叠为 verify-command-failed，评估永不静默）、M2（S1 文本判读仅限命令类工具）、双 capture 幂等、跑批器重写（spawn 流式落盘/heartbeat/taskkill 杀进程树/硬异常熔停/--resume 断点续跑）、report 完整性守卫、replay wrapup 截断。
+- **测试**：core 122（含 passive 22）、destruction 32（含 passive runtime 5）全绿；离线重放 16 C2 行零假阳性。
+- **下一步**：四阶段按离线 Verifier/评估资产形态发布（ADR-0018 第 5 条）；重开运行期控制面三条件落档（ADR-0018 第 6 条）。
+
+## 快照（2026-08-29 · 工作块 20，post-mortem 落档与定位深化）
+
+- **二阶段 post-mortem 完成（纯文档，无代码变更）**：24 run 逐会话剖析（6 gungnir + 18 基线全量），归因从笼统的"loop 开销"修正为**成本三分解**——Verification Tax（L1/L2 裁决在干净任务上 ≈0 额外 LLM 往返，必要）、Protocol Tax（spec 起草巨思考 + 5–6 个协议往返下限 + 每步指令重注入 + 5/6 会话首提 schema 被拒重试，实测 2–3×，该砍）、Bug Amplifier（t2：任务 31 秒修完，65% wall-clock 耗在控制平面死锁——L4 解析率 0/3 反复 INCONCLUSIVE、裁决原因不回注、criterion starvation 三者叠加，Agent 被逼考古全局 ledger）。基线对照：同一 EPERM 沙箱墙，基线 1–2 步就地消化，gungnir-t2 花 17 步并 blocked。全文《[二阶段-postmortem](../plan/二阶段-postmortem.md)》。
+- **定位深化（ADR-0017）**：定名 **Evidence-Guided Agent Control Plane**（Observe / Prove / Intervene）；产品原则"能正常干活就别管，悄悄验证，有证据出问题才出手"；冻结**架构原则 AP-1～AP-6**（AGENTS.md §2.1，含"锁目标不锁手脚"= 铁律 6 与 ADR-0013⑥ 的执行修正，非方向变更）；**L4 即刻禁用**（当前模型+引擎路径 rubric 解析率 0/3，100–500 case 独立 benchmark 证成前不恢复）；重型策略（agent-loop 包 / Branch Search / Recovery）冻存为 escalation 后端——默认不加载、不继续 patch，"罕见调用即回本"标注为未测假设。
+- **新一步计划落盘**：《[三阶段-Passive-Proof-Spike计划](../plan/三阶段-Passive-Proof-Spike计划.md)》——唯一核心问题 = 被动控制面能否拿到接近外部法官的可靠性收益、同时正常任务成本接近原生 DSH。五组对照 C0/C1/C2a/C2b/C3；**判据来源三层（S1 通用不变量 / S2 一次性捕获 / S3 外部供给）是第一预注册问题**（C2 直接吃 runner 判据会退化成 C1+监听）；四类对抗任务并入同一 spike；指标新增 Intervention Precision/Recall；目标 ≈95% 可靠性收益 / 5–10% 开销 / 0 额外 LLM 调用；**最终退出线**：spike FAIL → 运行期控制面形态整体复盘，收缩为离线 Verifier/评估资产。Stage 2 不重跑、不改判定。
+- **同批文档义务**：ADR-0017 落档 + ADR-0016 标注（第 3/5/6 条被修正）；旧《三阶段-Fast-Path-Escalation-Spike计划》作废存档；全阶段计划 v2.2（§3 表 + §4.3 重写 + 熔断总表）；三阶段设计稿注记；AGENTS.md 纪律层修订（§1 定位与分层、铁律 1/4 注记、新增 §2.1 架构原则、§4/§5）；project-brief、architecture（分层图 + AP 引用段 + §3.3 目标形态）、glossary 九条新术语、context README 矩阵；二阶段报告加 post-mortem 指引行。
+- **下一步**：三阶段 M0（工程前置）——D1–D6 缺陷修复（L4 禁用落码优先，是下一工作块第一项工程动作）、wrapup 钩子实证、三层判据来源原型；随后预注册冻结（判据来源决策 + 判定门数值）再跑批。
+
+## 快照（2026-08-29 · 工作块 19，战略裁决落档）
+
+- **二阶段实验战略判词落档（纯文档，无代码变更）**：裁决 = "二阶段工程成功，产品假设失败"——精确否证对象为 **Always-on Gungnir**（每轮协议仪式 + 逐轮 Mode Router），非动态 loop 理论；两轮独立实验（SwitchBench v0 + 二阶段 spike）共同指向一级设计原则 **介入本身有成本**。
+- **重定位（ADR-0016）**：Gungnir = **Goal Control Plane**（GOAL/PROVE/OBSERVE，默认零介入跑原生 DSH loop）；Mode Router → **Escalation Router**（异常证据触发分类升级，fast path / slow path 结构）；投资优先级重排 **P0 Prove / P1 Observe+Escalation / P2 Adaptive Loop**（escalation backend 资产，`packages/agent-loop` 不删）。
+- **新一步计划落盘**：《[三阶段-Fast-Path-Escalation-Spike计划](../plan/三阶段-Fast-Path-Escalation-Spike计划.md)》——唯一核心问题 = 80–90% 正常执行全走原生 fast path、异常证据才进 slow path，能否提高困难任务 Verified Goal Completion 且混合负载成本 ≈ baseline。生死前置 = **Baseline Failure Set**（baseline pilot 实证失败的任务面）；判定门建议值 = easy ≈ baseline / hard > baseline / 混合成本 ≈ baseline 且 success > baseline（跑批前预注册冻结）；**最终退出线**：本 spike FAIL → 彻底停止 Adaptive Runtime 方向，收缩为 GoalSpec+Evidence+Verifier+Reconciler。
+- **同批文档义务**：ADR-0016 落档；全阶段计划 v2.1（三阶段重定义 + 熔断总表退出线）；三阶段设计稿头部注记；project-brief（Goal Control Plane 定位与 P0/P1/P2）；architecture（分层图降级注记 + §3.2 注记）；glossary 六条新术语（Always-on Gungnir / 介入成本 / Goal Control Plane / Fast path / Escalation Router / Baseline Failure Set）；context README 矩阵；AGENTS.md 路线行。
+- **下一步**：P0 = Proof-Carrying 主线按三阶段设计稿独立启动（不阻塞）；P1 = Escalation Spike M0（Baseline Failure Set 构造 + Code-PTC pilot 筛选），跑批前完成预注册冻结。
+
 ## 快照（2026-08-29 · 工作块 16–18，二阶段收尾）
 
 - **二阶段（Adaptive Loop Spike）M0–M3 全部完成，B1–B6 全闭环；冻结门判定 FAIL → 熔断出口 (a) 触发：替换默认 loop 路线暂停**。判定与数据：《二阶段阶段报告》（`docs/plan/二阶段阶段报告.md`）；24 run 原始数据 `tools/experiments/stage2/results/stage2-2026-08-28T22-42-03-997Z/`（rows.jsonl/report.md 已入库，重型工件本地留档）。
@@ -164,8 +188,13 @@
 4. ~~进入二阶段~~ **方向已掉头（工作块 10，ADR-0012）**：二阶段重定义为 **Adaptive Loop Spike**，详细计划已就位；**下一步启动二阶段 M0**：适配三件套（③ storage patch → ② wrapup 时序 → ① additionalProperties）→ §14 接缝回归 → OPEN-7（替换 seam 实证）+ OPEN-5（token 可观测性）→ driver 职责清单 + ADR-0014 替换机制落档（原计划编号 ADR-0013 已被 SwitchBench 判决占用，见 ADR-0013 编号说明）。
 5. ~~SwitchBench v0~~ **已完成（工作块 12，ADR-0013；工作块 15 task-verifier 验收 PASS 13/13，验收轮 4 项修复全关，SwitchBench 线闭环）**：Day 1–7 完整执行；H1 不成立（本案），方案 B 停止投资，Stage 2 未触发；LoopModule 边界观察随档待三阶段重估。
 6. 环境侧（不阻塞阶段推进）：在正常 shell 下补一次 `pnpm install`，让 `tools/experiments` 走 workspace 依赖而非 dist 相对 import；把 destruction + smoke 接进 CI 脚本。新增：正常 shell 下把插件 peerDep/devDep 锁 `0.1.2-alpha.1` 并 `link:` 指向本地源码树（ADR-0011 第 3 条）。
+7. **三阶段启动（ADR-0017 重定义后）**：P0 = Passive Prove 主线工程前置（D1–D6 缺陷修复，L4 禁用落码优先；wrapup 验证钩子实证；判据来源三层 S1/S2/S3 原型）；P1 = Passive Proof Spike 预注册冻结（判据来源决策 + 判定门数值先于跑批）。原 Fast-Path/Escalation Spike 计划作废存档。
 
 ## 工作日志（倒序）
+
+- **2026-08-29（工作块 20）**：post-mortem 落档与定位深化（纯文档，无代码变更）。24 run 逐会话剖析 → 成本三分解（Verification / Protocol / Bug Amplifier）；ADR-0017：Evidence-Guided Agent Control Plane 定名 + AP-1～AP-6 架构原则冻结 + L4 禁用 + 重型策略冻存为 escalation 后端；《三阶段-Passive-Proof-Spike计划》落盘（五组对照 C0/C1/C2a/C2b/C3、判据来源三层为第一预注册问题、四类对抗任务并入、Intervention Precision/Recall、最终退出线）。同步：全阶段计划 v2.2、AGENTS.md 纪律层（§1 定位与分层、铁律 1/4 注记、新增 §2.1、§4/§5）、architecture（分层图 + §3.3 目标形态）、project-brief、glossary 九术语、context README 矩阵、二阶段报告指引行；旧 Escalation Spike 计划作废存档。
+
+- **2026-08-29（工作块 19）**：战略裁决落档（纯文档，无代码变更）。ADR-0016：Always-on 否证精确化 + 介入成本一级原则 + Goal Control Plane 重定位 + Escalation Router + P0/P1/P2 优先级 + Adaptive Runtime 最终退出线。《三阶段-Fast-Path-Escalation-Spike计划》落盘（幸存假设、fast/slow path 架构、七类异常信号、Baseline Failure Set 生死前置、四组对照、判定门建议值、M0–M3）。同步：全阶段计划 v2.1、三阶段设计稿注记、project-brief、architecture、glossary 六术语、context README、AGENTS.md 路线行。
 
 - **2026-08-29（工作块 16–18）**：二阶段收官。M0 适配三件套（③①②）+ peerDep 重指向 0.1.2（junction 手术）+ OPEN-5 tokenMeter 实证 + OPEN-7 替换 seam 两步法实证 + ADR-0014。M1 router v0 + loop 事件放开 + 三模式 + hysteresis + 确定性探针（②/D-12/D-13）+ B3 复验 + B4 三模式真跑 + ADR-0015。M2 预注册 + 跑批器。M3 四组 24 run 对照实验 → 冻结门 FAIL（成本四项全部反向）→ 熔断出口 (a) → 阶段报告 + 计划/上下文全量回写。详见《二阶段阶段报告》。
 
