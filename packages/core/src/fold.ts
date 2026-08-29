@@ -104,6 +104,13 @@ export function foldEvent(state: GungnirState, raw: unknown, index = 0): Gungnir
       return foldLoopState(state, event, index)
     case 'gungnir/loop-transition':
       return foldLoopTransition(state, event, index)
+    case 'gungnir/invariant':
+    case 'gungnir/capture':
+    case 'gungnir/assessment':
+    case 'gungnir/intervention':
+      // 被动面事件（三阶段 P1，ADR-0017）：advisory——不影响 Goal 状态机，
+      // fold 只做 schema 校验（parseGungnirEvent 已保证）+ 计数推进。
+      return { ...state, eventsFolded: state.eventsFolded + 1, lastEventTs: event.ts }
   }
 }
 

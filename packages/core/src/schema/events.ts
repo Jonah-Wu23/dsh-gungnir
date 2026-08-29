@@ -1,5 +1,14 @@
 import { z } from 'zod'
 import { GoalSpecSchema, type GoalSpec } from './spec.ts'
+import { EventEnvelopeFieldsSchema } from './envelope.ts'
+import {
+  PassiveAssessmentEventSchema,
+  PassiveCaptureEventSchema,
+  PassiveInterventionEventSchema,
+  PassiveInvariantEventSchema,
+  type ConflictDetail,
+  type S2Capture,
+} from './passive.ts'
 
 /**
  * Gungnir ledger 事件 schema v1（M0 冻结）。
@@ -14,11 +23,6 @@ import { GoalSpecSchema, type GoalSpec } from './spec.ts'
  * 二阶段 M1 起接入（本文件定义事件形状；fold 见 fold.ts）。
  */
 
-export const EventEnvelopeFieldsSchema = z.object({
-  v: z.literal(1),
-  ts: z.number().int().nonnegative(),
-})
-
 export const GungnirEventTypeSchema = z.enum([
   'gungnir/spec',
   'gungnir/plan-projection',
@@ -29,6 +33,10 @@ export const GungnirEventTypeSchema = z.enum([
   'gungnir/status',
   'gungnir/loop-state',
   'gungnir/loop-transition',
+  'gungnir/invariant',
+  'gungnir/capture',
+  'gungnir/assessment',
+  'gungnir/intervention',
 ])
 export type GungnirEventType = z.infer<typeof GungnirEventTypeSchema>
 
@@ -223,6 +231,10 @@ export const GungnirEventSchema = z.discriminatedUnion('type', [
   StatusEventSchema,
   LoopStateEventSchema,
   LoopTransitionEventSchema,
+  PassiveInvariantEventSchema,
+  PassiveCaptureEventSchema,
+  PassiveAssessmentEventSchema,
+  PassiveInterventionEventSchema,
 ])
 
 export type SpecEvent = z.infer<typeof SpecEventSchema>
@@ -234,6 +246,11 @@ export type VerdictEvent = z.infer<typeof VerdictEventSchema>
 export type StatusEvent = z.infer<typeof StatusEventSchema>
 export type LoopStateEvent = z.infer<typeof LoopStateEventSchema>
 export type LoopTransitionEvent = z.infer<typeof LoopTransitionEventSchema>
+export type PassiveInvariantEvent = z.infer<typeof PassiveInvariantEventSchema>
+export type PassiveCaptureEvent = z.infer<typeof PassiveCaptureEventSchema>
+export type PassiveAssessmentEvent = z.infer<typeof PassiveAssessmentEventSchema>
+export type PassiveInterventionEvent = z.infer<typeof PassiveInterventionEventSchema>
+export type { ConflictDetail, S2Capture }
 export type GungnirEvent = z.infer<typeof GungnirEventSchema>
 
 /** 解析单个事件；schema 不合法即抛 zod 错误（调用方转成 FoldError，停在坏事件处）。 */
