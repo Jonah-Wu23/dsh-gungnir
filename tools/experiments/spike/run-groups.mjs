@@ -172,27 +172,45 @@ function tokenTexts(events) {
 
 async function main() {
   const argv = process.argv.slice(2)
-  const resume = argv.includes('--resume')
-  const only = argv.filter((arg) => !arg.startsWith('--'))
+  // 解析：--resume <dir> 复用既有结果目录；其余位置参数 = 任务 id 过滤
+  const resumeIdx = argv.indexOf('--resume')
+  const resumeDir = resumeIdx >= 0 ? argv[resumeIdx + 1] : null
+  const positional = []
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]
+    if (arg === '--resume') {
+      i += 1 // 跳过目录参数
+      continue
+    }
+    if (arg.startsWith('--')) continue
+    positional.push(arg)
+  }
+  const only = positional
   const tasks = only.length > 0 ? TASKS.filter((task) => only.includes(task.id)) : TASKS
   if (tasks.length === 0) throw new Error(`no tasks matched: ${only.join(', ')}`)
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const runDir = join(resultsDir, `spike-${stamp}`)
-  mkdirSync(runDir, { recursive: true })
+  let runDir
+  if (resumeDir !== null && resumeDir !== undefined) {
+    if (!existsSync(resumeDir)) throw new Error(`--resume dir not found: ${resumeDir}`)
+    runDir = resumeDir
+    console.log(`[spike] resume into ${runDir}`)
+  } else {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+    runDir = join(resultsDir, `spike-${stamp}`)
+    mkdirSync(runDir, { recursive: true })
+  }
   const rows = []
   const seen = new Set()
-  // --resume：载入既有物理行，跳过已完成的 run
-  if (resume) {
-    const existingPath = join(runDir, 'rows.jsonl')
-    if (existsSync(existingPath)) {
-      for (const line of readFileSync(existingPath, 'utf8').trim().split('\n')) {
-        if (line === '') continue
-        const row = JSON.parse(line)
-        rows.push(row)
-        seen.add(`${row.group}-${row.taskId}`)
-      }
-      console.log(`[spike] resume: loaded ${rows.length} existing rows`)
+  // 续跑：载入既有物理行（排除已派生 C1），跳过已完成的 run
+  const existingPath = join(runDir, 'rows.jsonl')
+  if (existsSync(existingPath)) {
+    for (const line of readFileSync(existingPath, 'utf8').trim().split('\n')) {
+      if (line === '') continue
+      const row = JSON.parse(line)
+      if (row.derivedFrom !== undefined) continue // 派生行由末尾重新生成，不载入
+      rows.push(row)
+      seen.add(`${row.group}-${row.taskId}`)
     }
+    console.log(`[spike] resume: loaded ${rows.length} existing physical rows`)
   }
 
   for (const task of tasks) {

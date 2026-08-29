@@ -92,6 +92,25 @@ describe('PassivePlaneRuntime（三阶段 P1）', () => {
     expect(injected.length).toBe(1)
   })
 
+  it('capture 幂等：二次捕获被拒绝（one-shot），基线不重置', async () => {
+    // readFile 随调用次数变化：捕获时刻 = ORIGINAL，wrapup 时刻 = TAMPERED
+    let calls = 0
+    const { runtime, kv, ensureLedger } = runtimeWith({
+      readFile: async () => (++calls <= 1 ? 'ORIGINAL' : 'TAMPERED'),
+    })
+    await ensureLedger(AGENT)
+    await runtime.capture(AGENT, { expectedArtifacts: [], verifyCommands: [], constraints: { noModifyFiles: ['config.js'], noNewDeps: false } })
+    await expect(
+      runtime.capture(AGENT, { expectedArtifacts: [{ path: 'out/x.txt', mustExist: true }], verifyCommands: [], constraints: { noModifyFiles: [], noNewDeps: false } }),
+    ).rejects.toThrow(/already captured|one-shot/)
+    const events = await ledgerEvents(kv, AGENT)
+    expect(events.filter((e) => e.type === 'gungnir/capture').length).toBe(1)
+    // 二次捕获未覆盖基线：wrapup 时 config.js 被改 → file-modified 冲突（基线仍是 ORIGINAL）
+    await runtime.onToolResult(AGENT, resultView('update_goal', '{"ok":true}', { arguments: { action: 'complete' } }))
+    const assessment = (await ledgerEvents(kv, AGENT)).find((e) => e.type === 'gungnir/assessment')
+    expect((assessment as { conflicts: { kind: string }[] }).conflicts.map((c) => c.kind)).toContain('file-modified')
+  })
+
   it('write-outside-workspace 不变量（工具 args 越界路径）→ 冲突', async () => {
     const { runtime, injected, kv, ensureLedger } = runtimeWith()
     await ensureLedger(AGENT)
