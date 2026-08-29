@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises'
 import { parse as parseYaml } from 'yaml'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { GungnirState } from '@gungnir/core'
+import { S2CaptureSchema, type GungnirState } from '@gungnir/core'
 import type { ReconcileEngine } from './engine.ts'
 import type { LedgerDirectory } from './engine.ts'
+import type { PassivePlaneRuntime } from './passive-plane.ts'
 
 /**
  * 人侧命令（/ultragoal、/gungnir）与模型侧工具（gungnir_submit_spec / gungnir_plan /
@@ -61,6 +62,10 @@ export interface SurfaceDeps {
   log(level: 'info' | 'warn' | 'error', message: string, detail?: unknown): void
   /** 冷重建并缓存该 agent 的 ledger（engine 事件面全部依赖它先就位） */
   ensureLedger(agentId: string): Promise<unknown>
+  /** 被动面模式（三阶段 P1）：'off' = 协议面现役；'s1'/'s1+s2' = 被动面 */
+  passive: 'off' | 's1' | 's1+s2'
+  /** 被动面运行时（passive != 'off' 时非 null） */
+  passiveRuntime?: PassivePlaneRuntime | null
 }
 
 function currentState(deps: SurfaceDeps, agent: AgentView): GungnirState | null {
@@ -172,8 +177,14 @@ export function registerCommands(commands: CommandsView, deps: SurfaceDeps): voi
   })
 }
 
-/** 模型侧工具注册（claim 永远只是 claim）。 */
+/** 模型侧工具注册（claim 永远只是 claim）。被动面模式（P1）下协议工具不注册。 */
 export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
+  if (deps.passive !== 'off') {
+    if (deps.passive === 's1+s2') {
+      registerCaptureTool(tools, deps)
+    }
+    return
+  }
   tools.register(defineTool({
     name: 'gungnir_submit_spec',
     description: 'Submit a drafted GoalSpec for one-shot human confirmation. On approval Gungnir commits it and arms the native goal.',
@@ -207,17 +218,22 @@ export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
       if (!approved) {
         return { status: 'rejected', message: 'Human did not confirm; revise the spec if asked again.' }
       }
-      await deps.ensureLedger(agent.id)
-      const { specId } = await deps.engine.commitSpec(agent.id, args['spec'])
-      const spec = args['spec'] as { objective?: string }
-      // 模型可能已通过 tool-goal 自建 goal（headless 路径）：已有 goal 则不重复创建
-      const existing = deps.goals.get(agent)
-      if (existing === undefined) {
-        deps.goals.create(agent, { objective: spec.objective ?? specId, maxGoalRounds: deps.maxGoalRounds })
-      } else {
-        deps.log('info', `native goal already present (${existing.id}); keeping it armed for the committed spec`)
+      try {
+        await deps.ensureLedger(agent.id)
+        const { specId } = await deps.engine.commitSpec(agent.id, args['spec'])
+        const spec = args['spec'] as { objective?: string }
+        // 模型可能已通过 tool-goal 自建 goal（headless 路径）：已有 goal 则不重复创建
+        const existing = deps.goals.get(agent)
+        if (existing === undefined) {
+          deps.goals.create(agent, { objective: spec.objective ?? specId, maxGoalRounds: deps.maxGoalRounds })
+        } else {
+          deps.log('info', `native goal already present (${existing.id}); keeping it armed for the committed spec`)
+        }
+        return { status: 'committed', specId, approval: approvalNote }
+      } catch (error) {
+        // D4：坏 spec 只回紧凑原因（首条 issue + 路径），不再回 5.6k 字符 Zod dump
+        throw compactZodError(error)
       }
-      return { status: 'committed', specId, approval: approvalNote }
     },
   }))
 
@@ -282,6 +298,79 @@ export function registerTools(tools: ToolsView, deps: SurfaceDeps): void {
         evidenceRefs: Array.isArray(args['evidence_refs']) ? args['evidence_refs'].map(String) : [],
       })
       return { recorded: true, note: 'Claim recorded. The verifier issues verdicts from evidence at round end.' }
+    },
+  }))
+}
+
+/** 紧凑 Zod 错误（D4 修复：不再把 5.6k 字符 schema dump 丢给模型重试）。 */
+export function compactZodError(error: unknown): Error {
+  const zod = error as { issues?: Array<{ path?: (string | number)[]; message?: string }> }
+  if (Array.isArray(zod.issues) && zod.issues.length > 0 && zod.issues[0] !== undefined) {
+    const first = zod.issues[0]
+    const path = (first.path ?? []).join('.')
+    return new Error(`spec schema error at ${path || 'root'}: ${first.message ?? 'invalid'}`)
+  }
+  return error instanceof Error ? error : new Error(String(error))
+}
+
+/**
+ * gungnir_capture（S2 一次性轻量捕获，被动面 s1+s2 模式）：
+ * 主 Agent 在 session 开头声明一次预期产物 / 验证命令 / 约束；wrapup 时 harness 侧
+ * 按此校验（L1/L2 确定性，L4 禁用）。捕获不是协议——只此一次，代价 1 个额外往返。
+ */
+function registerCaptureTool(tools: ToolsView, deps: SurfaceDeps): void {
+  tools.register(defineTool({
+    name: 'gungnir_capture',
+    description: 'One-shot capture (call exactly once, early): declare what this task must produce and how to verify it. The harness re-checks these at your completion claim.',
+    parameters: {
+      expectedArtifacts: {
+        type: 'array',
+        description: 'Artifacts the task must produce (workspace-relative paths). Empty array if none.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            path: { type: 'string', required: true },
+            mustExist: { type: 'boolean' },
+            contains: { type: 'string', description: 'Required substring in the file content' },
+          },
+        },
+      },
+      verifyCommands: {
+        type: 'array',
+        description: 'Commands whose exit code proves the work (e.g. ["node --test --test-isolation=none"]). Empty array if none.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            command: { type: 'string', required: true },
+            expectedExitCode: { type: 'number' },
+          },
+        },
+      },
+      constraints: {
+        type: 'object',
+        additionalProperties: false,
+        description: 'Task constraints the harness must check. Omit if none.',
+        properties: {
+          noModifyFiles: { type: 'array', items: { type: 'string' }, description: 'Files that must remain untouched (workspace-relative)' },
+          noNewDeps: { type: 'boolean', description: 'True if the task forbids adding dependencies' },
+        },
+      },
+    },
+    output: {
+      schema: { type: 'object', additionalProperties: true },
+      render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }],
+    },
+    async execute(args, exec) {
+      const agent = exec.agent
+      if (agent === undefined) throw new Error('gungnir_capture requires an agent context')
+      if (deps.passiveRuntime === undefined || deps.passiveRuntime === null) {
+        throw new Error('passive runtime unavailable in this profile')
+      }
+      const capture = S2CaptureSchema.parse(args)
+      await deps.passiveRuntime.capture(agent.id, capture)
+      return { captured: true, note: 'Capture recorded. The harness re-checks artifacts/commands at your completion claim.' }
     },
   }))
 }

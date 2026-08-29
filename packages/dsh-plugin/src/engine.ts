@@ -1,4 +1,5 @@
 import {
+  assertNoL4,
   parseGoalSpec,
   reconcile,
   decisionToPhase,
@@ -74,11 +75,12 @@ export class ReconcileEngine {
     await ledger.append(event)
   }
 
-  /** gungnir_submit_spec 落地：spec 已通过外部确认后调用。 */
+  /** gungnir_submit_spec 落地：spec 已通过外部确认后调用。L4 判据禁用（ADR-0017 D1）。 */
   async commitSpec(agentId: string, rawSpec: unknown): Promise<{ specId: string }> {
     const ledger = this.ledgers.get(agentId)
     if (ledger === undefined) throw new Error(`no gungnir ledger for agent ${agentId}`)
     const spec = parseGoalSpec(rawSpec)
+    assertNoL4(spec)
     await ledger.append({ type: 'gungnir/spec', spec })
     return { specId: spec.specId }
   }

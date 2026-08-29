@@ -11,6 +11,7 @@ import {
 import { AgentLedger, type KvChannel } from './ledger.ts'
 import { ReconcileEngine } from './engine.ts'
 import { buildDirective, buildVerifyDirective, directiveApplicable } from './prestep.ts'
+import { PassivePlaneRuntime } from './passive-plane.ts'
 import { registerCommands, registerTools, type AgentView, type CommandsView, type GoalsView, type SurfaceDeps, type ToolsView, type UserQuestionsView } from './surfaces.ts'
 import { ExitCodeVerifier } from './verifiers/exit-code.ts'
 import { ArtifactVerifier } from './verifiers/artifact.ts'
@@ -41,16 +42,34 @@ export interface Config {
   rubricTimeoutMs?: number
   /** headless/实验模式：gungnir_submit_spec 跳过 ask-user 直接提交（启动者即授权人） */
   autoApproveSpec?: boolean
+  /**
+   * 被动面模式（三阶段 P1，ADR-0017）：
+   * - 'off'：现役协议面（二阶段形态，C3 负对照）；
+   * - 's1'：Passive Proof —— 仅 S1 通用不变量（C2a）；
+   * - 's1+s2'：Passive Proof —— S1 + 一次性轻量捕获（C2b）。
+   * passive != 'off' 时：不注册协议工具、不注入协议指令、wrapup 钩子评估 +
+   * MAF 最小介入。
+   */
+  passive?: 'off' | 's1' | 's1+s2'
 }
 
-export const Config: z<Config> = z.object({
+// schemastery 无 enum 类型：passive 用 string schema（default 'off'），运行时经
+// normalizePassive 归一（Config 类型保持字面量联合）。
+export const Config = z.object({
   workspaceRoot: z.string().default(process.cwd()),
   maxGoalRounds: z.number().default(64),
   rubricProvider: z.string().default('deepseek'),
   rubricModel: z.string().default('deepseek-chat'),
   rubricTimeoutMs: z.number().default(60_000),
   autoApproveSpec: z.boolean().default(false),
-})
+  passive: z.string().default('off'),
+}) as z<Config>
+
+/** passive 配置归一（schemastery 无 enum：string 进，运行时校验 + 归一）。 */
+export function normalizePassive(value: unknown): 'off' | 's1' | 's1+s2' {
+  if (value === 's1' || value === 's1+s2') return value
+  return 'off'
+}
 
 // ---- 窄结构访问辅助（unknown-only，接缝形状见 dsh-interface.md） -------------------
 
@@ -266,6 +285,25 @@ export function apply(ctx: Context, config: Config): void {
     log,
   })
 
+  // ---- 被动面（三阶段 P1，ADR-0017）：passive != 'off' 时现役 ----------------------
+  const passiveMode = normalizePassive(config.passive)
+  const passiveRuntime = new PassivePlaneRuntime({
+    ledgerOf: (agentId) => directory.get(agentId),
+    ensureLedger,
+    injectMessage: (agentId, text) => {
+      const agent = findAgent(ctx, agentId)
+      if (agent === null) {
+        log('warn', `cannot inject MAF: agent ${agentId} not live`)
+        return
+      }
+      agent.inject(makePluginMessage(text))
+    },
+    runCommand: (command, timeoutMs) => runShellCommand(ctx, command, timeoutMs),
+    readFile: (path) => verifyContext.readFile(path),
+    workspaceRoot,
+    log,
+  })
+
   const surfaceDeps: SurfaceDeps = {
     engine,
     ledgers: directory,
@@ -275,6 +313,8 @@ export function apply(ctx: Context, config: Config): void {
     maxGoalRounds: config.maxGoalRounds ?? 64,
     log,
     ensureLedger,
+    passive: passiveMode,
+    passiveRuntime,
   }
 
   registerCommands(service(ctx, 'commands', true) as unknown as CommandsView, surfaceDeps)
@@ -367,6 +407,14 @@ export function apply(ctx: Context, config: Config): void {
       value: result['value'],
     }
     void engine.captureToolResult(agentId, view).catch((error: unknown) => log('error', 'evidence capture failed', error))
+    // 被动面（P1）：S1 不变量观察 + wrapup 评估（update_goal complete/blocked）
+    if (passiveMode !== 'off') {
+      const argumentsDict = asDict(pick(exec, 'arguments')) ?? {}
+      const text = toolResultText(view.content)
+      void passiveRuntime
+        .onToolResult(agentId, { name: view.name, arguments: argumentsDict, text, isError: view.isError, callId: view.callId })
+        .catch((error: unknown) => log('error', 'passive observation failed', error))
+    }
   })
 
   onAny(ctx, 'agent/turn-stopping', (...args: unknown[]) => {
@@ -417,6 +465,8 @@ export function apply(ctx: Context, config: Config): void {
     const next = args[1] as () => Promise<{ kind: string; messages?: unknown[] }>
     const decision = await next()
     if (payload === null || decision.kind !== 'enter' || !Array.isArray(decision.messages)) return decision
+    // 被动面（P1）：零协议注入——Agent 无感知，默认跑原生路径
+    if (passiveMode !== 'off') return decision
     const agent = asDict(payload.agent)
     const agentId = typeof pick(agent, 'id') === 'string' ? (pick(agent, 'id') as string) : null
     if (agentId === null) return decision
@@ -451,4 +501,23 @@ function findAgent(ctx: Context, agentId: string): AgentView | null {
   const agent = get.call(agents, agentId)
   if (asDict(agent) === null) return null
   return agent as AgentView
+}
+
+/** 工具结果文本提取（递归展平 content[] 的 text 块；环境输出，非模型文本）。 */
+function toolResultText(blocks: readonly { type: string; text?: string; content?: unknown }[]): string {
+  const parts: string[] = []
+  const walk = (node: unknown): void => {
+    if (typeof node === 'string') return
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item)
+      return
+    }
+    if (node !== null && typeof node === 'object') {
+      const dict = node as Record<string, unknown>
+      if (typeof dict['text'] === 'string') parts.push(dict['text'] as string)
+      if (dict['content'] !== undefined) walk(dict['content'])
+    }
+  }
+  walk(blocks)
+  return parts.join('\n')
 }
