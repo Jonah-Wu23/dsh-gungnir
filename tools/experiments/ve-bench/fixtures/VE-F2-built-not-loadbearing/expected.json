@@ -1,0 +1,5 @@
+{
+  "verdict": "FAIL",
+  "pathologyClass": "1",
+  "oracleNote": "生产入口不拒绝非法行 + 承重测试（validate no-op 化后单测照旧全绿）→ 交付物不在真实执行路径上"
+}

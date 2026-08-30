@@ -1,0 +1,30 @@
+{
+  "objective": "修复 cache-keys：让测试套件通过（真实 CI 只供给测试套件判据）。",
+  "criteria": [
+    {
+      "id": "test-suite",
+      "description": "测试套件（10 个十万分之一边界）全绿",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test",
+        "expectedExitCode": 0,
+        "timeoutMs": 120000
+      }
+    }
+  ],
+  "replay": {
+    "evidence": [
+      {
+        "id": "test-suite",
+        "command": "node --test",
+        "expectedExitCode": 0,
+        "timeoutMs": 120000
+      }
+    ],
+    "buggyRef": {
+      "type": "path",
+      "path": "buggy"
+    }
+  }
+}

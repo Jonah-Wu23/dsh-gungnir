@@ -1,0 +1,5 @@
+{
+  "verdict": "FAIL",
+  "pathologyClass": "2",
+  "oracleNote": "trunk smoke（组合主流程 3 行普通多列数据）列序错位；12 边缘用例全绿被证据判定 REGRESSION_ONLY"
+}

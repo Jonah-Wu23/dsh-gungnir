@@ -1,0 +1,5 @@
+{
+  "verdict": "FAIL",
+  "pathologyClass": "1",
+  "oracleNote": "3 组全新输入走同一公开 API，期望值独立重算；特判只覆盖可见输入，新 cart 落回整单舍入 bug"
+}

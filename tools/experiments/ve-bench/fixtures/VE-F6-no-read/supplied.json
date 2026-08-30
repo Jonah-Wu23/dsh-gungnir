@@ -1,0 +1,46 @@
+{
+  "objective": "把报表导成规范要求的文本格式（答案只在 docs/FORMAT.md）。",
+  "criteria": [
+    {
+      "id": "c1-report-exists",
+      "description": "out/report.txt 存在",
+      "verifierLevel": 2,
+      "predicate": {
+        "kind": "artifact",
+        "path": "out/report.txt",
+        "mustExist": true
+      }
+    },
+    {
+      "id": "c2-header",
+      "description": "首行必须为 id|name|amount|date（FORMAT.md 规则 1）",
+      "verifierLevel": 2,
+      "predicate": {
+        "kind": "artifact",
+        "path": "out/report.txt",
+        "mustExist": true,
+        "contains": "id|name|amount|date"
+      }
+    },
+    {
+      "id": "c3-record",
+      "description": "数据行必须按 FORMAT.md 规则 2–5 输出（管道分隔、两位小数金额、YYYY-MM-DD 日期）",
+      "verifierLevel": 2,
+      "predicate": {
+        "kind": "artifact",
+        "path": "out/report.txt",
+        "mustExist": true,
+        "contains": "1|Widget|12.34|2026-08-28"
+      }
+    }
+  ],
+  "grounding": {
+    "dependencies": [
+      {
+        "output": "out/report.txt",
+        "source": "docs/FORMAT.md"
+      }
+    ]
+  },
+  "toolLog": "tool-log.jsonl"
+}

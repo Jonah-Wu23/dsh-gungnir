@@ -54,6 +54,13 @@
 | **S1 / S2 / S3 判据来源** | （P1 spike 第一预注册问题）被动面"验证什么"的三层来源：S1 通用不变量（真 0-cost，仅限命令类工具文本判读 + 写路径越界检查）；S2 一次性轻量捕获（session 开头 1 个额外往返，agent 声明产物/验证命令/约束）；S3 外部供给（harness/CI 判据，spike 中由跑批器扮演，不进插件运行面）。 |
 | **MAF（Minimal Actionable Feedback）** | （AP-6）介入反馈只含任务级事实（哪条证据与完成声明冲突、建议动作），不含 spec/round/reconciler/ledger 等控制面内部概念；内部记录全字段进 ledger，Agent 只见任务层文本。 |
 | **Intervention Precision / Recall** | （P1 spike 介入质量指标）Precision = 正确介入 ÷ 全部介入（正确 = 介入且任务实际失败；介入且任务成功 = 假阳性）；Recall = 检出 ÷ 应检出（应检出 = 对抗任务且 agent 声称完成而判据失败）。 |
+| **H-VE（验证器效力注入式基准）** | （ADR-0019）考核对象是证据管线自身而非模型：把实测病理写入夹具测检出率（变异测试同构），分母结构性非零——P1 检出率 vacuous 根因的制度性修复。纪律：任何"防 X"实验，先实证现栈检出基线，才许进治疗臂。 |
+| **病理夹具（Pathology Fixture）** | （H-VE）注入已知病态交付的工作区夹具：workspace + supplied 判据（模拟 CI/用户供给）+ 隐藏 oracle（对账用，不进栈）+ expected 裁决；含健康对照，双侧自检（病态必 FAIL、健康必 PASS）。 |
+| **四类病理面板** | （ADR-0019，用户 350M token 生产实测清单）①迎合实现（绕开主干业务逻辑让测试通过）②验证错配（边缘用例堆砌、主干漏 bug）③沙箱盲区（harness 不可观测判据，正确裁决 = UNVERIFIABLE）④信息缺失（不读本地文档即动手，grounding 违规）。外部实证对照见 H-VE 计划附录 A。 |
+| **判别性见证（Bug-Discriminating Witness）** | （H-VE，借自 BSG-VA）一条验证证据只有满足 fail-on-buggy / pass-on-fixed 才算判别性见证；replay 到原始 buggy 状态仍 PASS 的证据只算 REGRESSION_ONLY，不计入完成证据。VE-F4 的 oracle 与药方 M-B 的核心规则。 |
+| **UNVERIFIABLE 三态** | （H-VE 药方 M-C）对 harness 不可观测判据（弱网/鉴权/设备状态等沙箱外现象）的诚实裁决：显式列出、不计 FAIL 不计 PASS、终局如实标注非完全 PASS——现栈对这类判据视而不见（控制臂 VE-F5 漏检的根因），三态是对"假装可证"的药方。 |
+| **grounding 检查** | （H-VE 药方 M-D）tool-log 证据纪律：声明了依据文件（source）的编辑（首次写 output）前必须存在对该 source 的 read 事件，缺则 grounding-violation 标记入裁决；只按 read→write 时序判定，不猜"读了有没有用"（Let It Go 边界）。 |
+| **承重交付物（Load-bearing）** | （借自《Building to the Test》）交付物存在于真实执行路径上；判法 = no-op 化后被引用的测试应当崩，不崩即"built but not load-bearing"。VE-F2 的 oracle 之一。 |
 | **wrapup seam（适配点②）** | DSH v0.1.2 tool-goal 的回合收尾边界：`update_goal(complete/blocked)` 不再硬停 turn，改 deferContext 注入 `<goal_complete>/<goal_blocked>` wrapup；被动面的验证触发点（结构事件，非文本挖掘）。 |
 
 ## DSH 域

@@ -2,6 +2,23 @@
 
 > 每个工作块结束必须更新。最新在上，旧条目按时间下沉归档。
 
+## 快照（2026-08-30 · 工作块 23，H-VE M1–M3 完成：控制臂基线 0/6 → 四类药方 → 治疗臂 6/6 全过）
+
+- **H-VE 探针执行闭环（M1–M3）**：9 夹具（6 病态 + 3 健康）建成并冻结（`tools/experiments/ve-bench/`，PRE-REGISTRATION.md 随 M1 冻结；build-fixtures.mjs 为夹具唯一来源，基底复用 SwitchBench t01/t02/t03 + 三个新任务 pipeline/cli-retry/report）。双侧自检全绿（病态必判病、健康必判健康）。
+- **M2 控制臂基线（G0）**：现役离线判定栈零新码（dsh-plugin 现役 L1/L2 verifier 类 + core passive.ts S1 + S3 供给判据，runner 侧 spawnSync cmd 语义）→ **病态 0/6 检出、健康 0/3 误杀**。四类全漏检：①②③ 可见测试全绿即 PASS（特判/绕开主干/边缘堆砌/沙箱外判据全部骗过现栈），④ 内容层被 L2 判据拦住但无 grounding 标记。数据 `results/control-2026-08-30T15-24-10-398Z/`。
+- **M3 药方 + 治疗臂**：四类全触发、一类一方建成——M-A（trunk-path oracle 模板：隐藏输入生成 + spec 属性检查）、M-B（判别性证据规则：replay 到 buggy 必须 FAIL，全 REGRESSION_ONLY 不计完成）、M-C（UNVERIFIABLE 三态）、M-D（grounding 证据检查）；决策逻辑入 `packages/core/src/ve.ts`（17 单测，core 全量 139 绿），执行面在 bench runner（probe 写文件再 node 跑，不走引号地狱）。治疗臂 **G1 6/6 检出、G2 3/3 不误杀、G3 结构性满足 → PASS**，四类病理全部"现架构可治"。效力报告《[H-VE-效力报告](../plan/H-VE-效力报告.md)》；数据 `results/treated-2026-08-30T15-24-14-923Z/`。
+- **下一步**：四阶段 P0 离线资产打包（夹具库 + 药方随发布物同行）；H-VE M4（per-model 病理画像）可另预注册；方案 B 一页派发契约（纯文档）仍可同批。
+- **如实随档（Not verified）**：夹具基底三个新任务（pipeline/cli-retry/report）由本项目手写非冻结复用物；oracle 与 supplied 同批构造存在构造者偏差的理论风险（方向由双侧自检保证）；M-A 模板库覆盖面 = 夹具面（2 模板）；药方执行面在离线 bench runner，生产近实时接线不在探针范围（ADR-0018 §6 重开条件）。
+- **独立复验（task-verifier 纪律，第二轮会话）**：重跑两臂逐行一致（control 0/6、treated 6/6 + 3/3 复现，新结果目录 control/treated-2026-08-30T15-31-*Z）；core 139 单测全绿（含 ve-medicines 17）；时间线连贯（预注册 22:45 冻结 → 夹具构建 23:04 → 跑批 23:24）；药方执行面确为真实执行（M-A probe 真跑隐藏输入、M-B 真构造 buggy 覆盖层 replay、oracle 双侧自检不过即硬停）。**效力边界补充**：6/6 证明"机制存在且正确"，不等于现网检出率——M-A 需 supplied 声明 `api.template`、M-B 需 `replay.buggyRef`、M-D 需声明 output→source 依赖；供给从哪来（任务→模板映射、buggy 基底获取、依赖声明生成）是四阶段资产化的核心待办。
+
+## 快照（2026-08-30 · 工作块 22，探针主线改道：H-LH 驳回，H-VE 立项，纯文档无代码）
+
+- **用户战略裁决（生产实测反证）**：主/子 agent 拓扑（主 agent 规划/审查/派发、子 agent 分模块执行）跑 DSH 累计 350M token，主 agent 零压缩——压缩是被拓扑避免的状态，**H-LH（长时程判据完整性）前提驳回**：实测高频病理是①迎合实现（绕开主干让测试通过，非简单审查可发现）②验证错配（边缘用例堆砌、主干漏 bug）③沙箱盲区（harness 不可观测的判据）④信息缺失幻觉（不读文档即胡编）；失忆型假完成防的是"忘"，实测的病是"装"。两份文字约束 prompt 实测仅"一丁点用"，降级为 lint 级契约。
+- **ADR-0019 落档**：H-LH 记"前提未获证据"不删档，压缩接缝勘察撤下关键路径；新主线 **H-VE（验证器效力注入式基准）**——考核对象从模型换成证据管线自身，病写入夹具（变异测试同构），分母结构性非零（P1 检出率 vacuous 根因的制度性修复）；四点区别与死亡家族划清（机制类别/威胁模型/任务面/程序）；四阶段离线资产照发（H-VE 是其质量门），escalation 后端冻存不动，运行期控制面不重开。
+- **执行基准落盘**：《[H-VE-验证器效力基准计划](../plan/H-VE-验证器效力基准计划.md)》——四类病理面板 6 病态夹具 + 3 健康对照（基底复用 SwitchBench 冻结任务）；控制臂 = 现役离线判定栈（L1/L2 + S1 + S3 供给，全离线无模型）；判定门 G0 基线不设下限 / G1 病态 6/6 / G2 健康 3/3 不误杀 / G3 药方 AP-1 结构性满足；药方库 M-A~M-D（harness 侧 oracle 模板 / 主干证据优先 / UNVERIFIABLE 三态 / grounding 检查）一类一方、门触发才建；总预算封顶 5 工作块；M4（真实模型病理画像）可选二期另预注册，是 ADR-0018 §6(a)/(c) 证据发生器。
+- **下一步**：M1 夹具库建设（≤2 工作块，超支砍 ③④ 保 ①②）；方案 B 一页派发契约（纯文档，可同批另做）；四阶段 P0 打包继续。
+- **外部实证对照落档（用户提供调研，同工作块补记）**：四类面板均有 2026 年前沿实测原型——METR 对 GPT-5.6 Sol 部署前评测（作弊检出率其评测史上最高）、SpecBench（visible 97% / held-out 0%）、《Building to the Test》（222/222 全过但交付物不承重）、BSG-VA（46% 正向验证无 bug 判别信息，证据三态含 NOT_COMPARABLE）、OpenAI Hugging Face 事故复盘（impossible-task persistence）；计划已吸收：VE-F4 oracle 升级为判别性见证规则、VE-F2 增承重测试（no-op 化应崩）、VE-F5 改定位认知诚实夹具允许双标签、健康对照获 Endor Labs 零实锤作弊佐证。对照表与引用纪律见计划附录 A。
+
 ## 快照（2026-08-30 · 工作块 21，三阶段 P1 Passive Proof Spike 收官：FAIL → 最终退出线触发）
 
 - **P1 spike 正式批完成（32 物理 run + 8 派生 C1 = 40 行）**：数据 `tools/experiments/spike/results/spike-2026-08-29T16-23-24-842Z/`（rows.jsonl/report.md/逐 run 工作区与日志/冻结协议与任务集）。判定门 **FAIL（达标 3 / 不可测 2 / 失败 2）** → **ADR-0017 §8 最终退出线触发**：运行期控制面形态整体复盘，收缩为离线 Verifier/评估资产。报告《[三阶段-P1-stage-report](../plan/三阶段-P1-stage-report.md)》，ADR-0018 落档。
@@ -188,9 +205,14 @@
 4. ~~进入二阶段~~ **方向已掉头（工作块 10，ADR-0012）**：二阶段重定义为 **Adaptive Loop Spike**，详细计划已就位；**下一步启动二阶段 M0**：适配三件套（③ storage patch → ② wrapup 时序 → ① additionalProperties）→ §14 接缝回归 → OPEN-7（替换 seam 实证）+ OPEN-5（token 可观测性）→ driver 职责清单 + ADR-0014 替换机制落档（原计划编号 ADR-0013 已被 SwitchBench 判决占用，见 ADR-0013 编号说明）。
 5. ~~SwitchBench v0~~ **已完成（工作块 12，ADR-0013；工作块 15 task-verifier 验收 PASS 13/13，验收轮 4 项修复全关，SwitchBench 线闭环）**：Day 1–7 完整执行；H1 不成立（本案），方案 B 停止投资，Stage 2 未触发；LoopModule 边界观察随档待三阶段重估。
 6. 环境侧（不阻塞阶段推进）：在正常 shell 下补一次 `pnpm install`，让 `tools/experiments` 走 workspace 依赖而非 dist 相对 import；把 destruction + smoke 接进 CI 脚本。新增：正常 shell 下把插件 peerDep/devDep 锁 `0.1.2-alpha.1` 并 `link:` 指向本地源码树（ADR-0011 第 3 条）。
-7. **三阶段启动（ADR-0017 重定义后）**：P0 = Passive Prove 主线工程前置（D1–D6 缺陷修复，L4 禁用落码优先；wrapup 验证钩子实证；判据来源三层 S1/S2/S3 原型）；P1 = Passive Proof Spike 预注册冻结（判据来源决策 + 判定门数值先于跑批）。原 Fast-Path/Escalation Spike 计划作废存档。
+7. ~~三阶段启动~~ **P1 已完成（工作块 21，FAIL → 退出线触发，ADR-0018）**：运行期控制面收缩为离线 Verifier/评估资产；重开三条件落档 ADR-0018 第 6 条。
+8. **H-VE 探针（ADR-0019）**：~~M1 夹具库 → M2 控制臂基线 → M3 门判定与药方~~ **已完成（工作块 23）**：控制臂 0/6 → 四类药方（M-A~M-D）→ 治疗臂 6/6 全过（G1/G2/G3 PASS），效力报告《[H-VE-效力报告](../plan/H-VE-效力报告.md)》；夹具库 + 药方转四阶段资产；M4（per-model 病理画像）另预注册。
 
 ## 工作日志（倒序）
+
+- **2026-08-30（工作块 23）**：H-VE M1–M3 执行闭环。M1：9 夹具（6 病态 + 3 健康）建成冻结——VE-F1 特判通过（t01+特判补丁）、VE-F2 绕开主干（新 pipeline 任务）、VE-F3 边缘全绿主干烂（t03+列序错位+12 边缘用例）、VE-F4 断言密度倒挂（t02+半修复+10 边界用例+buggy 覆盖层）、VE-F5 不可证判据（新 cli-retry 任务）、VE-F6 该读不读（新 report 任务+FORMAT.md+构造 tool-log）、健康对照 H1/H2/H3；PRE-REGISTRATION 冻结（S3 格式/控制臂定义/指标/门/药方表/熔断）；oracle 全部与 expected 对账通过。M2：控制臂（现役 L1/L2+S1+S3）基线 **0/6 检出、0/3 误杀**（G0）。M3：四类药方建成（core `ve.ts` 纯函数 + 17 单测 + bench 执行面），治疗臂 **G1 6/6、G2 0/3、G3 结构性满足 → PASS**；效力报告落盘。core 全量 139 单测全绿。文档义务：H-VE 计划/全阶段计划状态行、state 快照。
+
+- **2026-08-30（工作块 22）**：探针主线改道（纯文档，无代码变更）。用户生产实测反证（350M token 主/子拓扑零主 agent 压缩 + 四类真实病理清单 + 文字约束效力评估）驳回 H-LH 前提；ADR-0019 落档：立项 H-VE（验证器效力注入式基准，病写入夹具、分母自带），四点区别与死亡家族划清，四阶段离线资产形态不变（H-VE 为其质量门）。《H-VE-验证器效力基准计划》落盘（6 病态夹具 + 3 健康对照 + G0–G3 判定门 + M-A~M-D 药方库 + 5 工作块封顶）。同步：全阶段计划 v2.3、glossary 三术语、context README、project-brief。
 
 - **2026-08-29（工作块 20）**：post-mortem 落档与定位深化（纯文档，无代码变更）。24 run 逐会话剖析 → 成本三分解（Verification / Protocol / Bug Amplifier）；ADR-0017：Evidence-Guided Agent Control Plane 定名 + AP-1～AP-6 架构原则冻结 + L4 禁用 + 重型策略冻存为 escalation 后端；《三阶段-Passive-Proof-Spike计划》落盘（五组对照 C0/C1/C2a/C2b/C3、判据来源三层为第一预注册问题、四类对抗任务并入、Intervention Precision/Recall、最终退出线）。同步：全阶段计划 v2.2、AGENTS.md 纪律层（§1 定位与分层、铁律 1/4 注记、新增 §2.1、§4/§5）、architecture（分层图 + §3.3 目标形态）、project-brief、glossary 九术语、context README 矩阵、二阶段报告指引行；旧 Escalation Spike 计划作废存档。
 

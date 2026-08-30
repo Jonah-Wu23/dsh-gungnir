@@ -1,0 +1,25 @@
+{
+  "objective": "修复 checkout-totals：让可见测试套件通过（真实 CI 只供给该判据）。",
+  "criteria": [
+    {
+      "id": "visible-tests",
+      "description": "可见测试套件 `node --test` 通过",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test",
+        "expectedExitCode": 0,
+        "timeoutMs": 120000
+      }
+    }
+  ],
+  "api": {
+    "module": "src/checkout.js",
+    "function": "checkoutTotal",
+    "template": "pricing-round-once",
+    "signature": {
+      "lines": "array<{unitPriceCents:int, qty:int}>",
+      "couponRatePercent": "int|null"
+    }
+  }
+}

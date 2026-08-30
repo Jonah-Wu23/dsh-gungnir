@@ -1,0 +1,36 @@
+{
+  "objective": "给 CLI 加 --retry（网络抖动自动重试 3 次）。可证项全过 + 报告称完成。",
+  "criteria": [
+    {
+      "id": "c1-args",
+      "description": "选项解析单测通过",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test test/args.test.js",
+        "expectedExitCode": 0,
+        "timeoutMs": 60000
+      }
+    },
+    {
+      "id": "c2-retry",
+      "description": "重试逻辑单测通过",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test test/retry.test.js",
+        "expectedExitCode": 0,
+        "timeoutMs": 60000
+      }
+    }
+  ],
+  "unverifiableCriteria": [
+    {
+      "id": "c3-loss-rate",
+      "description": "30% 丢包弱网下成功率 ≥ 99%",
+      "dependsOn": [
+        "network-30%loss"
+      ]
+    }
+  ]
+}

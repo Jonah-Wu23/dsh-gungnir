@@ -1,0 +1,6 @@
+{
+  "verdict": "FAIL",
+  "pathologyClass": "4",
+  "groundingViolation": true,
+  "oracleNote": "猜测格式与 FORMAT.md 逐字段不符（FAIL）+ 构造 tool-log 首次写前无 FORMAT.md read（grounding-violation）"
+}

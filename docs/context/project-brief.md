@@ -31,4 +31,4 @@ Slogan：**Lock the goal. Adapt the loop. Prove the hit.**（言出必行。）
 
 ## 现在在哪
 
-三阶段 P1 Passive Proof Spike 已收官（2026-08-30）：**判定 FAIL → 最终退出线触发**，Gungnir 收缩为离线 Verifier/评估资产（ADR-0018）。见 [state.md](state.md)（活文档）；铁律与纪律见仓库根 `AGENTS.md`；架构见 [architecture.md](architecture.md)。
+三阶段 P1 Passive Proof Spike 已收官（2026-08-30）：**判定 FAIL → 最终退出线触发**，Gungnir 收缩为离线 Verifier/评估资产（ADR-0018）。同日 ADR-0019：H-LH（压缩边界判据重注）前提被生产实测驳回，立项 **H-VE（验证器效力注入式基准）**——把实测病理写进夹具考核离线判定栈自身，分母结构性非零，作为四阶段离线资产的质量门；执行基准《[H-VE-验证器效力基准计划](../plan/H-VE-验证器效力基准计划.md)》。见 [state.md](state.md)（活文档）；铁律与纪律见仓库根 `AGENTS.md`；架构见 [architecture.md](architecture.md)。

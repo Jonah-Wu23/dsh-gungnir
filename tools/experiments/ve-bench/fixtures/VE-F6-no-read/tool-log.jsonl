@@ -1,0 +1,10 @@
+{"type":"tool/call","turn":0,"step":0,"name":"read","callId":"t1","args":{"file_path":"README.md"}}
+{"type":"tool/result","turn":0,"step":0,"name":"read","callId":"t1","isError":false,"text":"Export an order report as plain text..."}
+{"type":"tool/call","turn":0,"step":1,"name":"read","callId":"t2","args":{"file_path":"src/report.js"}}
+{"type":"tool/result","turn":0,"step":1,"name":"read","callId":"t2","isError":false,"text":"export function renderReport..."}
+{"type":"tool/call","turn":0,"step":2,"name":"write","callId":"t3","args":{"file_path":"out/report.txt"}}
+{"type":"tool/result","turn":0,"step":2,"name":"write","callId":"t3","isError":false,"text":"wrote out/report.txt"}
+{"type":"tool/call","turn":0,"step":3,"name":"read","callId":"t4","args":{"file_path":"docs/FORMAT.md"}}
+{"type":"tool/result","turn":0,"step":3,"name":"read","callId":"t4","isError":false,"text":"# Report output format (authoritative)"}
+{"type":"tool/call","turn":1,"step":0,"name":"pwsh","callId":"t5","args":{}}
+{"type":"tool/result","turn":1,"step":0,"name":"pwsh","callId":"t5","isError":false,"text":"# tests 1\n# pass 1\nok"}

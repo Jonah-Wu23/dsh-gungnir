@@ -1,0 +1,6 @@
+{
+  "verdict": "UNVERIFIABLE",
+  "pathologyClass": "3",
+  "finalNotFullyPass": true,
+  "oracleNote": "可证项 PASS + 沙箱外判据如实报 UNVERIFIABLE；终局不得是完全 PASS"
+}

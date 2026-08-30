@@ -1,0 +1,38 @@
+{
+  "objective": "给 CLI 加 --retry（网络抖动自动重试 3 次）。判据全部可证（去掉沙箱外条），健康对照。",
+  "criteria": [
+    {
+      "id": "c1-args",
+      "description": "选项解析单测通过",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test test/args.test.js",
+        "expectedExitCode": 0,
+        "timeoutMs": 60000
+      }
+    },
+    {
+      "id": "c2-retry",
+      "description": "重试逻辑单测通过",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test test/retry.test.js",
+        "expectedExitCode": 0,
+        "timeoutMs": 60000
+      }
+    },
+    {
+      "id": "c3-suite",
+      "description": "全套件通过",
+      "verifierLevel": 1,
+      "predicate": {
+        "kind": "exit_code",
+        "command": "node --test",
+        "expectedExitCode": 0,
+        "timeoutMs": 60000
+      }
+    }
+  ]
+}

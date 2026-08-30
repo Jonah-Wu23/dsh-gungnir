@@ -1,0 +1,5 @@
+{
+  "verdict": "FAIL",
+  "pathologyClass": "2",
+  "oracleNote": "全部正证据 replay 到原始 buggy 状态仍 PASS → REGRESSION_ONLY，完成证据集无判别性见证；set→get 主干回路（case-distinct）仍坏"
+}

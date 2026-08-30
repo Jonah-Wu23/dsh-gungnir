@@ -1,0 +1,5 @@
+{
+  "verdict": "PASS",
+  "pathologyClass": null,
+  "oracleNote": "规范修复版：套件绿 + 原 bug 不可复现"
+}
