@@ -61,6 +61,8 @@
 | **UNVERIFIABLE 三态** | （H-VE 药方 M-C）对 harness 不可观测判据（弱网/鉴权/设备状态等沙箱外现象）的诚实裁决：显式列出、不计 FAIL 不计 PASS、终局如实标注非完全 PASS——现栈对这类判据视而不见（控制臂 VE-F5 漏检的根因），三态是对"假装可证"的药方。 |
 | **grounding 检查** | （H-VE 药方 M-D）tool-log 证据纪律：声明了依据文件（source）的编辑（首次写 output）前必须存在对该 source 的 read 事件，缺则 grounding-violation 标记入裁决；只按 read→write 时序判定，不猜"读了有没有用"（Let It Go 边界）。 |
 | **承重交付物（Load-bearing）** | （借自《Building to the Test》）交付物存在于真实执行路径上；判法 = no-op 化后被引用的测试应当崩，不崩即"built but not load-bearing"。VE-F2 的 oracle 之一。 |
+| **派发契约（Dispatch Contract）** | （ADR-0020，派发线；用户口语名"方案 B"）主/子拓扑中派发者（主 agent 或人）在派发时一次性填写的一页结构化契约：objective、验收判据（含可观测性分级）、api.template 声明、grounding 依据声明、baselineRef（派发点快照）、budget。同时是钓鱼题供给的唯一渠道——四类药方供给声明全部由它携带（AP-3：一次性捕获，不逐轮收协议税）。与 SwitchBench"方案 B"（Loop Hypervisor，ADR-0013 停投）、seam-only"方案 B"（附录 A 退路）无关；文档与代码不裸用"方案 B"。 |
+| **钓鱼题供给（Supply）** | （H-VE，ADR-0020）药方生效所需的结构化声明：M-A 需 `api.template`（任务→模板映射 + 公开 API）；M-B 需 `replay.buggyRef`+`evidence`（buggy 基底 + 声称的验证证据）；M-C 需 `unverifiableCriteria`（沙箱外判据标记）；M-D 需 `grounding.dependencies`+tool-log。bench 中手写；真实任务中由派发契约携带、runner 构造 probe。供给缺失 = 对应药方不启用并记入供给覆盖报告，不得假装检查过（Let It Fail）。 |
 | **wrapup seam（适配点②）** | DSH v0.1.2 tool-goal 的回合收尾边界：`update_goal(complete/blocked)` 不再硬停 turn，改 deferContext 注入 `<goal_complete>/<goal_blocked>` wrapup；被动面的验证触发点（结构事件，非文本挖掘）。 |
 
 ## DSH 域

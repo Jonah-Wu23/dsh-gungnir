@@ -8,7 +8,7 @@
 |---|---|---|---|
 | **L0 常读** | 本 README、[project-brief](project-brief.md)、[state](state.md) | 每次会话开始 | 三件合计 ≤ 250 行 |
 | **L1 入门** | [architecture](architecture.md)、[glossary](glossary.md)、[decisions](decisions.md) | 新协作者一次性读完；老手只在相关时查 | 每件 ≤ 200 行 |
-| **L2 按需** | [dsh-interface](dsh-interface.md)、`docs/plan/` 阶段详细计划（当前：一阶段〔已完成〕、二阶段〔已完成，熔断〕、三阶段〔P1 Passive Proof Spike 已完成：FAIL→退出线，见 stage report；P0 passive 化主线按离线形态推进〕、H-VE 验证器效力基准〔M1–M3 已完成：控制臂 0/6 → 四类药方 → 治疗臂 6/6，见效力报告〕） | 做对应工作时读 | 事实手册，只增不删（过期条目标记而非删除） |
+| **L2 按需** | [dsh-interface](dsh-interface.md)、`docs/plan/` 阶段详细计划（当前：一阶段〔已完成〕、二阶段〔已完成，熔断〕、三阶段〔P1 Passive Proof Spike 已完成：FAIL→退出线，见 stage report；P0 passive 化主线按离线形态推进〕、H-VE 验证器效力基准〔M1–M3 已完成：控制臂 0/6 → 四类药方 → 治疗臂 6/6，见效力报告〕、派发契约与钓鱼题供给线〔已规划待执行，ADR-0020〕） | 做对应工作时读 | 事实手册，只增不删（过期条目标记而非删除） |
 | **L3 深层** | `docs/plan/全阶段实施计划.md`、`docs/idea/*`（思想源文档，只读）、[dsh-interface-detail](dsh-interface-detail.md)（接缝勘察证据附录，只存档不更新）、各包 README、DSH 上游文档 | 仅当 L0–L2 无法回答"为什么"时 | 无限制 |
 
 披露规则：
