@@ -21,6 +21,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src tests"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "zod": "^3.25.76"
   }

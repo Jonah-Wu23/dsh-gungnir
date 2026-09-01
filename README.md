@@ -114,28 +114,17 @@ Gungnir 建立了标准化的评测基准，并在 54 组真实环境运行中�
 
 ## 快速上手
 
-### 环境要求
+**兼容性**：插件基于 dsh v0.1.2-alpha.1 开发，不兼容 dsh v0.1.1-rc2。
 
-- Node.js >= 20.0.0
-- pnpm >= 9.0.0
-- DeepSeek Harness (DSH) 环境
+### 安装
 
-### 安装与构建
-
-在项目目录中执行安装与构建命令：
+在 DeepSeek Harness 工作区中执行安装命令：
 
 ```powershell
-pnpm install
-pnpm -r build
+pnpm add dsh-gungnir
 ```
 
-运行测试：
-
-```powershell
-pnpm -r test
-```
-
-### 作为 DSH 插件加载
+### 配置插件
 
 在 DeepSeek Harness 配置文件中注册 Gungnir 插件：
 
