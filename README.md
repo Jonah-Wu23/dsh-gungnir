@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://www.npmjs.com/package/dsh-gungnir"><img src="https://img.shields.io/npm/v/dsh-gungnir?color=cb3837&logo=npm" alt="npm package" /></a>
   <a href="https://github.com/Jonah-Wu23/dsh-gungnir/releases"><img src="https://img.shields.io/badge/version-v0.1.0-blue" alt="Version 0.1.0" /></a>
   <img src="https://img.shields.io/badge/platform-DSH%20%7C%20Node.js%20ESM-2F5D50" alt="Platform" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-5B6C8F" alt="Apache License 2.0" /></a>
