@@ -1,12 +1,12 @@
 import { z } from 'zod'
-import { sha256OfString } from '@gungnir/core'
+import { sha256OfString } from 'gungnir-core'
 import {
   expectPredicate,
   type SuccessCriterion,
   type Verifier,
   type VerifierResult,
   type VerifyContext,
-} from '@gungnir/core'
+} from 'gungnir-core'
 
 /**
  * L4 LlmRubric verifier：按 rubric 语义评分。低可信通道——

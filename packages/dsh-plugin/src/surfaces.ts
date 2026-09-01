@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { parse as parseYaml } from 'yaml'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import { S2CaptureSchema, type GungnirState } from '@gungnir/core'
+import { S2CaptureSchema, type GungnirState } from 'gungnir-core'
 import type { ReconcileEngine } from './engine.ts'
 import type { LedgerDirectory } from './engine.ts'
 import type { PassivePlaneRuntime } from './passive-plane.ts'

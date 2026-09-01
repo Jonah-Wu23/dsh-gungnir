@@ -1,4 +1,4 @@
-import { satisfiedIdsOf, type GungnirState } from '@gungnir/core'
+import { satisfiedIdsOf, type GungnirState } from 'gungnir-core'
 
 /**
  * pre-step 指令注入（ADR-0007）：goal round 的第一个 step 之前，把“本轮唯一任务 +

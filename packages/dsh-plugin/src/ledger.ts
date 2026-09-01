@@ -3,7 +3,7 @@ import {
   foldEvents,
   type GungnirEvent,
   type GungnirState,
-} from '@gungnir/core'
+} from 'gungnir-core'
 
 /**
  * Gungnir ledger（ADR-0006）：append-only 事件账本，载体是 ctx.storage 的 KV unit

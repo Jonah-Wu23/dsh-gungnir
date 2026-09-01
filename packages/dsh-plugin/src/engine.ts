@@ -8,7 +8,7 @@ import {
   type VerdictEvent,
   type Verifier,
   type VerifyContext,
-} from '@gungnir/core'
+} from 'gungnir-core'
 import type { AgentLedger } from './ledger.ts'
 import { evidenceFromToolResult, type NewEvidenceInput, type ToolResultView } from './evidence.ts'
 

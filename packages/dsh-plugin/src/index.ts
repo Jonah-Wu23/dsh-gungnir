@@ -10,7 +10,7 @@ import {
   parseDispatchContract,
   contractToSupplied,
   type SuppliedProjection,
-} from '@gungnir/core'
+} from 'gungnir-core'
 import { readFileSync, existsSync, rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { AgentLedger, type KvChannel } from './ledger.ts'

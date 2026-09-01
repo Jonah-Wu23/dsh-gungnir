@@ -1,5 +1,5 @@
-import { sha256Of } from '@gungnir/core'
-import type { EvidenceEvent } from '@gungnir/core'
+import { sha256Of } from 'gungnir-core'
+import type { EvidenceEvent } from 'gungnir-core'
 
 /**
  * Evidence 捕获（Claim ≠ Evidence 铁律的采集端）：

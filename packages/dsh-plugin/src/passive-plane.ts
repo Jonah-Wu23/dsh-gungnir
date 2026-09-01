@@ -22,7 +22,7 @@ import {
   type S2VerifyContext,
   type SuppliedProjection,
   type ToolEventView,
-} from '@gungnir/core'
+} from 'gungnir-core'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import type { AgentLedger } from './ledger.ts'

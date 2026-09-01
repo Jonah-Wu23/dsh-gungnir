@@ -1,11 +1,11 @@
-import { sha256Of } from '@gungnir/core'
+import { sha256Of } from 'gungnir-core'
 import {
   expectPredicate,
   type SuccessCriterion,
   type Verifier,
   type VerifierResult,
   type VerifyContext,
-} from '@gungnir/core'
+} from 'gungnir-core'
 
 /**
  * L1 ExitCode verifier：跑 deterministic 命令，裁决 exit code（+可选 stdout 包含）。

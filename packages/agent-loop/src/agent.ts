@@ -43,7 +43,7 @@ import {
   type GungnirAdaptiveService,
   type LoopMode,
   type LoopRouterInputs,
-} from '@gungnir/core'
+} from 'gungnir-core'
 import { RuntimeContextProjection } from './runtime-context.ts'
 import { executeToolCalls } from './tool-calls.ts'
 
@@ -66,7 +66,7 @@ declare module '@deepseek-ai/cordis' {
  * Loop Strategy（认知策略；WAIT 是运行状态，不算策略）。类型权威在
  * @gungnir/core（router.ts / schema/events.ts）。
  */
-export type { LoopMode } from '@gungnir/core'
+export type { LoopMode } from 'gungnir-core'
 
 /** 每turn模式切换预算（hysteresis 最小件，M1 冻结值，ADR-0015）。 */
 export const MAX_MODE_TRANSITIONS_PER_TURN = 4

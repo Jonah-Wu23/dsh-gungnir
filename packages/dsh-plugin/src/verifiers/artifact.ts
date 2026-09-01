@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises'
 import { isAbsolute, resolve, sep } from 'node:path'
-import { sha256OfString } from '@gungnir/core'
+import { sha256OfString } from 'gungnir-core'
 import {
   expectPredicate,
   type SuccessCriterion,
   type Verifier,
   type VerifierResult,
   type VerifyContext,
-} from '@gungnir/core'
+} from 'gungnir-core'
 
 /**
  * L2 Artifact verifier：只读检查 workspace 内文件——存在 / 内容包含 / sha256 / JSON 谓词。

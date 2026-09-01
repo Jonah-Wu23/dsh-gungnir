@@ -20,7 +20,7 @@ import {
   generateProbeScenario,
   type CommandObservation,
   type ProbeTemplate,
-} from '@gungnir/core'
+} from 'gungnir-core'
 
 export interface ProbeRunnerDeps {
   /** ctx.shell 执行器（与模型同沙箱；命令构造纪律：探针走单进程 node，沙箱兼容） */
