@@ -38,7 +38,7 @@ importers:
 
   packages/agent-loop:
     dependencies:
-      '@gungnir/core':
+      gungnir-core:
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -81,7 +81,7 @@ importers:
 
   packages/dsh-plugin:
     dependencies:
-      '@gungnir/core':
+      gungnir-core:
         specifier: workspace:*
         version: link:../core
       yaml:
@@ -130,12 +130,12 @@ importers:
 
   tools/destruction:
     dependencies:
-      '@gungnir/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       dsh-gungnir:
         specifier: workspace:*
         version: link:../../packages/dsh-plugin
+      gungnir-core:
+        specifier: workspace:*
+        version: link:../../packages/core
     devDependencies:
       '@types/node':
         specifier: ^24.0.0
@@ -148,12 +148,12 @@ importers:
 
   tools/experiments:
     dependencies:
-      '@gungnir/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       dsh-gungnir:
         specifier: workspace:*
         version: link:../../packages/dsh-plugin
+      gungnir-core:
+        specifier: workspace:*
+        version: link:../../packages/core
 
 packages:
 

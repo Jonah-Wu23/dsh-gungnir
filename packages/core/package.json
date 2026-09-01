@@ -1,5 +1,5 @@
 {
-  "name": "@gungnir/core",
+  "name": "gungnir-core",
   "version": "0.1.0",
   "description": "Pure domain functions for Gungnir: GoalSpec/event/verdict schemas, fold (strict replay), reconciler decision table, verifier contract. Zero DSH dependency.",
   "type": "module",

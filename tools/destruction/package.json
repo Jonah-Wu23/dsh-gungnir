@@ -11,7 +11,7 @@
     "lint": "eslint src tests"
   },
   "dependencies": {
-    "@gungnir/core": "workspace:*",
+    "gungnir-core": "workspace:*",
     "dsh-gungnir": "workspace:*"
   },
   "devDependencies": {

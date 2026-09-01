@@ -11,7 +11,7 @@
     "test": "echo \"the 20-task run IS the test: pnpm run\" && exit 0"
   },
   "dependencies": {
-    "@gungnir/core": "workspace:*",
+    "gungnir-core": "workspace:*",
     "dsh-gungnir": "workspace:*"
   }
 }

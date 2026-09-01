@@ -28,7 +28,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@gungnir/core": "workspace:*",
+    "gungnir-core": "workspace:*",
     "yaml": "^2.8.0",
     "zod": "^3.25.76"
   },

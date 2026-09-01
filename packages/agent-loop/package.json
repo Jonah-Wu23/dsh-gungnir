@@ -28,7 +28,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@gungnir/core": "workspace:*"
+    "gungnir-core": "workspace:*"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.0.1",

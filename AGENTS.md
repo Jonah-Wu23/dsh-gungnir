@@ -91,8 +91,8 @@
 
 ## 5. 工程规范
 
-- **语言与形态**：TypeScript（strict）、ESM；插件遵循 cordis 结构（`apply(ctx)` + 显式 inject + Schema config）；域逻辑放 `@gungnir/core`（零 DSH 依赖的纯函数），DSH 适配放插件包。
-- **包划分**：`@gungnir/core`（域纯函数）+ `dsh-gungnir`（证据/裁决/调和层插件，Prove + Observe 主线）+ 二阶段新增 `@gungnir/agent-loop`（Adaptive Loop Runtime 驱动包；发布名候选 `dsh-gungnir-loop`，四阶段定；**2026-08-29 起冻存为 escalation 后端资产：默认不加载、不继续 patch，资产保留不删，ADR-0017**）。一律树外插件形态，不碰 DSH 源码。
+- **语言与形态**：TypeScript（strict）、ESM；插件遵循 cordis 结构（`apply(ctx)` + 显式 inject + Schema config）；域逻辑放 `gungnir-core`（零 DSH 依赖的纯函数），DSH 适配放插件包。
+- **包划分**：`gungnir-core`（域纯函数）+ `dsh-gungnir`（证据/裁决/调和层插件，Prove + Observe 主线）+ 二阶段新增 `@gungnir/agent-loop`（Adaptive Loop Runtime 驱动包；发布名候选 `dsh-gungnir-loop`，四阶段定；**2026-08-29 起冻存为 escalation 后端资产：默认不加载、不继续 patch，资产保留不删，ADR-0017**）。一律树外插件形态，不碰 DSH 源码。
 - **包 README**：每个包的 README 含 Contract（做什么/不做什么）与 Known Limitations 小节，文风对齐 DSH 上游。
 - **决策先于代码**：架构级选择先落 ADR（`docs/context/decisions.md`）再动手；执行中推翻旧决策时新增 ADR，不删除旧的。
 - **测试**：core 全单测（fold/决策表/路由规则全覆盖）；集成必须真实 profile + headless 冒烟，不做离线 mock 联调；破坏测试（进程 kill、重启、环境漂移、策略振荡注入）是第一等用例，进 CI 脚本。
