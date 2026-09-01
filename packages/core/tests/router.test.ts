@@ -46,6 +46,19 @@ describe('router v0: decision table (ordered, first match wins)', () => {
     const both = inputs({ hasActiveSpec: true, hasCommittedAction: true, claimRecordedThisRound: true, machineVerifiableOutstanding: true })
     expect(routeLoopMode(both).mode).toBe('VERIFY')
   })
+
+  it('R0 escalation (P2): pending VERIFY upgrade wins over every normal route', () => {
+    expect(routeLoopMode(inputs({ pendingEscalation: { mode: 'VERIFY' } }))).toEqual({ mode: 'VERIFY', rule: 'escalate-verify' })
+    expect(routeLoopMode(inputs({ hasActiveSpec: true, hasCommittedAction: true, pendingEscalation: { mode: 'VERIFY' } }))).toEqual({ mode: 'VERIFY', rule: 'escalate-verify' })
+  })
+
+  it('R0 escalation (P2): pending RECOVER upgrade routes to RECOVER', () => {
+    expect(routeLoopMode(inputs({ pendingEscalation: { mode: 'RECOVER' } }))).toEqual({ mode: 'RECOVER', rule: 'escalate-recover' })
+  })
+
+  it('R0 escalation: no pending escalation -> normal routing unchanged', () => {
+    expect(routeLoopMode(inputs({ pendingEscalation: null }))).toEqual({ mode: 'FAST', rule: 'fast-no-goal-work' })
+  })
 })
 
 describe('router v0: routerInputsOf derived from fold state', () => {

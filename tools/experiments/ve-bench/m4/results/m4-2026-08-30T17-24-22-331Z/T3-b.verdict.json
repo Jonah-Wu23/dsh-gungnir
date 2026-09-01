@@ -1,0 +1,69 @@
+{
+  "run": "T3-b",
+  "task": "T3-cli-retry",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 263357,
+    "killed": false
+  },
+  "sessionId": "session-b462ac57-db84-4083-8e11-0f623c4bfbf1",
+  "verdict": {
+    "stackVerdict": "UNVERIFIABLE",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-args",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test test/args.test.js"
+      },
+      {
+        "id": "c2-retry",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test test/retry.test.js"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING",
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-args: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING",
+          "c2-retry: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": true,
+        "handled": true,
+        "unverifiableIds": [
+          "c3-loss"
+        ],
+        "finalNotFullyPass": true
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": true,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 1,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

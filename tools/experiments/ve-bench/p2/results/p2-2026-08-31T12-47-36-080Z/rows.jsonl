@@ -1,0 +1,1 @@
+{"run":"E2-deepseek-C1-envwall","layer":"C","arm":"E2","task":"C1-envwall","stage":"deepseek","stackVerdict":"HARD_FAIL","reasons":["hard failure: [p2] E2-deepseek-C1-envwall: session log not found (熔停)"],"timeout":false}

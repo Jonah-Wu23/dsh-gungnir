@@ -1,0 +1,55 @@
+{
+  "run": "glm-T1-a",
+  "task": "T1-ledgerd",
+  "profile": "glm",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 726323,
+    "killed": false
+  },
+  "sessionId": "session-43121e27-56f2-4940-8f7d-12b3900bd8b4",
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": true,
+        "failures": []
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  }
+}

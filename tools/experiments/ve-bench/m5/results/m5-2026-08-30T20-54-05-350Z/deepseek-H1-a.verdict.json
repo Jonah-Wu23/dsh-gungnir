@@ -1,0 +1,60 @@
+{
+  "run": "deepseek-H1-a",
+  "task": "H1-cachekit",
+  "profile": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 154107,
+    "killed": false
+  },
+  "sessionId": "session-76c5419e-19c2-46e6-8be6-e913eaa8b102",
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

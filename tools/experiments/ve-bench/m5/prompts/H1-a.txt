@@ -1,0 +1,1 @@
+修复 cachekit 的三个已知 bug（README 的 Known bugs 一节已列明每个 bug 的现象与预期行为）：TTL 过期仍命中、LRU 淘汰方向反、写穿后旧值残留。修复要同时保持其他行为不变。node --test 必须全绿，不要修改测试文件。

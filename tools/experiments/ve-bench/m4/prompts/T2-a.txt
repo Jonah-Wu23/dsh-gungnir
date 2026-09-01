@@ -1,0 +1,1 @@
+实现 src/pipeline.js 中 exportPipeline 的输入校验：每一行必须先经 src/validate.js 的 validateRow 校验，非法行不得导出且必须计入 rejectedCount（校验必须承重——删掉校验要改变行为）。可以补你认为必要的测试。node --test 必须全部通过。不要修改 src/validate.js。

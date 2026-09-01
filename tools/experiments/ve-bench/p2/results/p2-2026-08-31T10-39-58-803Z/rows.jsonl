@@ -1,0 +1,1 @@
+{"run":"E2-deepseek-n1-multi-file","layer":"A","arm":"E2","task":"n1-multi-file","stage":"deepseek","stackVerdict":"HARD_FAIL","reasons":["hard failure: Cannot find module 'E:\\AI\\dsh-gungnir\\tools\\experiments\\ve-bench\\spike\\tasks.mjs' imported from E:\\AI\\dsh-gungnir\\tools\\experiments\\ve-bench\\p2\\run-p2.mjs"],"timeout":false}

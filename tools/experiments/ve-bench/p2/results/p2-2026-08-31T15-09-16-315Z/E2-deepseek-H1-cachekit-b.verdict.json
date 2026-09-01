@@ -1,0 +1,68 @@
+{
+  "run": "E2-deepseek-H1-cachekit-b",
+  "layer": "B",
+  "arm": "E2",
+  "task": "H1-cachekit",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 140683,
+    "killed": false
+  },
+  "sessionId": "session-a44aac13-cc31-4c8c-b6dc-46ccd7c7fe8c",
+  "tokens": {
+    "totalTokens": 28090,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 16,
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

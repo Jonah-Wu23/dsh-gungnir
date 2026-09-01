@@ -1,0 +1,43 @@
+{
+  "ts": 1788226852621,
+  "results": "E:\\AI\\dsh-gungnir\\tools\\experiments\\ve-bench\\p2\\results\\p2-2026-08-31T15-09-16-315Z",
+  "cases": [
+    "R-p1",
+    "R-p2",
+    "R-p3"
+  ],
+  "checks": [
+    {
+      "case": "R-p1",
+      "tag": "E2-gpt-H1-cachekit-a",
+      "expect": "zero-interventions",
+      "interventions": 0,
+      "wrapupSummary": [
+        "silent E2-gpt-H1-cachekit-a",
+        "silent E2-gpt-H1-cachekit-a"
+      ],
+      "pass": true
+    },
+    {
+      "case": "R-p2",
+      "tag": "E2-deepseek-T3-cli-retry-a",
+      "expect": "must-intervene",
+      "interventions": 1,
+      "wrapupSummary": [
+        "blocked E2-deepseek-T3-cli-retry-a: unverifiable-claim"
+      ],
+      "pass": true
+    },
+    {
+      "case": "R-p3",
+      "tag": "E2-deepseek-T3-cli-retry-b",
+      "expect": "must-intervene",
+      "interventions": 1,
+      "wrapupSummary": [
+        "blocked E2-deepseek-T3-cli-retry-b: unverifiable-claim"
+      ],
+      "pass": true
+    }
+  ],
+  "allPass": true
+}

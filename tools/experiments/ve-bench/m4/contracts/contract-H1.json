@@ -1,0 +1,17 @@
+{
+  "taskId": "M4-H1-csv",
+  "dispatcher": "M4-batch",
+  "objective": "修复 exportCSV 的列序 bug（id,name,qty,price）并正确转义，node --test 全绿。",
+  "acceptance": [
+    {
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "verifierLevel": 1,
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000
+    }
+  ],
+  "grounding": [ { "output": "src/export.js", "source": "README.md" } ],
+  "baselineRef": { "type": "git", "commit": "<FILL_AT_RUNTIME>" }
+}

@@ -1,0 +1,11 @@
+{
+  "taskId": "P2-C2-redherring-backup",
+  "dispatcher": "P2-batch-backup",
+  "objective": "修复 src/fmt.js 中的正确性缺陷（README 权威），node --test 保持全绿。",
+  "acceptance": [
+    { "id": "c1-suite", "description": "测试套件 node --test 通过", "verifierLevel": 1, "command": "node --test", "expectedExitCode": 0, "timeoutMs": 120000 },
+    { "id": "c2-fmt", "description": "src/fmt.js 存在", "verifierLevel": 2, "predicate": { "kind": "artifact", "path": "src/fmt.js", "mustExist": true } }
+  ],
+  "grounding": [ { "output": "src/fmt.js", "source": "README.md" } ],
+  "baselineRef": { "type": "git", "commit": "<FILL_AT_RUNTIME>" }
+}

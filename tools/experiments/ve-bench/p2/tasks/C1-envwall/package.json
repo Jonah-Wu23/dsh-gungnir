@@ -1,0 +1,6 @@
+{
+  "name": "format-cli",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

@@ -1,0 +1,31 @@
+{
+  "objective": "审查 ledgerd 并修复其中任何正确性缺陷，使 README 列出的不变量全部成立，node --test 保持全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 180000,
+      "observability": "provable"
+    }
+  ],
+  "api": {
+    "module": "src/index.js",
+    "function": "transfer",
+    "template": "ledger-reentry"
+  },
+  "grounding": [
+    {
+      "output": "src/snapshot.js",
+      "source": "README.md"
+    },
+    {
+      "output": "src/transfer.js",
+      "source": "README.md"
+    }
+  ],
+  "taskId": "M5-T1-ledgerd",
+  "dispatcher": "M5-batch"
+}

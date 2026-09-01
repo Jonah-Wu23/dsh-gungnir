@@ -1,0 +1,62 @@
+{
+  "run": "E2-gpt-T1-ledgerd-a",
+  "layer": "B",
+  "arm": "E2",
+  "task": "T1-ledgerd",
+  "stage": "gpt",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 856167,
+    "killed": false
+  },
+  "sessionId": "session-413f8cc9-45d6-4a96-911c-bd2aa46ee623",
+  "tokens": null,
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "medicine: trunk probe output unparsable (exit 1)"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": false,
+        "failures": [
+          "trunk probe output unparsable (exit 1)"
+        ]
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  }
+}

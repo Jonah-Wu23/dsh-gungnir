@@ -31,7 +31,7 @@
 └─────────────────────────────────────────────┘
 ```
 
-方向权威：2026-08-28 全面掉头（ADR-0012），依据 `docs/idea/Agentloop自动调整【重新思考版】.md`；2026-08-29 战略裁决双落档（ADR-0016 否证 Always-on 形态；ADR-0017 修正归因为"协议税而非验证税"，定位定名 Evidence-Guided Agent Control Plane，冻结架构原则 AP-1～AP-6，禁用 L4）。路线（详见 `docs/plan/全阶段实施计划.md`）：一阶段证据基石（已完成）→ 二阶段 Adaptive Loop Spike（已完成：工程全过、冻结门 FAIL 熔断；post-mortem 完成成本三分解）→ 三阶段 Passive Prove 主线 + Passive Proof Spike（唯一幸存假设的检验）→ 四阶段生态发布。
+方向权威：2026-08-28 全面掉头（ADR-0012），依据 `docs/idea/Agentloop自动调整【重新思考版】.md`；2026-08-29 战略裁决双落档（ADR-0016 否证 Always-on 形态；ADR-0017 修正归因为"协议税而非验证税"，定位定名 Evidence-Guided Agent Control Plane，冻结架构原则 AP-1～AP-6，禁用 L4）。路线（详见 `docs/plan/全阶段实施计划.md`）：一阶段证据基石（已完成）→ 二阶段 Adaptive Loop Spike（已完成：工程全过、冻结门 FAIL 熔断；post-mortem 完成成本三分解）→ 三阶段 Passive Prove 主线 + Passive Proof Spike（已完成：FAIL→退出线，ADR-0018）→ 三阶段 P2 Escalation Proof Spike（已完成：G1 FAIL→BPAR v0 死刑，G2/G3/G4 PASS 运行期拦截能力证成，ADR-0021）→ 三阶段 P3 BPAR v0.1 确认批（ADR-0022：门禁程序修正 + S1 完成调用豁免，宽门 ≤3 run 已确认待执行）→ 四阶段生态发布。
 
 ## 2. Gungnir 铁律（违反任何一条即返工）
 
@@ -44,6 +44,7 @@
 7. **任何自动切换必须有 hysteresis**：dwell、cooldown、evidence threshold、switch budget 缺一不可。loop thrashing（控制器振荡）是动态 loop 的头号敌人：meta-loop 自己烧 token 就是失败。
 8. **熔断是命令不是建议**：阶段熔断条件触发即停，写复盘，走降级路径。禁止"再加一个 patch 试试"式续命。
 9. **禁止物理热插拔**：loop driver 实例在 session 生命周期内稳定；绝不在 open turn、open step、pending tool call、active AbortSignal 下做实例级替换，也不允许并发双 driver。机制层（Agent contract、session identity、append-only ledger、tool safety、cancellation、persistence/replay、observability）保持稳定，策略层才允许激进变化。
+10. **实验归因纪律（装置失败 ≠ 假设失败，ADR-0021）**：因实验程序自身缺陷（runner bug、通道故障、命令构造错误、判定栈缺陷）导致的验证目标失败，一律记 **INVALID（实验程序无效）**——修复装置、重烧、再判；**严禁计入假设否证或目标不可行的证据**。INVALID 行保留落档、永不删除（Let It Fail），但不进判定分母；跑批前必须以双侧自检 + 独立审查门证明装置合意。（惨痛教训：P1 C2b 命令构造炸雷被计入判定门 FAIL，直接引发全面转向与路径冻结。）
 
 ## 2.1 架构原则（ADR-0017 冻结，与铁律同级执行）
 

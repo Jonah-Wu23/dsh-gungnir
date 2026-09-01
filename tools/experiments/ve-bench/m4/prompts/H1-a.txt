@@ -1,0 +1,1 @@
+修复 src/export.js 的 CSV 导出 bug：数据行列序应为 id,name,qty,price，且含逗号或引号的值要正确转义。node --test 必须全部通过。不要修改测试文件。

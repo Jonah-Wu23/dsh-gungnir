@@ -43,10 +43,16 @@ packages/agent-loop  @gungnir/agent-loop 【二阶段建成；冻存为 escalati
                                          三模式 FAST/EXECUTE/VERIFY + 确定性 router；经组合
                                          接缝替换 dsh-agent-loop（ADR-0014 两步法）
 tools/               destruction/        破坏注入 harness
-                     experiments/        实验跑批（一阶段 20 任务生死实验；二阶段四组对照实验）
+                     experiments/        实验跑批（一阶段 20 任务生死实验；二阶段四组对照实验；
+                                         H-VE 验证器效力基准 M1–M3〔冻结资产〕）
+                     ve-supply/          派发契约供给闭环（ADR-0020 B2，离线/判定侧）：
+                                         contract → supplied 投影（core 纯函数）→ git 快照 buggy 基底
+                                         （snapshot.mjs）→ session log tool-log 提取（toollog.mjs）→
+                                         治疗臂判定（adjudicate.mjs / medicines.mjs）→ 裁决 + 覆盖报告
+                                         （run-supply.mjs）
 ```
 
-依赖方向单向：`dsh-plugin → core`、`agent-loop → core`，反向禁止。`core` 不知道 session log 的存在，只认识事件数组。
+依赖方向单向：`dsh-plugin → core`、`agent-loop → core`，反向禁止。`core` 不知道 session log 的存在，只认识事件数组。`tools/ve-supply` 消费 `@gungnir/core`（dist 纯函数）与 `dsh-plugin` verifier 类，不 import `tools/experiments/` 冻结物（执行面为提升复制，差异点已在文件头如实标注）。
 
 ## 3. 运行时数据流
 
@@ -97,6 +103,25 @@ tools/               destruction/        破坏注入 harness
 ```
 
 判据来源三层（spike 第一预注册问题）：S1 通用不变量（零协议，真 0-cost）；S2 一次性轻量捕获（至多 1 个额外往返）；S3 外部供给（harness 配置 / CI / 用户验收测试）。细则与判定门见《[三阶段-Passive-Proof-Spike计划](../plan/三阶段-Passive-Proof-Spike计划.md)》。
+
+### 3.4 离线供给闭环（ADR-0020 B2，四阶段 P0 资产）
+
+```text
+派发者（主 agent / 人）──填写──→ 派发契约 JSON（一次性，AP-3）
+                                     │ contractToSupplied（core 纯函数）
+                                     ▼
+                              supplied 四块（api / replay / unverifiableCriteria / grounding）
+                                     │
+          ┌──────────────┬───────────┼─────────────┐
+          ▼              ▼           ▼             ▼
+      M-A 隐藏 probe  M-B buggy 基底  M-C 三态     M-D 时序
+      （模板库构造）   （git archive）  （沙箱外）    （tool-log）
+          └──────────────┴───────────┴─────────────┘
+                                     ▼
+              治疗臂判定（L1/L2 + S1 + M-A~M-D）→ 裁决 + 证据链 + 供给覆盖报告
+```
+
+运行期介入（wrapup 钩子 + MAF 注入）维持 ADR-0018 §5 冻结；本闭环是交付后离线裁决，不注入子 agent 运行时协议（AP-1/AP-3 合规，契约文档 §4）。
 
 ## 4. 关键边界
 

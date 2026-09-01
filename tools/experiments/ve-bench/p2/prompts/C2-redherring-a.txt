@@ -1,0 +1,1 @@
+修复 src/calc.js 中的正确性缺陷，使 README 列出的规则全部成立，node --test 保持全绿。

@@ -197,7 +197,8 @@ export const StatusEventSchema = EventEnvelopeFieldsSchema.extend({
 // - loop-state：模式快照锚点（切换后必落；turn 边界由 driver 补锚）。快照必须与
 //   fold 派生的当前模式一致（单一真理，同 status 快照纪律）。
 
-export const LoopModeSchema = z.enum(['FAST', 'EXECUTE', 'VERIFY'])
+/** P2（ADR-0021 BPAR v0）：RECOVER 为例外升级的换档模式（SIG-2 持续 → 预算内）。 */
+export const LoopModeSchema = z.enum(['FAST', 'EXECUTE', 'VERIFY', 'RECOVER'])
 export type LoopMode = z.infer<typeof LoopModeSchema>
 
 export const LoopStateEventSchema = EventEnvelopeFieldsSchema.extend({

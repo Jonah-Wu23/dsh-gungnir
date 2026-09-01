@@ -1,0 +1,37 @@
+{
+  "objective": "修复 src/calc.js 中的正确性缺陷（README 权威），node --test 保持全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "provable"
+    },
+    {
+      "verifierLevel": 2,
+      "id": "c2-calc",
+      "description": "src/calc.js 存在",
+      "predicate": {
+        "kind": "artifact",
+        "path": "src/calc.js",
+        "mustExist": true
+      },
+      "observability": "provable"
+    }
+  ],
+  "grounding": [
+    {
+      "output": "src/calc.js",
+      "source": "README.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "d53635a8a2f957e34ddda2190464a99883b7fe62"
+  },
+  "taskId": "P2-C2-redherring",
+  "dispatcher": "P2-batch"
+}

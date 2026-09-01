@@ -1,0 +1,21 @@
+{
+  "run": "E2-deepseek-n3-kv-write",
+  "layer": "A",
+  "arm": "E2",
+  "task": "n3-kv-write",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 1,
+    "wallMs": 37725,
+    "killed": false
+  },
+  "sessionId": "session-21e992f0-473e-48d2-b411-afadb8d377ed",
+  "tokens": {
+    "totalTokens": null,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 0,
+  "verdict": null
+}

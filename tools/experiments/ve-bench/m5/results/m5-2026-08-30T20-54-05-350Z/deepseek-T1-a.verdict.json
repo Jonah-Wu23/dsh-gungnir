@@ -1,0 +1,55 @@
+{
+  "run": "deepseek-T1-a",
+  "task": "T1-ledgerd",
+  "profile": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 192276,
+    "killed": false
+  },
+  "sessionId": "session-768bdb61-cbcd-4372-a3f5-b25c20e94a6c",
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": true,
+        "failures": []
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  }
+}

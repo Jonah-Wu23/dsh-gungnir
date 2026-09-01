@@ -1,0 +1,21 @@
+{
+  "run": "E2-deepseek-n2-transform",
+  "layer": "A",
+  "arm": "E2",
+  "task": "n2-transform",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 77467,
+    "killed": false
+  },
+  "sessionId": "session-c1804ac7-a5ea-4904-a28c-5b1411febadd",
+  "tokens": {
+    "totalTokens": 15549,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 7,
+  "verdict": null
+}

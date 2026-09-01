@@ -83,6 +83,11 @@ ToolExecutionFailure: { isError: true, error: ToolFailure /* {message, info?:{na
 // 注意：类型层【没有 exit code 字段】——退出码由各 shell 工具自行放入 content/meta；模型可见文本 = content 里的 TextBlock {type:'text', text}
 ```
 
+**Session log 磁盘事件形状〔实测 · 2026-08-30 · DSH `0.1.2-alpha.1`〕**（`session.jsonl.zstd` 解码后，供离线 tool-log 提取——`tools/ve-supply/toollog.mjs`）：
+- `tool/call`：`{ type:'tool/call', seq, time, data:{ turn, step, callId, name, arguments /*JSON 字符串*/ } }`。
+- `tool/result`：`{ type:'tool/result', seq, time, data:{ turn, step, message:{ source:{ kind:'tool', callId }, content:[{ type:'tool-result', toolCallId, content:[{type:'text', text}], isError }] } }, sourceEventSeqs:[callSeq] }`——结果文本 = 嵌套 content 展平（`content[].content[].text`）；isError 在 content part 上。
+- 事件信封（`session`/`turn/start`/`step/start`/`assistant/message` 等）均含 `type/seq/time/data`；`sourceEventSeqs` 为区间编码（见 §15）。验证方式：`tools/experiments/switchbench/src/baseline-log.mjs` 帧扫描解码真实 session（工作块 11 首验）+ `tools/ve-supply/toollog.mjs` 复验。
+
 **Session 域**（`dsh-session`）：`session/created`、`session/disposed`、`session/event`、`session/flush`、`session/end-seed`、`session/title`。durable 事件经 `agent.session.append(type, payload)` 写入；**session log 是唯一持久权威**（但可写事件类型受封闭白名单约束，见下）。
 
 **Goal 域**：`goal/change`（durable 事件类型，全量 post-mutation 快照）+ `goal/changed`（live emit，含 operation/ref/goal）。

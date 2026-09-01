@@ -1,0 +1,74 @@
+{
+  "run": "glm-T4-b",
+  "task": "T4-billreport",
+  "profile": "glm",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 253325,
+    "killed": false
+  },
+  "sessionId": "session-e54c301f-6bf0-49f8-815d-5f7b06c5c66a",
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "S1: tool-error — the most recent tool call returned an error"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      },
+      {
+        "id": "c2-report",
+        "kind": "artifact",
+        "outcome": "PASS",
+        "detailRef": "path:src/report.js sha256:2a04636d4fe986ac"
+      }
+    ],
+    "s1Conflicts": [
+      {
+        "kind": "tool-error",
+        "ref": "call:call_b37d6ee7f096418da5a07bd2#tool:pwsh",
+        "detail": "the most recent tool call returned an error"
+      }
+    ],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

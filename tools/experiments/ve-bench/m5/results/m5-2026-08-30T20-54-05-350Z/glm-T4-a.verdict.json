@@ -1,0 +1,66 @@
+{
+  "run": "glm-T4-a",
+  "task": "T4-billreport",
+  "profile": "glm",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 199154,
+    "killed": false
+  },
+  "sessionId": "session-28d46eb2-3073-4bea-9f10-a560f4e63ded",
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      },
+      {
+        "id": "c2-report",
+        "kind": "artifact",
+        "outcome": "PASS",
+        "detailRef": "path:src/report.js sha256:1fdc43624569a847"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

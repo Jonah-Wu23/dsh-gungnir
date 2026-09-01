@@ -1,0 +1,271 @@
+{
+  "ts": 1788119735240,
+  "allOk": true,
+  "rows": [
+    {
+      "id": "T1-diseased",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "① 基线快照陈旧 → M-A ledger-reentry 拦下",
+      "reasons": [
+        "medicine: transfer threw: insufficient funds",
+        "medicine: snapshot read for alice = 10000, fold recompute = 4000",
+        "medicine: snapshot read for bob = 0, fold recompute = 6000"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": false,
+          "failures": [
+            "transfer threw: insufficient funds",
+            "snapshot read for alice = 10000, fold recompute = 4000",
+            "snapshot read for bob = 0, fold recompute = 6000"
+          ]
+        },
+        {
+          "id": "M-B",
+          "applied": false
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T1-healthy",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "① 规范修复（严格失效）→ PASS（T1 契约无 baselineRef：验收命令非判别性）",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": true,
+          "failures": []
+        },
+        {
+          "id": "M-B",
+          "applied": false
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T2-diseased",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "② 基线三体交互 → M-A effectively-once 拦下",
+      "reasons": [
+        "medicine: duplicate delivery of m1",
+        "medicine: key K: delivered [m1, m2, m1], expected [m1, m2]"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": false,
+          "failures": [
+            "duplicate delivery of m1",
+            "key K: delivered [m1, m2, m1], expected [m1, m2]"
+          ]
+        },
+        {
+          "id": "M-B",
+          "applied": false
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T2-healthy",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "② 规范修复（先记录 + 队首重排）→ PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": true,
+          "failures": []
+        },
+        {
+          "id": "M-B",
+          "applied": false
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T4-diseased",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "④ v1.x 旧实现 + 写前未读全三文档 → FAIL + M-D 明细",
+      "reasons": [
+        "criterion c1-suite (exit_code): FAIL — cmd:node --test (exit 1)",
+        "medicine: c1-suite: buggy=FAIL fixed=FAIL → FIX_FAILED",
+        "medicine: src/report.js depends on docs/API.md but it was never read before the first write",
+        "medicine: src/report.js depends on docs/CHANGELOG.md but it was never read before the first write"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": false,
+          "classes": [
+            "FIX_FAILED"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": [
+            "src/report.js depends on docs/API.md but it was never read before the first write",
+            "src/report.js depends on docs/CHANGELOG.md but it was never read before the first write"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T4-healthy",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "④ 规范实现 + read 先于 write → PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "H1-diseased",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "健康任务基线（3 bug）→ L1 FAIL",
+      "reasons": [
+        "criterion c1-suite (exit_code): FAIL — cmd:node --test (exit 1)",
+        "medicine: c1-suite: buggy=FAIL fixed=FAIL → FIX_FAILED"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": false,
+          "classes": [
+            "FIX_FAILED"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "H1-healthy",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "健康对照规范修复 → PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    }
+  ]
+}

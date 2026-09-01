@@ -10,6 +10,8 @@ Gungnir 的纯域函数包：GoalSpec / ledger 事件 / verdict 的 zod schema�
 - **fold（strict replay）**：`foldEvents(raw[]) → GungnirState` 纯函数重放。畸形 schema、断序 round、非法 phase 转换、快照与派生值不一致、verifier 与 criterion 声明不匹配、FAIL 无签名、evidenceId 重复……任何违规立即抛 `FoldError` 并停在首个坏事件（`eventIndex`/`code` 可定位）。绝不静默跳过或猜测修复。
 - **Reconciler**：`reconcile(state, roundVerdicts) → Decision` 决策表——ADVANCE / REPLAN / RETRY / BLOCKED / NEEDS_HUMAN / REVALIDATE / COMPLETE。熔断三件套（budget.maxRounds、budget.maxVerifierRuns、roundsNoImprovement ≥ 3、consecutiveInconclusive ≥ 3）任一触发即禁止继续 commit。阶梯强制：L4 PASS 在生效判定中降级 PARTIAL（纯语义永远不足以支撑最终 PASS）；COMPLETE 要求存在 L1/L2 PASS 佐证（`deterministicPassSeen`）。
 - **Verifier 契约**：`Verifier { kind, level, verify(criterion, ctx) }` + `VerifyContext`（runCommand / readFile / completeRubric / now 由宿主注入）。契约在此，实现在 dsh-gungnir。
+- **药方（H-VE，ADR-0019）**：M-A trunk-path oracle 模板（`pricing-round-once` / `pipeline-validation`：隐藏代表性输入生成 + spec 属性检查）、M-B 判别性证据规则（replay 到 buggy 必 FAIL 才算判别）、M-C UNVERIFIABLE 三态、M-D grounding read→write 时序检查（只判时序，不猜语义）。
+- **派发契约（Dispatch Contract，ADR-0020）**：`DispatchContract` zod schema + `contractToSupplied` 投影（契约 → supplied 四块：api / replay / unverifiableCriteria / grounding）+ `supplyCoverageOf` 供给覆盖报告（每个药方 applied / not-applied + 原因）。权威文档 `docs/plan/派发契约-v0.md`；执行面在 `tools/ve-supply/`。
 
 **不做什么**
 
@@ -23,3 +25,4 @@ Gungnir 的纯域函数包：GoalSpec / ledger 事件 / verdict 的 zod schema�
 - REVALIDATING 中"全部满足但无 L1/L2 佐证"的 COMPLETE 拒绝分支是防御性守卫：在现行 effectiveOutcome 规则下结构性不可达（L4 PASS 必然降级），保留作 defense-in-depth。
 - `roundsNoImprovement` 只在离开 VERIFYING（轮末）时结算；REVALIDATING 的进出不重复计数。
 - 一阶段 L3 external-state 与 L5 human 无 verifier 实现：human 谓词 criterion 只能经 NEEDS_HUMAN 出口。
+- 派发契约 `replay.evidence` v0 只取契约声明的 provable L1 command 判据（最诚实）；从 session log 提取 agent 实际跑过的命令列为后续增强。M-A 模板库覆盖面 = 现役 2 模板。

@@ -270,6 +270,51 @@ Harness 长期只信任 GoalSpec，不信任长 Plan；Plan 是 rolling-horizon 
 
 **取代**：无。**影响**：glossary 新增"派发契约 / 钓鱼题供给"；四阶段 P0 内容明确化；state.md 工作块 24。
 
+### ADR-0021 实验归因纪律升格铁律、三方案最近似形态（BPAR v0）定义与 Escalation Proof Spike 重开（accepted，2026-08-31；部分修正 ADR-0017 第 7 条、ADR-0018 第 5/6 条）
+
+**背景**：三条退出线已执行（ADR-0013 方案 B 停投、ADR-0016 Always-on 否证、ADR-0018 运行期控制面收缩）。2026-08-31 用户战略裁决：明确授权另立 ADR 乃至完全转向；目标重述为——寻找**最贴近三个最初方案（动态 agent loop / 动态工作逻辑 / ultragoal）、且 token 与无插件基线同量级**的形态；拒绝与三方案无关的降级发布。同时指出既往转向的关键程序缺陷：P1 的 C2b 炸雷（agent 自写带引号 shell 验证命令被 pwsh-sandbox 拆坏 → 3 次假阳性介入）是**实验程序缺陷**，却被计入判定门 FAIL，成为全面转向与路径冻结的直接推手。
+
+**证据清算（本轮重新审计，四分类）**：
+
+1. **被数据杀死且非 bug**：always-on 显性目标协议（剥离实现缺陷后纯协议税 2–3×，结构性）；always-on 每轮 Mode Router（+60.6%/+237.5%/+579.9% 为 invocation model 量级）。死刑维持，不在本次重开范围。
+2. **是 bug、当时已从归因剥离但未改判定**：C2b 假阳性（命令构造缺陷）；t2 会话 65% wall-clock 控制平面死锁。按本 ADR 第 1 条新纪律，这两类应记 INVALID 而非 FAIL。
+3. **被实测证明便宜**：C2a 被动面 token +0.4%、零额外往返、零介入、4/4 成功；验证税 ≈0 额外 LLM 往返；替换 loop 恒等模式与原生 17 类事件词汇完全一致（ADR-0014 B3）。
+4. **从未被实验**：Baseline-Preserving Adaptive Runtime + Escalation Router（ADR-0013 修订⑦ / ADR-0016 第 4 条）——其专属实验被 ADR-0017 第 6 条程序性替换为 Passive Proof Spike，从未执行；ADR-0017 第 7 条自认"罕见触发回本"为未测假设。**程序性替换不构成实验否证。**
+
+**决定**：
+
+1. **实验归因纪律升格为铁律 10（装置失败 ≠ 假设失败）**：因实验程序/测量装置自身缺陷（runner bug、通道故障、命令构造错误、判定栈缺陷）导致的验证目标失败，一律记 **INVALID（实验程序无效）**——修复装置、重烧、再判；严禁计入假设否证或目标不可行的证据。INVALID 行保留落档、永不删除（Let It Fail），但不进判定分母；跑批前必须以双侧自检 + 独立审查门证明装置合意（ADR-0013 事故 #6/#7"判决建立在合意实现上"先例的普遍化）。**溯及既往**：P1 判定门中由 C2b 命令构造缺陷驱动的失败项改记 INVALID；该改记不单独推翻 ADR-0018（退出线另有两项"不可测"支撑），但构成重开评估的合法程序入口。
+2. **BPAR v0 形态冻结**（Baseline-Preserving Adaptive Runtime，ADR-0013 修订⑦ 的可执行定义；三方案最近似映射，每项成本均有实测背书）：① **ultragoal 承重件** = 一次性 L1 派发契约 + harness 侧 Evidence/Verifier/Reconciler，逐轮协议仪式全部砍除（协议税 2–3× 的教训）；② **动态工作逻辑承重件** = 被动面（S1 通用不变量 + harness 模板化 S2 验证命令 + wrapup 结构钩子 + 最小介入反馈 MAF），成本 = 实测 +0.4% token；③ **动态 agent loop 承重件** = 恒等 driver（AdaptiveLoopAgent EXECUTE 恒等模式，ADR-0014 B3 实证原生等价）进 spike profile 默认配置 + 证据触发例外升级（VERIFY/RECOVER，hysteresis 沿用 ADR-0015，单实例纪律铁律 9）。SEARCH/Branch Search 不接线（范围控制）。健康路径成本预算 = baseline + ≤10%。
+3. **重开程序合规声明**：本条即 ADR-0018 第 6 条与 ADR-0020 第 5 条所要求的"另立 ADR"。新实验走新预注册、新批次；不重跑、不重判 Stage 2 / P1 任何旧数据。检出率 vacuous 的历史阻碍已被 H-VE M4/M5 治愈：bait 分母 = 实测犯病点位（③ deepseek 2/2、① gpt 补测 2/2、② glm 1/2）。
+4. **退出线（escalation 形态第一次也是最后一次审判）**：判定门分项预登记处置——成本门 FAIL = BPAR 死刑；检出门 FAIL（运行期拦截不超离线派生臂）= 运行期控制面永久关闭、资产删除性归档；升级价值门 FAIL = loop 件永久归档、其余件可幸存。全过 → 四阶段发布形态 = BPAR。用户意图落档：发布物必须与三方案承重件同源；同时确认**证据约束优先于偏好**——若判定门 FAIL，不得为保形态而降低判定标准（Let It Fail）。
+5. **维持不变**：always-on 双形态死刑、L4 禁用（独立 benchmark 证成前不恢复）、AP-1～AP-6、铁律 1–9、ADR-0013 第 9 条方案 B 重开三条件。
+
+**依据**：用户战略裁决（2026-08-31，含归因纪律指令与完全转向授权）；ADR-0017 第 1 条（成本三分解；"Stage 2 原始数字不得再用来证明 Adaptive Loop 本身很慢"）；ADR-0018 第 2/3/6 条；《[三阶段-P1-stage-report](../plan/三阶段-P1-stage-report.md)》；《[H-VE-M4-病理画像报告](../plan/H-VE-M4-病理画像报告.md)》/《[H-VE-M5-病理画像报告](../plan/H-VE-M5-病理画像报告.md)》（非 vacuous 分母来源）；ADR-0014 实证结论 4（B3 恒等等价）。
+
+**取代/修正**：部分修正 ADR-0017 第 7 条（escalation 资产为本 spike 解冻接线，仅限 VERIFY/RECOVER，Branch Search 维持冻存）；部分修正 ADR-0018 第 5/6 条（运行期介入为本 spike 解冻；§6 重开程序由本条履行）。ADR-0016 第 1/2/4/7 条维持。**影响**：AGENTS.md 新增铁律 10；三阶段新增 **P2 = Escalation Proof Spike**，执行基准《[三阶段-P2-Escalation-Proof-Spike计划](../plan/三阶段-P2-Escalation-Proof-Spike计划.md)》；全阶段计划 v2.4。
+
+### ADR-0022 门禁程序修正、BPAR v0.1 修复（S1 完成调用豁免 + COMPLETION_LINE）与宽门确认批 P3（accepted，2026-09-01；部分修正 ADR-0021 第 4 条执行方式）
+
+**背景**：
+
+1. **P2 收官**（工作块 30）：G2/G3/G4 PASS——运行期拦截能力首次证成（③ 运行期拦截 2/2 追平离线 ceiling、放行 0 vs E0 放行率 1.0；①② 语义病规避 E2 4/4 vs E3 2/4 vs E0 1/4）；G1 FAIL（token +7.8% 达标，但健康任务 1 次 S1 真阳性拦截 + 往返中位 +1.5）→ BPAR v0 死刑按预注册执行（ADR-0021 第 4 条）。
+2. **G1 唯一失分点诊断**：E2-gpt-H1-a 中 gpt 对 `update_goal(action="complete")` 误传 edit 专属参数 → 工具报错（isError）→ S1 tool-error 不变量在紧随的 wrapup 拦下 + MAF → 模型 5 步内自修正、终局 PASS。该拦截是**合法真阳性**（非装置缺陷，按铁律 10 不构成 INVALID），但 MAF **冗余**——错误就发生在完成声明调用自身，isError 对模型天然自明，模型本来就会自行重试。
+3. **用户三裁决（2026-09-01）**：①门禁程序抗议成立——P2 判定门数值由 agent 起草冻结，未经用户逐项确认；程序修正入本 ADR 第 1 条。②P2 判定不改写（44+4 run 归档，G1 FAIL 保留）；另立宽门确认批是用户主权，**门值由用户逐项确认后冻结**（第 3 条所载门值已经用户确认）。③prompt 侧修复 **COMPLETION_LINE** 用户已自行实施（三层 prompt 路径传播验证；`tools/experiments/ve-bench/p2/PRE-REGISTRATION.md` §8.1 登记；stage report §3 补记"跑批后 prompt 改进"）。
+
+**决定**：
+
+1. **门禁程序修正（面向未来）**：任何实验的判定门数值在预注册冻结前必须向用户明示逐项并获确认；未获确认的冻结不构成有效门。溯及说明：P2 门值未履行此程序，但判定已归档、不重写——本修正面向未来批次。
+2. **BPAR v0.1 = v0 + 修复两件**（互补：指引防发生，豁免防冗余拦截）：
+   - **S1 完成调用豁免**（core `passive.ts`）：fold 记录照常（账本完整、SIG-2 重复失败签名计数不变）；豁免发生在 wrapup 冲突评估处——`lastProblem === 'tool-error'` 时若报错调用即 goal 完成声明调用本身（complete/blocked action），抑制该冲突，不拦、不发 MAF（工具拒绝即完成未成立，错误自明）；其他调用的未消化错误、SIG-2（同 errorSignature 连续 ≥3）照常拦。纯事件类型 + 时序判定，零文本嗅探（Let It Go 合规）。先例：`isEscalationDenial`（M5 跑批后修复，同类环境事实不误报）。
+   - **COMPLETION_LINE** prompt 指引：用户已实施（`manifest.mjs` 标准完成声明行 → run-p2.mjs A/B/C 三层 prompt 路径）。
+3. **P3 = 宽门确认批（非新 spike、非 P2 重判）**：离线 replay 回归（零 run：P2 E2-gpt-H1-a 原案 tool-log 重放新栈必须**零拦截**；③ 拦截案 T3-a/b 重放必须**仍拦**）+ 真跑 ≤3 run（E2-gpt-H1-a 原位重烧 / E2-gpt-H1-b 姊妹对照 / 可选 E2-deepseek-H1-a 锚模型抽验）。**判定门（用户逐项确认，2026-09-01 冻结）**：**G-FIX 唯一硬门** = 真跑中 malformed update_goal 触发的 S1 拦截 = 0，且 replay 三项全过；能力保持由 replay 承担，不烧真跑；不重测全量成本/往返（P2 实测 token +7.8% 已达标，数据沿用）；新模式真阳性介入（非 malformed 类）如实随档、不判 FAIL。**FAIL 仅两种情形**：malformed 仍被拦（修复未生效）/ ③ replay 拦不住（机器改坏）。
+4. **后果预登记**：G-FIX 过 → **BPAR v0.1 取得四阶段发布候选资格**（默认形态还是 opt-in profile，届时另定）；FAIL → 回 ADR-0021 退出线已执行状态，本方向不再续命（本批为最后一轮）。
+5. **维持不变**：P2 全部数据与判定；铁律 1–10；always-on 双形态死刑；L4 禁用；AP-1～AP-6。
+
+**依据**：《[三阶段-P2-stage-report](../plan/三阶段-P2-stage-report.md)》§3（G1 诊断）与 `tools/experiments/ve-bench/p2/results/p2-2026-08-31T15-09-16-315Z/gate-report.md`；用户裁决与 COMPLETION_LINE 改动说明（2026-09-01）；铁律 10（本次拦截为合法真阳性，非 INVALID）。
+
+**取代/修正**：部分修正 ADR-0021 第 4 条的执行方式——G1 死刑针对 BPAR v0；v0.1 经用户确认的宽门确认批取得新资格程序。不重写 P2 任何数据与判定。**影响**：三阶段新增 **P3 = BPAR v0.1 确认批**，执行基准《[三阶段-P3-BPAR-v0.1-确认批计划](../plan/三阶段-P3-BPAR-v0.1-确认批计划.md)》；全阶段计划 v2.5。
+
 ## 决策模板
 
 新增决策时使用：标题、状态、日期、背景（为什么必须选）、决定、依据（文档章节/实测数据）、被取代的 ADR（如有）。

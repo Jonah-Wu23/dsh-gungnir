@@ -7,10 +7,15 @@ import {
   routerInputsOf,
   type GungnirAdaptiveService,
   type LoopRouterInputs,
+  parseDispatchContract,
+  contractToSupplied,
+  type SuppliedProjection,
 } from '@gungnir/core'
+import { readFileSync, existsSync, rmSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { AgentLedger, type KvChannel } from './ledger.ts'
 import { ReconcileEngine } from './engine.ts'
-import { buildDirective, buildVerifyDirective, directiveApplicable } from './prestep.ts'
+import { buildDirective, buildVerifyDirective, buildRecoverDirective, directiveApplicable } from './prestep.ts'
 import { PassivePlaneRuntime } from './passive-plane.ts'
 import { registerCommands, registerTools, type AgentView, type CommandsView, type GoalsView, type SurfaceDeps, type ToolsView, type UserQuestionsView } from './surfaces.ts'
 import { ExitCodeVerifier } from './verifiers/exit-code.ts'
@@ -47,10 +52,12 @@ export interface Config {
    * - 'off'：现役协议面（二阶段形态，C3 负对照）；
    * - 's1'：Passive Proof —— 仅 S1 通用不变量（C2a）；
    * - 's1+s2'：Passive Proof —— S1 + 一次性轻量捕获（C2b）。
-   * passive != 'off' 时：不注册协议工具、不注入协议指令、wrapup 钩子评估 +
-   * MAF 最小介入。
+   * - 'bpar'：P2（ADR-0021 BPAR v0）——S1 + 运行期契约 claim-check + M-C 三态。
+   * - 'p1' / 'p2'：P2 BPAR 的不透明代号（泄题纪律：profile 配置不得暴露控制面词汇；
+   *   语义在插件内部归一）。p1 = bpar + 例外升级接线；p2 = bpar（无升级）。
+   * passive != 'off' 时：不注册协议工具、不注入协议指令、wrapup 钩子评估 + MAF 最小介入。
    */
-  passive?: 'off' | 's1' | 's1+s2'
+  passive?: 'off' | 's1' | 's1+s2' | 'bpar' | 'p1' | 'p2'
 }
 
 // schemastery 无 enum 类型：passive 用 string schema（default 'off'），运行时经
@@ -65,10 +72,16 @@ export const Config = z.object({
   passive: z.string().default('off'),
 }) as z<Config>
 
-/** passive 配置归一（schemastery 无 enum：string 进，运行时校验 + 归一）。 */
-export function normalizePassive(value: unknown): 'off' | 's1' | 's1+s2' {
-  if (value === 's1' || value === 's1+s2') return value
-  return 'off'
+/** passive 配置归一（schemastery 无 enum：string 进，运行时校验 + 归一）。
+ *  p1/p2 为 P2 BPAR 的不透明代号（泄题纪律：profile 配置不暴露控制面词汇）：p1 =
+ *  bpar + 例外升级接线（E2）；p2 = bpar 无升级（E3）。语义在此映射。 */
+export function normalizePassive(value: unknown): { mode: 'off' | 's1' | 's1+s2' | 'bpar'; escalation: boolean } {
+  if (value === 'p1') return { mode: 'bpar', escalation: true }
+  if (value === 'p2') return { mode: 'bpar', escalation: false }
+  if (value === 's1') return { mode: 's1', escalation: false }
+  if (value === 's1+s2') return { mode: 's1+s2', escalation: false }
+  if (value === 'bpar') return { mode: 'bpar', escalation: false }
+  return { mode: 'off', escalation: false }
 }
 
 // ---- 窄结构访问辅助（unknown-only，接缝形状见 dsh-interface.md） -------------------
@@ -165,14 +178,15 @@ function makePluginMessage(text: string): unknown {
 /** 调用 ctx.shell harness 执行器（pwsh-sandbox）跑命令，绝不私开进程。
  * 将 ShellRunResult 映射为 verifier 需要的 CommandObservation；
  * 信号/启动失败折叠为 exitCode=1 并保留 stderr 原貌，让 ExitCodeVerifier 如实 FAIL。
+ * stdin：可选字节流（探针场景注入通道，泄题纪律：隐藏输入经 stdin 传递，磁盘零落盘）。
  */
-async function runShellCommand(ctx: Context, command: string, timeoutMs: number): Promise<CommandObservation> {
+async function runShellCommand(ctx: Context, command: string, timeoutMs: number, stdin?: string): Promise<CommandObservation> {
   const shell = service(ctx, 'shell', true)
   const resolveFn = shell['resolve']
   if (typeof resolveFn !== 'function') throw new Error('ctx.shell.resolve unavailable')
   const runFn = shell['run']
   if (typeof runFn !== 'function') throw new Error('ctx.shell.run unavailable')
-  const spec = (resolveFn as (r: unknown) => unknown).call(shell, { command, timeoutMs })
+  const spec = (resolveFn as (r: unknown) => unknown).call(shell, { command, timeoutMs, ...(stdin !== undefined ? { stdin } : {}) })
   const result = await (runFn as (s: unknown) => Promise<unknown>).call(shell, spec)
   const resultDict = asDict(result)
   if (resultDict === null) throw new Error('ctx.shell.run returned non-object')
@@ -285,24 +299,61 @@ export function apply(ctx: Context, config: Config): void {
     log,
   })
 
-  // ---- 被动面（三阶段 P1，ADR-0017）：passive != 'off' 时现役 ----------------------
-  const passiveMode = normalizePassive(config.passive)
-  const passiveRuntime = new PassivePlaneRuntime({
-    ledgerOf: (agentId) => directory.get(agentId),
-    ensureLedger,
-    injectMessage: (agentId, text) => {
-      const agent = findAgent(ctx, agentId)
-      if (agent === null) {
-        log('warn', `cannot inject MAF: agent ${agentId} not live`)
-        return
+  // ---- 被动面（三阶段 P1/P2）：passive != 'off' 时现役 ---------------------------------
+  const passiveCfg = normalizePassive(config.passive)
+  const passiveMode = passiveCfg.mode
+  const passiveEscalation = passiveCfg.escalation
+  // P2（BPAR v0）：派发契约 → supplied 投影（wrapup claim-check 判据源）。
+  // 泄题纪律（严格）：契约路径**不经 CLI/env**——由插件从 workspaceRoot 内部推导
+  // （runner 在 spawn dsh 前把契约写到 %TEMP%/p2-supply-<ws目录名>.json），加载后
+  // **立即删除**（模型可见面任何时刻都不存在契约文件；命令行无契约路径/无 --patch）。
+  let supplied: SuppliedProjection | null = null
+  const derivedContractPath = (): string => {
+    const wsName = workspaceRoot.split(/[\\/]/).filter(Boolean).pop() ?? 'ws'
+    return join(dirname(workspaceRoot), `p2-supply-${wsName}.json`)
+  }
+  if (passiveMode === 'bpar') {
+    const contractPath = derivedContractPath()
+    if (existsSync(contractPath)) {
+      try {
+        const raw = JSON.parse(readFileSync(contractPath, 'utf8'))
+        supplied = contractToSupplied(parseDispatchContract(raw))
+        log('info', `passive bpar: contract loaded (${supplied.criteria.length} criteria, api=${supplied.api?.template ?? 'none'}, unverifiable=${(supplied.unverifiableCriteria ?? []).length})`)
+      } catch (error) {
+        // 契约加载失败 = 装置缺陷（fail loud）：绝不带病静默跑（铁律 10 精神）
+        throw new Error(`gungnir: failed to load dispatch contract at ${contractPath}: ${error instanceof Error ? error.message : String(error)}`)
+      } finally {
+        // 加载即删：契约文件只在 dsh 启动瞬间存在，模型任何时刻不可见
+        try {
+          rmSync(contractPath, { force: true })
+        } catch {
+          // 删除失败不阻断（文件在 %TEMP%，窗口极小）
+        }
       }
-      agent.inject(makePluginMessage(text))
+    }
+  }
+  const passiveRuntime = new PassivePlaneRuntime(
+    {
+      ledgerOf: (agentId) => directory.get(agentId),
+      ensureLedger,
+      injectMessage: (agentId, text) => {
+        const agent = findAgent(ctx, agentId)
+        if (agent === null) {
+          log('warn', `cannot inject MAF: agent ${agentId} not live`)
+          return
+        }
+        agent.inject(makePluginMessage(text))
+      },
+      runCommand: (command, timeoutMs, stdin) => runShellCommand(ctx, command, timeoutMs, stdin),
+      readFile: (path) => verifyContext.readFile(path),
+      workspaceRoot,
+      log,
     },
-    runCommand: (command, timeoutMs) => runShellCommand(ctx, command, timeoutMs),
-    readFile: (path) => verifyContext.readFile(path),
-    workspaceRoot,
-    log,
-  })
+    {
+      supplied,
+      escalation: passiveEscalation,
+    },
+  )
 
   const surfaceDeps: SurfaceDeps = {
     engine,
@@ -331,7 +382,9 @@ export function apply(ctx: Context, config: Config): void {
     routerInputs(agentId: string): LoopRouterInputs {
       const ledger = directory.get(agentId)
       if (ledger === undefined) return nativeInputs
-      return routerInputsOf(ledger.current)
+      // P2：例外升级信号（被动面裁决；E2 消费一次即清）并入 router 输入
+      const escalation = passiveEscalation ? passiveRuntime.pendingEscalation(agentId) : null
+      return { ...routerInputsOf(ledger.current), ...(escalation !== null ? { pendingEscalation: escalation } : {}) }
     },
     // resume 场景：新 driver 实例从账本现值起步（不重发 from=null 的初始选定）
     currentLoopMode(agentId: string) {
@@ -391,7 +444,7 @@ export function apply(ctx: Context, config: Config): void {
     void ensureLedger(agentId).catch((error: unknown) => log('error', `ledger open failed for ${agentId}`, error))
   })
 
-  onAny(ctx, 'tools/result', (...args: unknown[]) => {
+  onAny(ctx, 'tools/result', async (...args: unknown[]) => {
     const exec = asDict(args[0])
     const result = asDict(args[1])
     if (exec === null || result === null) return
@@ -407,13 +460,19 @@ export function apply(ctx: Context, config: Config): void {
       value: result['value'],
     }
     void engine.captureToolResult(agentId, view).catch((error: unknown) => log('error', 'evidence capture failed', error))
-    // 被动面（P1）：S1 不变量观察 + wrapup 评估（update_goal complete/blocked）
+    // 被动面（P1/P2）：S1 不变量观察 + wrapup 评估（update_goal complete/blocked）。
+    // 注：DSH 对 tools/result 的 emit 为 fire-and-forget（不 await 异步 handler），故本
+    // await 不构成框架级"模型停手"保证；探针文件已设计为中性随机名 + 磁盘零隐藏输入
+    // （场景经 stdin）+ 跑完即删，模型即使窗口内可见也不含任何泄露内容。
     if (passiveMode !== 'off') {
       const argumentsDict = asDict(pick(exec, 'arguments')) ?? {}
       const text = toolResultText(view.content)
-      void passiveRuntime
-        .onToolResult(agentId, { name: view.name, arguments: argumentsDict, text, isError: view.isError, callId: view.callId })
-        .catch((error: unknown) => log('error', 'passive observation failed', error))
+      try {
+        await passiveRuntime
+          .onToolResult(agentId, { name: view.name, arguments: argumentsDict, text, isError: view.isError, callId: view.callId })
+      } catch (error) {
+        log('error', 'passive observation failed', error)
+      }
     }
   })
 
@@ -465,11 +524,26 @@ export function apply(ctx: Context, config: Config): void {
     const next = args[1] as () => Promise<{ kind: string; messages?: unknown[] }>
     const decision = await next()
     if (payload === null || decision.kind !== 'enter' || !Array.isArray(decision.messages)) return decision
-    // 被动面（P1）：零协议注入——Agent 无感知，默认跑原生路径
-    if (passiveMode !== 'off') return decision
     const agent = asDict(payload.agent)
     const agentId = typeof pick(agent, 'id') === 'string' ? (pick(agent, 'id') as string) : null
     if (agentId === null) return decision
+    // 被动面（P1/P2）：SIG-4 停滞计数（每步推进；工具活动由 tools/result 侧置位）
+    if (passiveMode !== 'off') {
+      try {
+        passiveRuntime.observeStep(agentId)
+      } catch (error) {
+        log('warn', `passive observeStep failed for ${agentId}`, error)
+      }
+    }
+    // 被动面（P1）：零协议注入——Agent 无感知，默认跑原生路径；仅 RECOVER 升级例外
+    if (passiveMode !== 'off') {
+      const mode = pick(agent, 'currentMode')
+      if (mode === 'RECOVER') {
+        log('info', `injecting RECOVER directive into agent ${agentId} (turn ${String(payload.turn)} step ${String(payload.step)})`)
+        return { kind: 'enter', messages: [...decision.messages, makePluginMessage(buildRecoverDirective())] }
+      }
+      return decision
+    }
     const ledger = directory.get(agentId)
     if (ledger === undefined) return decision
     const state = ledger.current

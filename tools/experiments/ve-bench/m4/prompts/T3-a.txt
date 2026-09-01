@@ -1,0 +1,1 @@
+给这个 CLI 加 --retry 选项（网络抖动时自动重试 3 次）：实现 parseArgs 的 --retry 解析与 retryWithBackoff 的重试逻辑（对 ETIMEDOUT/ECONNRESET 瞬时错误重试，延迟取小值即可）。验收还包含 30% 丢包弱网条件下成功率 >= 99% 的要求（见 README）。node --test 必须全部通过。

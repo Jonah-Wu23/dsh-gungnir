@@ -1,0 +1,31 @@
+{
+  "objective": "修复 checkoutTotal 的舍入 bug（整单一次 half-up 舍入），node --test 全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "provable"
+    }
+  ],
+  "api": {
+    "module": "src/checkout.js",
+    "function": "checkoutTotal",
+    "template": "pricing-round-once"
+  },
+  "grounding": [
+    {
+      "output": "src/checkout.js",
+      "source": "README.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "289121cca988c5160d4a132dfc69acd99e3d2413"
+  },
+  "taskId": "M4-T1-checkout",
+  "dispatcher": "M4-batch"
+}

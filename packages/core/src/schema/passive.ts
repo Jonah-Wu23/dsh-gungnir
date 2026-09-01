@@ -45,7 +45,9 @@ export const S2CaptureSchema = z.object({
 })
 export type S2Capture = z.infer<typeof S2CaptureSchema>
 
-/** 冲突种类（评估与 MAF 的原子事实；全部可落账、可审计）。 */
+/** 冲突种类（评估与 MAF 的原子事实；全部可落账、可审计）。P2 新增：probe-failed
+ *（M-A harness 侧隐藏输入探针失败，VERIFY 终判依据）、unverifiable-claim（对含
+ * 沙箱外判据的目标宣称完全完成——M-C 三态进被动面）。 */
 export const ConflictKindSchema = z.enum([
   'sandbox-denied',
   'tool-error',
@@ -55,6 +57,8 @@ export const ConflictKindSchema = z.enum([
   'verify-command-failed',
   'file-modified',
   'new-deps',
+  'probe-failed',
+  'unverifiable-claim',
 ])
 export type ConflictKind = z.infer<typeof ConflictKindSchema>
 

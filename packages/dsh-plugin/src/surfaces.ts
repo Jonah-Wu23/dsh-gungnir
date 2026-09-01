@@ -63,7 +63,7 @@ export interface SurfaceDeps {
   /** 冷重建并缓存该 agent 的 ledger（engine 事件面全部依赖它先就位） */
   ensureLedger(agentId: string): Promise<unknown>
   /** 被动面模式（三阶段 P1）：'off' = 协议面现役；'s1'/'s1+s2' = 被动面 */
-  passive: 'off' | 's1' | 's1+s2'
+  passive: 'off' | 's1' | 's1+s2' | 'bpar'
   /** 被动面运行时（passive != 'off' 时非 null） */
   passiveRuntime?: PassivePlaneRuntime | null
 }

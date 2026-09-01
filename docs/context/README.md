@@ -8,7 +8,7 @@
 |---|---|---|---|
 | **L0 常读** | 本 README、[project-brief](project-brief.md)、[state](state.md) | 每次会话开始 | 三件合计 ≤ 250 行 |
 | **L1 入门** | [architecture](architecture.md)、[glossary](glossary.md)、[decisions](decisions.md) | 新协作者一次性读完；老手只在相关时查 | 每件 ≤ 200 行 |
-| **L2 按需** | [dsh-interface](dsh-interface.md)、`docs/plan/` 阶段详细计划（当前：一阶段〔已完成〕、二阶段〔已完成，熔断〕、三阶段〔P1 Passive Proof Spike 已完成：FAIL→退出线，见 stage report；P0 passive 化主线按离线形态推进〕、H-VE 验证器效力基准〔M1–M3 已完成：控制臂 0/6 → 四类药方 → 治疗臂 6/6，见效力报告〕、派发契约与钓鱼题供给线〔已规划待执行，ADR-0020〕） | 做对应工作时读 | 事实手册，只增不删（过期条目标记而非删除） |
+| **L2 按需** | [dsh-interface](dsh-interface.md)、`docs/plan/` 阶段详细计划（当前：一阶段〔已完成〕、二阶段〔已完成，熔断〕、三阶段〔P1 Passive Proof Spike 已完成：FAIL→退出线，见 stage report；P0 passive 化主线按离线形态推进〕、H-VE 验证器效力基准〔M1–M5 已完成：控制臂 0/6 → 四类药方 → 治疗臂 6/6 → M4 真实模型病理画像 → M5 大任务面多模型画像〔deepseek 0/8、glm T2② 检出、gpt 通道停顿〕，见效力报告与 M4/M5 报告〕、派发契约与钓鱼题供给线〔B1–B3 全部完成：契约文档 + 供给闭环 + 真实演示 + M4 病理画像，ADR-0020〕、三阶段 P2 Escalation Proof Spike〔已完成：G1 FAIL→BPAR v0 死刑、G2/G3/G4 PASS 运行期拦截能力证成，ADR-0021〕、P3 BPAR v0.1 确认批〔已完成：S1 完成调用豁免落码 + replay 三项全过 + 真跑 3 run 零拦截零升级信号全 PASS，G-FIX PASS → 发布候选资格，ADR-0022，见 P2 stage report §9 附录〕） | 做对应工作时读 | 事实手册，只增不删（过期条目标记而非删除） |
 | **L3 深层** | `docs/plan/全阶段实施计划.md`、`docs/idea/*`（思想源文档，只读）、[dsh-interface-detail](dsh-interface-detail.md)（接缝勘察证据附录，只存档不更新）、各包 README、DSH 上游文档 | 仅当 L0–L2 无法回答"为什么"时 | 无限制 |
 
 披露规则：
@@ -26,7 +26,7 @@
 | 写阶段代码（当前：三阶段 Passive Prove 主线 / Passive Proof Spike） | + architecture、dsh-interface、对应阶段的详细计划 | glossary（术语不清时）、decisions（动到已决策领域时） |
 | 架构 / 接缝 / 技术选型 | + dsh-interface、decisions | idea 原文（结论有争议时）、DSH 上游 README |
 | 新增或修改 Verifier | + 三阶段计划 §5（Proof-Carrying 设计稿）、glossary（阶梯定义） | — |
-| 动 Adaptive Loop / 路由规则 / 替换 seam | + ADR-0012/0016/0017、architecture（均为冻存资产；重开须另立 ADR） | 二阶段计划与阶段报告 + post-mortem（历史语境）、重新思考版原文（结论有争议时） |
+| 动 Adaptive Loop / 路由规则 / 替换 seam | + ADR-0012/0016/0017/0021、architecture（冻存资产；P2 spike 解冻接线见 ADR-0021 与《三阶段-P2-Escalation-Proof-Spike计划》） | 二阶段计划与阶段报告 + post-mortem（历史语境）、重新思考版原文（结论有争议时） |
 | 测试 / 破坏测试 / 实验 | + 对应阶段计划的测试策略节（当前：二阶段计划 §7） | — |
 | 升级 DSH 版本 | + dsh-interface（含接缝回归清单） | — |
 | 理解项目为什么长这样 | + decisions（全部 ADR） | idea 四篇（方向结论以重新思考版为准） |

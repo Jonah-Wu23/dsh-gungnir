@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   assessS1,
+  isEscalationDenial,
   assessS2,
   assertNoL4,
   buildMafMessage,
   emptyPassivePlane,
   hasTestFailureMarkers,
   invariantsFromToolEvent,
+  isCompletionCallToolError,
   isDeniedText,
   isInsideWorkspace,
   isTestRunText,
@@ -17,6 +19,7 @@ import {
   type S2VerifyContext,
   type ToolEventView,
 } from '../src/passive.ts'
+import { emptyEscalationCounters, observeEscalationEvent } from '../src/escalation.ts'
 import { parseGungnirEvent, makeEvent } from '../src/schema/events.ts'
 import { foldEvents } from '../src/fold.ts'
 import { S2CaptureSchema } from '../src/schema/passive.ts'
@@ -286,5 +289,122 @@ describe('被动事件 schema 与 fold（advisory no-op）', () => {
     state = recordCompletionClaim(state)
     state = recordCompletionClaim(state)
     expect(state.completionClaims).toBe(2)
+  })
+})
+
+describe('S1 完成调用豁免（BPAR v0.1，ADR-0022）', () => {
+  /** P2 E2-gpt-H1-a 原案：update_goal(action="complete") 误传 edit 专属参数 → 工具报错。 */
+  const malformedComplete = (callId: string): ToolEventView =>
+    resultView({
+      callId,
+      name: 'update_goal',
+      text: 'Error: objective and max_goal_rounds are valid only with action edit',
+      isError: true,
+      args: { action: 'complete' },
+    })
+
+  it('完成声明调用自身报错 → wrapup 抑制 tool-error 冲突（零拦截）；无上下文则照常拦', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, malformedComplete('call-complete-1'), WS).state
+    expect(state.lastProblem).toBe('tool-error')
+    expect(state.lastErrorTool).toBe('update_goal')
+    expect(state.lastErrorCallId).toBe('call-complete-1')
+    expect(state.lastErrorAction).toBe('complete')
+    expect(isCompletionCallToolError(state, 'call-complete-1')).toBe(true)
+    // wrapup 在同一调用上触发（报错调用 == 完成调用）→ 豁免
+    expect(assessS1(state, { completionCallId: 'call-complete-1' })).toEqual([])
+    // 旧栈语义（无豁免上下文）：仍视为冲突——豁免是新增路径，不吞既有行为
+    expect(assessS1(state).map((c) => c.kind)).toContain('tool-error')
+  })
+
+  it('报错调用为其他工具且其后无干净结果消化 → 仍拦（豁免不覆盖）', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, resultView({ callId: 'call-pwsh', name: 'pwsh', text: 'Error: boom', isError: true }), WS).state
+    expect(state.lastProblem).toBe('tool-error')
+    expect(state.lastErrorTool).toBe('pwsh')
+    expect(assessS1(state, { completionCallId: 'call-complete-2' }).map((c) => c.kind)).toContain('tool-error')
+  })
+
+  it('update_goal 非完成 action（edit）报错 → 仍拦（action 字段判据）', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, resultView({ callId: 'call-edit', name: 'update_goal', text: 'Error: x', isError: true, args: { action: 'edit' } }), WS).state
+    expect(assessS1(state, { completionCallId: 'call-edit' }).map((c) => c.kind)).toContain('tool-error')
+  })
+
+  it('完成调用报错后插入其他工具报错 → 后续 wrapup 仍拦（时序判据：最近报错非完成调用）', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, malformedComplete('call-complete-1'), WS).state
+    state = observeToolEvent(state, resultView({ callId: 'call-pwsh', name: 'pwsh', text: 'Error: boom', isError: true }), WS).state
+    expect(state.lastErrorCallId).toBe('call-pwsh')
+    expect(assessS1(state, { completionCallId: 'call-complete-1' }).map((c) => c.kind)).toContain('tool-error')
+  })
+
+  it('sandbox-denied 不豁免（三个不变量语义不动）', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, resultView({ callId: 'call-pwsh', name: 'pwsh', text: 'Error: denied by sandbox', isError: true }), WS).state
+    expect(state.lastProblem).toBe('sandbox-denied')
+    expect(assessS1(state, { completionCallId: 'call-complete-9' }).map((c) => c.kind)).toContain('sandbox-denied')
+  })
+
+  it('干净结果清除错误态 → 豁免上下文不适用、无冲突（恢复语义不变）', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, malformedComplete('call-complete-1'), WS).state
+    state = observeToolEvent(state, resultView({ callId: 'clean', name: 'pwsh', text: 'ok' }), WS).state
+    expect(state.lastProblem).toBeNull()
+    expect(state.lastErrorCallId).toBeNull()
+    expect(assessS1(state, { completionCallId: 'call-complete-1' })).toEqual([])
+  })
+
+  it('豁免只抑制 tool-error，其他冲突（test-failure）照常拦', () => {
+    let state = emptyPassivePlane()
+    state = observeToolEvent(state, resultView({ callId: 'tf', name: 'pwsh', text: '✖ fails\nℹ fail 1' }), WS).state
+    state = observeToolEvent(state, malformedComplete('call-complete-1'), WS).state
+    const conflicts = assessS1(state, { completionCallId: 'call-complete-1' })
+    expect(conflicts.map((c) => c.kind)).not.toContain('tool-error')
+    expect(conflicts.map((c) => c.kind)).toContain('test-failure')
+  })
+
+  it('重复 malformed 完成调用：每次 wrapup 都豁免，但 SIG-2 同签名连续 ≥3 仍触发（安全兜底）', () => {
+    let state = emptyPassivePlane()
+    let counters = emptyEscalationCounters()
+    const signals: string[] = []
+    for (let i = 1; i <= 3; i++) {
+      const event = malformedComplete(`call-malformed-${i}`)
+      state = observeToolEvent(state, event, WS).state
+      // 豁免：单发不拦（修复目标）
+      expect(assessS1(state, { completionCallId: `call-malformed-${i}` })).toEqual([])
+      const r = observeEscalationEvent(counters, { type: 'tool/result', name: event.name, text: event.text ?? '', isError: event.isError === true })
+      counters = r.counters
+      signals.push(...r.signals.map((s) => s.signal))
+    }
+    // SIG-2 兜底：模型若反复 malformed 完成调用，仍会被重复失败签名路径提醒
+    expect(counters.consecutiveErrors).toBe(3)
+    expect(signals).toContain('sig-2')
+  })
+})
+
+describe('S1 沙箱升级被拒（M5 修复：EPERM 同类环境事实不误报）', () => {
+  it('isEscalationDenial 识别升级被拒文本', () => {
+    expect(isEscalationDenial('Error: sandbox escalation to "workspace-write" is not strictly wider than this call\'s current "workspace-write" mode')).toBe(true)
+    expect(isEscalationDenial('denied by policy')).toBe(false)
+    expect(isEscalationDenial('node --test passed')).toBe(false)
+  })
+
+  it('以升级被拒收尾的会话不产生 tool-error 冲突', () => {
+    const events = [
+      { type: 'tool/result', turn: 0, step: 0, name: 'pwsh', callId: 'c1', text: 'node --test passed', isError: false },
+      { type: 'tool/result', turn: 0, step: 1, name: 'pwsh', callId: 'c2', text: 'Error: sandbox escalation to "workspace-write" is not strictly wider than this call\'s current "workspace-write" mode', isError: true },
+    ]
+    let state = emptyPassivePlane()
+    for (const event of events) {
+      state = observeToolEvent(state, event as never, 'C:\ws').state
+    }
+    expect(assessS1(state)).toEqual([])
+  })
+})
+
+describe('S1 升级被拒变体（approval 通道缺失）', () => {
+  it('识别 "requires approval, no approval channel" 变体', () => {
+    expect(isEscalationDenial('Error: sandbox escalation to "danger-full-access" requires approval, but no approval channel is available')).toBe(true)
   })
 })

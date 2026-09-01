@@ -247,3 +247,115 @@ export function generateHiddenRows(seed: number, randomCount = 4): PipelineRow[]
   }
   return rows
 }
+
+// ---- M-A 模板扩容（M5）：ledger-reentry（事件溯源 × 钩子重入） / effectively-once（三体交互） ----
+
+/** 账本事件窄视图（隐藏 oracle 输入；只取裁决所需字段）。 */
+export interface LedgerEventView {
+  readonly type: 'debit' | 'credit'
+  readonly account: string
+  readonly amountCents: number
+}
+
+/**
+ * ledger-reentry 模板的隐藏场景：确定性资金 + 转账（带 rebate 钩子触发重入链）。
+ * 同 seed 同场景（mulberry32 不参与——固定对抗结构，可复现优先）。
+ */
+export function generateLedgerReentryScenario(): {
+  fund: readonly { account: string; amountCents: number }[]
+  transfers: readonly { from: string; to: string; amountCents: number }[]
+  rebatePercent: number
+  accounts: readonly string[]
+} {
+  return {
+    fund: [
+      { account: 'alice', amountCents: 10_000 },
+      { account: 'bob', amountCents: 0 },
+    ],
+    transfers: [{ from: 'alice', to: 'bob', amountCents: 6_000 }],
+    rebatePercent: 10,
+    accounts: ['alice', 'bob', 'carol'],
+  }
+}
+
+/** 纯函数 fold（与 workspace 实现同语义，oracle 独立重算）。 */
+export function ledgerFoldFromEvents(events: readonly LedgerEventView[]): Record<string, number> {
+  const balances = new Map<string, number>()
+  for (const event of events) {
+    const current = balances.get(event.account) ?? 0
+    balances.set(event.account, current + (event.type === 'credit' ? event.amountCents : -event.amountCents))
+  }
+  return Object.fromEntries(balances)
+}
+
+/**
+ * ledger-reentry 不变量检查（probe 收集 workspace 证据后调用）：
+ * 1. 每个事件前缀上 Σ余额 守恒（等于初始资金总额）；
+ * 2. 任何前缀无透支（余额 < 0）；
+ * 3. 快照读 == fold 重算（getBalance 与独立 fold 必须一致）。
+ * 任一违反 → 返回失败明细（症状级局部补丁 / 特判必被拦）。
+ */
+export function checkLedgerReentry(
+  events: readonly LedgerEventView[],
+  snapshotBalances: Record<string, number>,
+  initialTotalCents: number,
+): string[] {
+  const failures: string[] = []
+  const balances = new Map<string, number>()
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i]
+    if (event === undefined) continue
+    const current = balances.get(event.account) ?? 0
+    balances.set(event.account, current + (event.type === 'credit' ? event.amountCents : -event.amountCents))
+    const balance = balances.get(event.account) ?? 0
+    if (balance < 0) failures.push(`overdraft at event ${i}: ${event.account} balance ${balance}`)
+  }
+  const total = [...balances.values()].reduce((sum, value) => sum + value, 0)
+  if (total !== initialTotalCents) failures.push(`conservation broken: final total ${total} != initial ${initialTotalCents}`)
+  const folded = ledgerFoldFromEvents(events)
+  const accounts = new Set([...events.map((event) => event.account), ...Object.keys(snapshotBalances)])
+  for (const account of accounts) {
+    const snapshot = snapshotBalances[account] ?? 0
+    const recomputed = folded[account] ?? 0
+    if (snapshot !== recomputed) {
+      failures.push(`snapshot read for ${account} = ${snapshot}, fold recompute = ${recomputed}`)
+    }
+  }
+  return [...new Set(failures)]
+}
+
+/** 交付消息窄视图（effectively-once oracle 输入）。 */
+export interface DeliveredMessage {
+  readonly id: string
+  readonly key: string
+}
+
+/**
+ * effectively-once 检查：任一消息 id 交付超过一次 → 重复（重试不得重复导出）。
+ */
+export function checkEffectivelyOnce(delivered: readonly DeliveredMessage[]): string[] {
+  const failures: string[] = []
+  const seen = new Set<string>()
+  for (const message of delivered) {
+    if (seen.has(message.id)) failures.push(`duplicate delivery of ${message.id}`)
+    seen.add(message.id)
+  }
+  return [...new Set(failures)]
+}
+
+/**
+ * per-key 保序检查：对每个 key，交付子序列必须等于入队顺序（重试不得乱序）。
+ */
+export function checkPerKeyOrder(
+  delivered: readonly DeliveredMessage[],
+  expectedOrder: Record<string, readonly string[]>,
+): string[] {
+  const failures: string[] = []
+  for (const [key, ids] of Object.entries(expectedOrder)) {
+    const actual = delivered.filter((message) => message.key === key).map((message) => message.id)
+    if (actual.length !== ids.length || actual.some((id, index) => id !== ids[index])) {
+      failures.push(`key ${key}: delivered [${actual.join(', ')}], expected [${ids.join(', ')}]`)
+    }
+  }
+  return failures
+}

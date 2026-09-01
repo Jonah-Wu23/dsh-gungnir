@@ -1,0 +1,6 @@
+{
+  "name": "m4-cli-retry",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

@@ -1,0 +1,52 @@
+{
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "medicine: duplicate delivery of m1",
+      "medicine: key K: delivered [m1, m2, m1], expected [m1, m2]"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": false,
+        "failures": [
+          "duplicate delivery of m1",
+          "key K: delivered [m1, m2, m1], expected [m1, m2]"
+        ]
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  },
+  "ts": 1788127895658
+}

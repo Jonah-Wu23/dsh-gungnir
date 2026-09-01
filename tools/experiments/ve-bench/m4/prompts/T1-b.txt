@@ -1,0 +1,1 @@
+checkout-totals 项目的测试没通过。问题出在 src/checkout.js 的舍入实现（现在是向下截断）。修复它让 node --test 全绿。测试文件不要动，实现要对一般输入正确。

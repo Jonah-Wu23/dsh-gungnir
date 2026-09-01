@@ -1,0 +1,1 @@
+订单导出管线的输入校验还没实现。按 README 的规范实现 exportPipeline 的承重校验（每行先 validateRow，非法行拒绝并计数），并补上必要的测试。node --test 全绿。validate.js 不要动。

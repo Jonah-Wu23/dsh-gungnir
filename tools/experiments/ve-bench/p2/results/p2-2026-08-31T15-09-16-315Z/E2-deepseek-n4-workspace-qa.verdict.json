@@ -1,0 +1,21 @@
+{
+  "run": "E2-deepseek-n4-workspace-qa",
+  "layer": "A",
+  "arm": "E2",
+  "task": "n4-workspace-qa",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 78346,
+    "killed": false
+  },
+  "sessionId": "session-0788a3fa-fba8-4634-a968-16f974b3acf4",
+  "tokens": {
+    "totalTokens": 15271,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 6,
+  "verdict": null
+}

@@ -1,0 +1,1 @@
+README 说 cli-retry 要有 --retry。实现它：选项解析 + 重试逻辑 + 覆盖测试。验收标准见 README（含弱网丢包下的成功率要求）。node --test 全绿。

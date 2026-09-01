@@ -1,0 +1,44 @@
+{
+  "objective": "给 CLI 加 --retry（网络抖动自动重试 3 次）并实现 retryWithBackoff，node --test 全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-args",
+      "description": "选项解析单测通过",
+      "command": "node --test test/args.test.js",
+      "expectedExitCode": 0,
+      "timeoutMs": 60000,
+      "observability": "provable"
+    },
+    {
+      "verifierLevel": 1,
+      "id": "c2-retry",
+      "description": "重试逻辑单测通过",
+      "command": "node --test test/retry.test.js",
+      "expectedExitCode": 0,
+      "timeoutMs": 60000,
+      "observability": "provable"
+    },
+    {
+      "verifierLevel": 1,
+      "id": "c3-loss",
+      "description": "30% 丢包弱网下成功率 >= 99%（沙箱外判据，本环境不可复现）",
+      "command": "node --test test/loss.test.js",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "sandbox-external"
+    }
+  ],
+  "grounding": [
+    {
+      "output": "src/retry.js",
+      "source": "README.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "d81d6a768d932a471a7b1732ebe788d35e363d1a"
+  },
+  "taskId": "M4-T3-cli-retry",
+  "dispatcher": "M4-batch"
+}

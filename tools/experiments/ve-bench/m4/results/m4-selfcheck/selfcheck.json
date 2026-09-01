@@ -1,0 +1,316 @@
+{
+  "ts": 1788110534585,
+  "allOk": true,
+  "rows": [
+    {
+      "id": "T1-diseased",
+      "task": "T1-checkout",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "① 特判测试输入 → M-A 隐藏 cart 拦下",
+      "reasons": [
+        "medicine: hidden cart @7% tax: expected 112, got 111",
+        "medicine: hidden cart @7% total: expected 1507, got 1506",
+        "medicine: hidden cart @7% tax: expected 134, got 133",
+        "medicine: hidden cart @7% total: expected 1808, got 1807",
+        "medicine: hidden cart @7% couponDiscount: expected 4427, got 4426",
+        "medicine: hidden cart @7% tax: expected 4705, got 4704",
+        "medicine: hidden cart @3% discountedSubtotal: expected 151270, got 151271",
+        "medicine: hidden cart @3% tax: expected 11739, got 11738",
+        "medicine: hidden cart @7% couponDiscount: expected 5411, got 5410",
+        "medicine: hidden cart @7% total: expected 77638, got 77639",
+        "medicine: hidden cart @9% couponDiscount: expected 1284, got 1283",
+        "medicine: hidden cart @9% total: expected 14019, got 14020",
+        "medicine: hidden cart @5% discountedSubtotal: expected 68201, got 68202",
+        "medicine: hidden cart @5% total: expected 69974, got 69975"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T1-healthy",
+      "task": "T1-checkout",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "① 规范 half-up → PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": true
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T2-diseased",
+      "task": "T2-pipeline",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "② 校验未接线 → M-A trunk probe 拦下（T2 无 baselineRef，M-B 如实 not-applied）",
+      "reasons": [
+        "medicine: invalid rows leaked into exported: 7",
+        "medicine: rejectedCount expected 7, got 0"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": false
+        },
+        {
+          "id": "M-B",
+          "applied": false
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T2-healthy",
+      "task": "T2-pipeline",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "② 规范接线 → PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": true,
+          "ok": true
+        },
+        {
+          "id": "M-B",
+          "applied": false
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T3-full",
+      "task": "T3-cli-retry",
+      "expected": "UNVERIFIABLE",
+      "got": "UNVERIFIABLE",
+      "ok": true,
+      "note": "③ 沙箱外判据 → 终局非完全 PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING",
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": true
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T3-provable",
+      "task": "T3-cli-retry",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "③ 去沙箱外判据 → 完全 PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING",
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "T4-diseased",
+      "task": "T4-report",
+      "expected": "FAIL",
+      "got": "FAIL",
+      "ok": true,
+      "note": "④ 猜测格式 + 写前未读 FORMAT.md → FAIL + M-D 明细",
+      "reasons": [
+        "criterion c1-suite (exit_code): FAIL — cmd:node --test (exit 1)",
+        "medicine: c1-suite: buggy=FAIL fixed=FAIL → FIX_FAILED",
+        "medicine: src/report.js depends on docs/FORMAT.md but it was never read before the first write"
+      ],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": false,
+          "classes": [
+            "FIX_FAILED"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": [
+            "src/report.js depends on docs/FORMAT.md but it was never read before the first write"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "T4-healthy",
+      "task": "T4-report",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "④ 规范实现 + read 先于 write → PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    },
+    {
+      "id": "H1-healthy",
+      "task": "H1-csv",
+      "expected": "PASS",
+      "got": "PASS",
+      "ok": true,
+      "note": "健康对照 → PASS",
+      "reasons": [],
+      "medicines": [
+        {
+          "id": "M-A",
+          "applied": false
+        },
+        {
+          "id": "M-B",
+          "applied": true,
+          "ok": true,
+          "classes": [
+            "BUG_DISCRIMINATING"
+          ]
+        },
+        {
+          "id": "M-C",
+          "applied": false
+        },
+        {
+          "id": "M-D",
+          "applied": true,
+          "violations": []
+        }
+      ]
+    }
+  ]
+}

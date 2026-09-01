@@ -1,0 +1,31 @@
+{
+  "objective": "修复 relaypump 使交付保证成立（effectively-once + per-key 保序，README 权威），node --test 全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 180000,
+      "observability": "provable"
+    }
+  ],
+  "api": {
+    "module": "src/index.js",
+    "function": "createPump",
+    "template": "effectively-once"
+  },
+  "grounding": [
+    {
+      "output": "src/pump.js",
+      "source": "README.md"
+    },
+    {
+      "output": "src/queue.js",
+      "source": "README.md"
+    }
+  ],
+  "taskId": "M5-T2-relaypump",
+  "dispatcher": "M5-batch"
+}

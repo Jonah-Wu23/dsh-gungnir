@@ -1,0 +1,54 @@
+{
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "medicine: transfer threw: insufficient funds",
+      "medicine: snapshot read for alice = 10000, fold recompute = 4000",
+      "medicine: snapshot read for bob = 0, fold recompute = 6000"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": false,
+        "failures": [
+          "transfer threw: insufficient funds",
+          "snapshot read for alice = 10000, fold recompute = 4000",
+          "snapshot read for bob = 0, fold recompute = 6000"
+        ]
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  },
+  "ts": 1788127895353
+}

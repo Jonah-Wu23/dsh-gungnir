@@ -16,11 +16,11 @@ export function buildDirective(state: GungnirState): string | null {
 
   if (state.currentAction === null) {
     lines.push(
-      `[Gungnir round ${state.currentRound + 1} start] No action is committed yet. Call the gungnir_plan tool ONCE with a rolling-horizon projection (ordered steps, each targeting concrete successCriteria). The harness will commit the first actionable step for this round.`,
+      `[Round ${state.currentRound + 1} start] No action is committed yet. Call the gungnir_plan tool ONCE with a rolling-horizon projection (ordered steps, each targeting concrete successCriteria). The harness will commit the first actionable step for this round.`,
     )
   } else {
     lines.push(
-      `[Gungnir round ${state.currentRound} — committed action ${state.currentAction.actionId}] This round has exactly ONE committed action: ${state.currentAction.summary} (targets: ${state.currentAction.targetsCriteria.join(', ')}). Execute it; do not work on other steps.`,
+      `[Round ${state.currentRound} — committed action ${state.currentAction.actionId}] This round has exactly ONE committed action: ${state.currentAction.summary} (targets: ${state.currentAction.targetsCriteria.join(', ')}). Execute it; do not work on other steps.`,
     )
   }
 
@@ -50,7 +50,7 @@ export function buildVerifyDirective(state: GungnirState): string | null {
   }
   if (outstanding.length === 0) return null
   return [
-    `[Gungnir VERIFY] Machine-verifiable checks are outstanding for action ${state.currentAction.actionId}: ${outstanding.join(', ')}.`,
+    `[VERIFY] Machine-verifiable checks are outstanding for action ${state.currentAction.actionId}: ${outstanding.join(', ')}.`,
     'Verification before conclusion: run each exit_code predicate command yourself and re-check each artifact predicate (path/content) with your tools NOW; do not end this turn with unverified claims.',
     'The harness verifier re-checks every criterion from evidence at round end — a claim without deterministic backing will FAIL. If a check cannot pass, say so in gungnir_report with asserted_outcome=failed or blocked instead of claiming done.',
   ].join('\n')
@@ -60,4 +60,16 @@ export function directiveApplicable(state: GungnirState, step: number): boolean 
   // 实测（0.1.1-rc.2，headless）：step 从 1 起，且单 turn 内可能完成全部工作——
   // 在 SPEC_COMMITTED/EXECUTING 期间逐 step 注入（协议压力），COMPLETE 等终态自然停止。
   return step >= 1 && buildDirective(state) !== null
+}
+
+/**
+ * RECOVER 模式指令（P2，BPAR v0 例外升级：SIG-2 持续 → 换档）。任务层事实（AP-6）：
+ * 只说"当前做法未收敛、重读规格换策略"，不暴露触发器/预算等控制面内部概念，
+ * 不带品牌前缀（泄题纪律：不暴露监督面身份）。
+ */
+export function buildRecoverDirective(): string {
+  return [
+    'Your current approach has not been converging.',
+    'Stop and re-assess: form a fresh hypothesis about what is actually wrong, and switch to a different strategy. Do not repeat the same failing action.',
+  ].join('\n')
 }

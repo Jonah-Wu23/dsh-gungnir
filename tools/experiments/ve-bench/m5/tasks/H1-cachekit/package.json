@@ -1,0 +1,6 @@
+{
+  "name": "cachekit",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

@@ -1,0 +1,74 @@
+{
+  "run": "E3-deepseek-C2-redherring",
+  "layer": "C",
+  "arm": "E3",
+  "task": "C2-redherring",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 69189,
+    "killed": false
+  },
+  "sessionId": "session-75f62ca6-c46f-43e6-9d8b-16fd9e645b5a",
+  "tokens": {
+    "totalTokens": 19217,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 11,
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      },
+      {
+        "id": "c2-calc",
+        "kind": "artifact",
+        "outcome": "PASS",
+        "detailRef": "path:src/calc.js sha256:726175587ea134a0"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

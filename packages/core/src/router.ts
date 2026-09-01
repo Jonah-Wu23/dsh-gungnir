@@ -10,8 +10,8 @@ import type { GungnirState } from './schema/state.ts'
  * 行为必须与普通 DSH 无差别（FAST = 原生路径，不注入任何 Gungnir 负担）。
  */
 
-/** Loop Strategy 词汇表的运行时常量（类型权威在 schema/events.ts）。 */
-export const LOOP_MODES: readonly LoopMode[] = ['FAST', 'EXECUTE', 'VERIFY']
+/** Loop Strategy 词汇表的运行时常量（类型权威在 schema/events.ts）。P2：RECOVER 例外升级。 */
+export const LOOP_MODES: readonly LoopMode[] = ['FAST', 'EXECUTE', 'VERIFY', 'RECOVER']
 
 /** router 输入：全部由 GungnirState 派生（结构化事实，无语义嗅探）。 */
 export interface LoopRouterInputs {
@@ -23,12 +23,17 @@ export interface LoopRouterInputs {
   claimRecordedThisRound: boolean
   /** 本 action 的目标 criterion 中存在未满足的机器可复验项（L1/L2） */
   machineVerifiableOutstanding: boolean
+  /**
+   * P2（BPAR v0）：被动面升级裁决（SIG-1 → VERIFY / SIG-2 持续 → RECOVER）。
+   * 由插件按被动面计数器提供（预算内）；无升级 = null。
+   */
+  pendingEscalation?: { mode: 'VERIFY' | 'RECOVER' } | null
 }
 
 /** router 输出：模式 + 命中的决策规则标识（落账审计字段 rule）。 */
 export interface LoopRouteDecision {
   mode: LoopMode
-  rule: 'verify-machine-verifiable' | 'execute-action' | 'execute-goal-work' | 'fast-no-goal-work' | 'hysteresis-hold'
+  rule: 'verify-machine-verifiable' | 'execute-action' | 'execute-goal-work' | 'fast-no-goal-work' | 'hysteresis-hold' | 'escalate-verify' | 'escalate-recover'
 }
 
 export function routerInputsOf(state: GungnirState): LoopRouterInputs {
@@ -63,6 +68,8 @@ export function routerInputsOf(state: GungnirState): LoopRouterInputs {
 
 /**
  * 决策表（有序，先命中先赢）：
+ * 0. 升级优先 —— 被动面升级裁决（SIG-1 → VERIFY / SIG-2 持续 → RECOVER）先于
+ *    常规路由（例外升级是证据触发的慢路径，Default-to-cheap 的例外）。
  * 1. VERIFY  —— action 已被 claim 且目标里有未满足的 L1/L2 谓词：验证优先序
  *              不能反（deterministic check 先行），驱动模型先跑机器可复验检查。
  * 2. EXECUTE —— action 已 commit 未 claim：执行轮（原生工具面 + reconcile 指令）。
@@ -71,6 +78,8 @@ export function routerInputsOf(state: GungnirState): LoopRouterInputs {
  *              不削工具面、不降模型档——v0 的"便宜"指不叠加认知负担；模型轴归三阶段）。
  */
 export function routeLoopMode(inputs: LoopRouterInputs): LoopRouteDecision {
+  if (inputs.pendingEscalation?.mode === 'VERIFY') return { mode: 'VERIFY', rule: 'escalate-verify' }
+  if (inputs.pendingEscalation?.mode === 'RECOVER') return { mode: 'RECOVER', rule: 'escalate-recover' }
   if (inputs.hasCommittedAction && inputs.claimRecordedThisRound && inputs.machineVerifiableOutstanding) {
     return { mode: 'VERIFY', rule: 'verify-machine-verifiable' }
   }

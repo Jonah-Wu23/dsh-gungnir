@@ -1,0 +1,21 @@
+{
+  "run": "E0-deepseek-n1-multi-file",
+  "layer": "A",
+  "arm": "E0",
+  "task": "n1-multi-file",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 81670,
+    "killed": false
+  },
+  "sessionId": "session-a2fe440d-1980-4f58-be00-8d131613a26d",
+  "tokens": {
+    "totalTokens": 15366,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 6,
+  "verdict": null
+}

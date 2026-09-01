@@ -1,0 +1,26 @@
+{
+  "objective": "修复 src/sum.js 中的正确性缺陷（README 权威），node --test 保持全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "provable"
+    }
+  ],
+  "grounding": [
+    {
+      "output": "src/sum.js",
+      "source": "README.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "df2c08f938d03b915f19c1b846f3ede4cddef36e"
+  },
+  "taskId": "P2-C1-envwall-backup",
+  "dispatcher": "P2-batch-backup"
+}

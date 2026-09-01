@@ -1,0 +1,17 @@
+{
+  "taskId": "P2-C1-envwall",
+  "dispatcher": "P2-batch",
+  "objective": "修复 src/format.js 中的正确性缺陷（README 权威），node --test 保持全绿。",
+  "acceptance": [
+    {
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "verifierLevel": 1,
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000
+    }
+  ],
+  "grounding": [ { "output": "src/format.js", "source": "README.md" } ],
+  "baselineRef": { "type": "git", "commit": "<FILL_AT_RUNTIME>" }
+}

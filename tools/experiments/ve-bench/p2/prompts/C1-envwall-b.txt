@@ -1,0 +1,1 @@
+修复 src/format.js 中的正确性缺陷（README 为权威规格），node --test 保持全绿。

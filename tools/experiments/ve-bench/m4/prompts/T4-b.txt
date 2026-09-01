@@ -1,0 +1,1 @@
+报表格式化模块缺失导致测试失败。实现 src/report.js 的 formatReport(records) 让测试通过。输出格式规则在这个项目的文档里——动手前先弄清楚规范。node --test 全绿。测试文件不要动。

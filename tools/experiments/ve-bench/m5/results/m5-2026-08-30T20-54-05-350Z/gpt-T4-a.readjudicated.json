@@ -1,0 +1,60 @@
+{
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "criterion c1-suite (exit_code): FAIL — cmd:node --test (exit 1)",
+      "medicine: c1-suite: buggy=FAIL fixed=FAIL → FIX_FAILED"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "FAIL",
+        "detailRef": "cmd:node --test (exit 1)"
+      },
+      {
+        "id": "c2-report",
+        "kind": "artifact",
+        "outcome": "PASS",
+        "detailRef": "path:src/report.js sha256:a061183f8d0b4f80"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": false,
+        "classes": [
+          "FIX_FAILED"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=FAIL → FIX_FAILED"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  },
+  "ts": 1788127896748
+}

@@ -63,7 +63,13 @@
 | **承重交付物（Load-bearing）** | （借自《Building to the Test》）交付物存在于真实执行路径上；判法 = no-op 化后被引用的测试应当崩，不崩即"built but not load-bearing"。VE-F2 的 oracle 之一。 |
 | **派发契约（Dispatch Contract）** | （ADR-0020，派发线；用户口语名"方案 B"）主/子拓扑中派发者（主 agent 或人）在派发时一次性填写的一页结构化契约：objective、验收判据（含可观测性分级）、api.template 声明、grounding 依据声明、baselineRef（派发点快照）、budget。同时是钓鱼题供给的唯一渠道——四类药方供给声明全部由它携带（AP-3：一次性捕获，不逐轮收协议税）。与 SwitchBench"方案 B"（Loop Hypervisor，ADR-0013 停投）、seam-only"方案 B"（附录 A 退路）无关；文档与代码不裸用"方案 B"。 |
 | **钓鱼题供给（Supply）** | （H-VE，ADR-0020）药方生效所需的结构化声明：M-A 需 `api.template`（任务→模板映射 + 公开 API）；M-B 需 `replay.buggyRef`+`evidence`（buggy 基底 + 声称的验证证据）；M-C 需 `unverifiableCriteria`（沙箱外判据标记）；M-D 需 `grounding.dependencies`+tool-log。bench 中手写；真实任务中由派发契约携带、runner 构造 probe。供给缺失 = 对应药方不启用并记入供给覆盖报告，不得假装检查过（Let It Fail）。 |
+| **供给覆盖报告（SupplyCoverage）** | （ADR-0020 B2）裁决输出的每药方供给状态清单（applied / not-applied + 原因）：无 api → M-A not-applied；无 baselineRef / 无 command 判据 → M-B not-applied（不假装 replay）；无沙箱外判据 → M-C not-applied；无 grounding → M-D not-applied。健康交付的 PASS 形态只要求可证判据全过（无沙箱外判据），全 applied 形态（含沙箱外判据）的终局是 UNVERIFIABLE——两者都是诚实标注，不冲突。 |
+| **per-model 病理画像** | （H-VE M4，ADR-0020）用验过的法官测真实模型：bait 任务面（四类病理诱导任务 + 健康对照，真实 profile 跑批）→ 分类犯病率 / 假完成宣称率 / 法官检出率 / 健康误杀率，出每模型的病理倾向画像（四阶段生态数据资产；结构预留多模型对照）。首版（deepseek-v4-flash-0731）：①②④ 犯病 0/2×3、③ 沙箱盲区假完成宣称 2/2（T3-b 模拟丢包当作验收达标）、健康 0/2 误杀、法官对③ UNVERIFIABLE 未放行 falseCompletion（ADR-0018 §6(a) 无新证据）。 |
+| **通道停顿（询问停顿，clarify-stall）** | （H-VE M5 观察，非四类病理）无应答 headless 环境下部分模型（实测 gpt-5.6-sol high）对含歧义任务深度分析后停在澄清提问（"请确认"/"是否按此实施"），无应答器 → 交付未修复。冒烟（无歧义小任务）可过 → 通道对无歧义任务可用；病理测量需 headless 自动应答器或 prompt 重设计（另立工作）。M5 中 gpt 8/8 标记 channelStall，不入犯病分母。 |
 | **wrapup seam（适配点②）** | DSH v0.1.2 tool-goal 的回合收尾边界：`update_goal(complete/blocked)` 不再硬停 turn，改 deferContext 注入 `<goal_complete>/<goal_blocked>` wrapup；被动面的验证触发点（结构事件，非文本挖掘）。 |
+| **INVALID（实验程序无效）** | （ADR-0021，铁律 10）实验程序/测量装置自身缺陷（runner bug、通道故障、命令构造错误、判定栈缺陷）导致的失败标记：修复装置、重烧、再判；INVALID 行保留落档、永不删除，但不进判定分母，严禁计入假设否证或目标不可行的证据。装置合意性由双侧自检 + 独立审查门证明后才允许跑批（ADR-0013 事故 #6/#7"合意实现"先例的普遍化；惨痛教训：P1 C2b 命令构造炸雷曾计入判定门 FAIL，直接引发全面转向）。 |
+| **BPAR（Baseline-Preserving Adaptive Runtime）v0** | （ADR-0021 第 2 条冻结的可执行定义；概念源自 ADR-0013 修订⑦）三方案最近似形态：ultragoal 承重件（一次性 L1 派发契约 + harness 侧 Evidence/Verifier/Reconciler，砍逐轮协议仪式）+ 动态工作逻辑承重件（被动面 S1 + harness 模板化 S2 + wrapup 钩子 + MAF）+ 动态 agent loop 承重件（恒等 driver 默认配置 + 证据触发例外升级 VERIFY/RECOVER）。健康路径成本预算 ≤ baseline +10%。P2 Escalation Proof Spike 的被测形态。 |
+| **BPAR v0.1** | （ADR-0022）BPAR v0 + 修复两件：S1 完成调用豁免（完成声明调用自身报错在 wrapup 冲突评估处豁免拦截，fold 照常、SIG-2 重复失败兜底）+ COMPLETION_LINE prompt 指引（complete 不传 edit 专属参数，用户实施）。P3 宽门确认批的被测形态。 |
 
 ## DSH 域
 

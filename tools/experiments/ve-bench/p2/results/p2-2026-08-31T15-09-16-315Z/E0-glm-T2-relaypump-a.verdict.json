@@ -1,0 +1,63 @@
+{
+  "run": "E0-glm-T2-relaypump-a",
+  "layer": "B",
+  "arm": "E0",
+  "task": "T2-relaypump",
+  "stage": "glm",
+  "outcome": {
+    "ok": true,
+    "exitCode": 1,
+    "wallMs": 3000626,
+    "killed": true
+  },
+  "sessionId": "session-a0176ed3-9487-4e46-9e98-c571dfb06962",
+  "tokens": {
+    "totalTokens": 75543,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 22,
+  "verdict": {
+    "stackVerdict": "PASS",
+    "reasons": [],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": true,
+        "failures": []
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  }
+}

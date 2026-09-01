@@ -1,0 +1,42 @@
+{
+  "objective": "修复 exportPipeline（非法行不得导出且必须计数）+ 新建 formatReport（按 docs/FORMAT.md 格式），node --test 全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "provable"
+    },
+    {
+      "verifierLevel": 2,
+      "id": "c2-report",
+      "description": "src/report.js 存在",
+      "predicate": {
+        "kind": "artifact",
+        "path": "src/report.js",
+        "mustExist": true
+      },
+      "observability": "provable"
+    }
+  ],
+  "api": {
+    "module": "src/pipeline.js",
+    "function": "exportPipeline",
+    "template": "pipeline-validation"
+  },
+  "grounding": [
+    {
+      "output": "src/report.js",
+      "source": "docs/FORMAT.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "cb39af47d08332f476bff579138c0463a538674b"
+  },
+  "taskId": "demo-pipeline-healthy",
+  "dispatcher": "B2-demo"
+}

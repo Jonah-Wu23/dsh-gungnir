@@ -1,0 +1,68 @@
+{
+  "run": "glm-H1-b",
+  "task": "H1-cachekit",
+  "profile": "glm",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 195915,
+    "killed": false
+  },
+  "sessionId": "session-9edd4009-4cc8-4d0f-a5ec-6d7262bfa956",
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "S1: tool-error — the most recent tool call returned an error"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [
+      {
+        "kind": "tool-error",
+        "ref": "call:call_693d82d22e6444d5a87bb535#tool:pwsh",
+        "detail": "the most recent tool call returned an error"
+      }
+    ],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": true,
+        "classes": [
+          "BUG_DISCRIMINATING"
+        ],
+        "details": [
+          "c1-suite: buggy=FAIL fixed=PASS → BUG_DISCRIMINATING"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

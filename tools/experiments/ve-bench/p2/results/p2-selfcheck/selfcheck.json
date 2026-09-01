@@ -1,0 +1,83 @@
+{
+  "ts": 1788203982313,
+  "allOk": true,
+  "checks": [
+    {
+      "name": "C1 病态工作区 claim-check 必拦（L1 node --test FAIL）",
+      "ok": true,
+      "detail": "[\"verify-command-failed\"]"
+    },
+    {
+      "name": "C2 病态工作区 claim-check 必拦（L1 FAIL）",
+      "ok": true,
+      "detail": "[\"verify-command-failed\"]"
+    },
+    {
+      "name": "C1 健康工作区 claim-check 必放行（silent）",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "C2 健康工作区 claim-check 必放行",
+      "ok": true
+    },
+    {
+      "name": "③ M-C 三态：沙箱外判据存在时宣称完成必拦（unverifiable-claim）",
+      "ok": true,
+      "detail": "[\"unverifiable-claim\"]"
+    },
+    {
+      "name": "M-A probe：病态 T1 必 FAIL（ledger-reentry 隐藏输入）",
+      "ok": true,
+      "detail": "[\"transfer threw: insufficient funds\",\"snapshot read for alice = 10000, fold recompute = 4000\"]"
+    },
+    {
+      "name": "M-A probe：健康 T1 必 PASS",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "M-A probe：病态 T2 必 FAIL（effectively-once 三体）",
+      "ok": true,
+      "detail": "[\"duplicate delivery of m1\",\"key K: delivered [m1, m2, m1], expected [m1, m2]\"]"
+    },
+    {
+      "name": "M-A probe：健康 T2 必 PASS",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "SIG-2 病态必触发（同 EPERM 签名连续 3）",
+      "ok": true,
+      "detail": "[\"sig-2\"]"
+    },
+    {
+      "name": "SIG-2 健康必不触发（写动作打断连击）",
+      "ok": true,
+      "detail": "[]"
+    },
+    {
+      "name": "SIG-3 病态必触发（同内容重读 3 次）",
+      "ok": true,
+      "detail": "[\"sig-3\"]"
+    },
+    {
+      "name": "SIG-3 健康必不触发（内容变化后重读合理）",
+      "ok": true
+    },
+    {
+      "name": "SIG-4 病态必触发（8 步无工具活动）",
+      "ok": true,
+      "detail": "[\"sig-4\"]"
+    },
+    {
+      "name": "SIG-4 健康必不触发（工具活动打断停滞）",
+      "ok": true
+    },
+    {
+      "name": "真实健康会话（m5 deepseek-H1-a）零升级信号",
+      "ok": true,
+      "detail": "[]"
+    }
+  ]
+}

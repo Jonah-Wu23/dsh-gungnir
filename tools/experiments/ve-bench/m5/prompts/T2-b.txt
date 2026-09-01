@@ -1,0 +1,1 @@
+relaypump 在"下游已接受但泵报失败"的场景下会重复交付或乱序（README 的 effectively-once 与 per-key 保序保证）。审查 src/ 的实现（尤其重试重排队与去重记录的时机），修复使保证在任何失败/重试/时钟推进组合下成立。node --test 全绿；公开 API 与测试文件不要动。

@@ -1,0 +1,83 @@
+{
+  "run": "E0-deepseek-T3-cli-retry-a",
+  "layer": "B",
+  "arm": "E0",
+  "task": "T3-cli-retry",
+  "stage": "deepseek",
+  "outcome": {
+    "ok": true,
+    "exitCode": 1,
+    "wallMs": 34396,
+    "killed": false
+  },
+  "sessionId": "session-7aef036e-1234-476c-9268-f2c6d4092dd2",
+  "tokens": {
+    "totalTokens": 13756,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "roundTrips": 1,
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "criterion c1-args (exit_code): FAIL — cmd:node --test test/args.test.js (exit 1)",
+      "criterion c2-retry (exit_code): FAIL — cmd:node --test test/retry.test.js (exit 1)",
+      "medicine: c1-args: buggy=FAIL fixed=FAIL → FIX_FAILED",
+      "medicine: c2-retry: buggy=FAIL fixed=FAIL → FIX_FAILED"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-args",
+        "kind": "exit_code",
+        "outcome": "FAIL",
+        "detailRef": "cmd:node --test test/args.test.js (exit 1)"
+      },
+      {
+        "id": "c2-retry",
+        "kind": "exit_code",
+        "outcome": "FAIL",
+        "detailRef": "cmd:node --test test/retry.test.js (exit 1)"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": false
+      },
+      {
+        "id": "M-B",
+        "applied": true,
+        "ok": false,
+        "classes": [
+          "FIX_FAILED",
+          "FIX_FAILED"
+        ],
+        "details": [
+          "c1-args: buggy=FAIL fixed=FAIL → FIX_FAILED",
+          "c2-retry: buggy=FAIL fixed=FAIL → FIX_FAILED"
+        ]
+      },
+      {
+        "id": "M-C",
+        "applied": true,
+        "handled": true,
+        "unverifiableIds": [
+          "c3-loss"
+        ],
+        "finalNotFullyPass": true
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": true,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 1,
+    "replayProvided": true,
+    "groundingProvided": true,
+    "apiProvided": false
+  }
+}

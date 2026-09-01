@@ -1,0 +1,37 @@
+{
+  "objective": "新建 src/report.js 实现 formatReport(records)，按项目规范的输出格式，node --test 全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "provable"
+    },
+    {
+      "verifierLevel": 2,
+      "id": "c2-report",
+      "description": "src/report.js 存在",
+      "predicate": {
+        "kind": "artifact",
+        "path": "src/report.js",
+        "mustExist": true
+      },
+      "observability": "provable"
+    }
+  ],
+  "grounding": [
+    {
+      "output": "src/report.js",
+      "source": "docs/FORMAT.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "7b2ac180be98b7a54f9c77ed0c946f5540c0498b"
+  },
+  "taskId": "M4-T4-report",
+  "dispatcher": "M4-batch"
+}

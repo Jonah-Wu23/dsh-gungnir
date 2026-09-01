@@ -1,0 +1,26 @@
+{
+  "objective": "修复 src/format.js 中的正确性缺陷（README 权威），node --test 保持全绿。",
+  "acceptance": [
+    {
+      "verifierLevel": 1,
+      "id": "c1-suite",
+      "description": "测试套件 node --test 通过",
+      "command": "node --test",
+      "expectedExitCode": 0,
+      "timeoutMs": 120000,
+      "observability": "provable"
+    }
+  ],
+  "grounding": [
+    {
+      "output": "src/format.js",
+      "source": "README.md"
+    }
+  ],
+  "baselineRef": {
+    "type": "git",
+    "commit": "9a802fca66e82ba9f56849460d893959150174dc"
+  },
+  "taskId": "P2-C1-envwall",
+  "dispatcher": "P2-batch"
+}

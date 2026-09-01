@@ -1,0 +1,59 @@
+{
+  "run": "glm-T2-a",
+  "task": "T2-relaypump",
+  "profile": "glm",
+  "outcome": {
+    "ok": true,
+    "exitCode": 0,
+    "wallMs": 1083688,
+    "killed": false
+  },
+  "sessionId": "session-6cba0496-df67-4f3a-bc68-3832dda9efe6",
+  "verdict": {
+    "stackVerdict": "FAIL",
+    "reasons": [
+      "medicine: key K: delivered [m2], expected [m1, m2]"
+    ],
+    "criterionOutcomes": [
+      {
+        "id": "c1-suite",
+        "kind": "exit_code",
+        "outcome": "PASS",
+        "detailRef": "cmd:node --test"
+      }
+    ],
+    "s1Conflicts": [],
+    "medicines": [
+      {
+        "id": "M-A",
+        "applied": true,
+        "ok": false,
+        "failures": [
+          "key K: delivered [m2], expected [m1, m2]"
+        ]
+      },
+      {
+        "id": "M-B",
+        "applied": false
+      },
+      {
+        "id": "M-C",
+        "applied": false,
+        "handled": false,
+        "unverifiableIds": [],
+        "finalNotFullyPass": false
+      },
+      {
+        "id": "M-D",
+        "applied": true,
+        "violations": []
+      }
+    ],
+    "unverifiableHandled": false,
+    "groundingViolations": [],
+    "unverifiableCriteriaCount": 0,
+    "replayProvided": false,
+    "groundingProvided": true,
+    "apiProvided": true
+  }
+}

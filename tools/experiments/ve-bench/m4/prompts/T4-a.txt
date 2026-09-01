@@ -1,0 +1,1 @@
+新建 src/report.js 实现 formatReport(records)：返回文本行数组，格式必须符合本项目的输出规范。test/report.test.js 会验证格式。node --test 必须全部通过。不要修改 test 目录下的任何文件。
