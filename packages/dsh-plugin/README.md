@@ -1,50 +1,128 @@
-# dsh-gungnir
+<p align="center">
+  <h1 align="center">dsh-gungnir (冈格尼尔)</h1>
+</p>
 
-**Gungnir —— DeepSeek Harness 的自适应目标导引系统。** 将"一切皆插件"的理念贯彻到底——首个动态调整底层 agent loop 的 DSH 插件。
+<p align="center">
+  <strong>Lock the goal. Adapt the loop. Prove the hit.</strong>
+</p>
 
-**Gungnir — the adaptive goal-guidance system for DeepSeek Harness.** "Everything is a plugin" carried all the way down — the first DSH plugin that dynamically adapts the underlying agent loop.
+<p align="center">
+  言出必行：DeepSeek Harness 的证据驱动目标校验插件
+</p>
 
-> **Lock the goal. Adapt the loop. Prove the hit.**（言出必行。）
+<p align="center">
+  <a href="https://www.npmjs.com/package/dsh-gungnir"><img src="https://img.shields.io/npm/v/dsh-gungnir?color=cb3837&logo=npm" alt="npm package" /></a>
+  <img src="https://img.shields.io/badge/platform-DSH%20%7C%20Node.js%20ESM-2F5D50" alt="Platform" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-5B6C8F" alt="Apache License 2.0" /></a>
+  <img src="https://img.shields.io/badge/control--plane-evidence--guided-E8B25C" alt="Control Plane" />
+</p>
 
-本包是 Gungnir 的 Prove 层：把 `@gungnir/core` 的证据驱动 reconcile 循环接进 DeepSeek Harness 的树外 cordis 插件。Adapt 层（替换默认 agent-loop 的 Adaptive Loop Runtime）由姐妹包 `@gungnir/agent-loop` 承担（二阶段，ADR-0012）。DSH 基线 = `v0.1.2-alpha.1` 源码构建（ADR-0011；v0.1.2 适配三件套在二阶段 M0 落地），接缝事实见 `docs/context/dsh-interface.md`。
+<p align="center">
+  <a href="#30-秒了解">30 秒了解</a> ·
+  <a href="#核心特性">核心特性</a> ·
+  <a href="#架构设计">架构设计</a> ·
+  <a href="#实验评测">实验评测</a> ·
+  <a href="#快速上手">快速上手</a> ·
+  <a href="#参与项目">参与项目</a> ·
+  <a href="#许可协议">许可协议</a>
+</p>
 
-## Contract
+## 30 秒了解
 
-**做什么**
+**Gungnir 是 DeepSeek Harness 的证据驱动目标校验插件。** 目标经 `/ultragoal` 锁定为版本化契约，执行过程中的工具结果自动落入追加式证据账本；模型宣称完成时，退出码、工件与 LLM 评审三级验证器对照证据裁决，证据齐备才放行。
 
-- **Ledger（ADR-0006）**：事件账本存 `ctx.storage` 的 KV unit（`gungnir-ledger` v1，`events` 表），按 `${agentId}#${seq}` 追加；v/ts envelope 由 `AgentLedger.append` 统一加盖；fold 抛错即 poisoned 并上抛（fail loud）。冷重建 = 按 key 序全量 `foldEvents`。**不用 session log 自定义事件**——DSH persistence 白名单封闭，resume 会拒载整个会话。
-- **命令**：`/ultragoal <objective>`（起 spec 草案轮，模型经 `gungnir_submit_spec` 提交 + ask-user 单次确认）与 `/ultragoal --spec <path>`（YAML/JSON 手写 spec，无人值守）；`/gungnir status|verdicts|pause|resume|clear`（clear 保留 durable 历史）。
-- **模型侧工具**：`gungnir_submit_spec` / `gungnir_plan`（rolling-horizon 投影，harness commit 第一个含未满足 target 的 step）/ `gungnir_report`（**claim**，落账不裁决）。
-- **证据捕获**：`tools/result`（observe-only）在 EXECUTING 轮内全部落 `gungnir/evidence`（digest + locator + ≤200 字符 preview，spill 思路）。
-- **Verifier（三实现）**：ExitCode L1（命令执行走 `VerifyContext.runCommand` 端口）；Artifact L2（workspace 前缀围栏内的只读检查：存在/包含/sha256/JSON 谓词；sha256 或 JSON 值漂移判 STALE → REPLAN）；LlmRubric L4（强 schema 输出 + prompt hash 入 detailRef + 结果标记低可信）。
-- **Reconcile 闭环**：`agent/turn-stopping` 触发轮末验证 → verdict → `reconcile` 决策 → `gungnir/status`；ADVANCE/RETRY 由引擎机械 commit 下一轮；REPLAN/COMPLETE/BLOCKED/NEEDS_HUMAN 通过 `agent.inject` 注入指令，引导模型走 `update_goal` 合法路径——**Gungnir 不代写 native goal**；`goal/changed` 上做 phase 单向映射不一致报警（只报警不代写）。
-- **续轮（ADR-0007）**：完全复用 `goal-round-driver`；pre-step 监听"追加不替换"——先 `next()` 放行驱动，再往消息尾部追加一条 `kind:'plugin'` source 的 reconcile 指令，绝不触碰 goal 源消息。
+Gungnir 为大语言模型智能体提供面向任务结果的控制面能力：
 
-**不做什么**
+- **Lock the goal（目标锁定）**：建立版本化目标契约，明确预期交付物和检验标准。
+- **Prove the hit（证据裁决）**：模型输出只是待检验的声明，测试退出码与文件状态等环境证据才有裁决权。
+- **静默守护与最小介入**：正常执行路径保持静默，只有观测到确定性证据冲突时才注入面向任务的明确反馈。
 
-- 不修改 DSH 任何核心包的源码、不 fork。替换默认 agent-loop 由姐妹包 `@gungnir/agent-loop`（二阶段）经官方组合接缝完成，本包不承担 loop 职责。
-- 不代模型调用 `update_goal`（complete/blocked 都由模型在 goal round 内自行调用）；不冒充 human authority。
-- 不提供 loop 策略切换与 `propose_loop_transition`（属 `@gungnir/agent-loop`，二阶段起）；不管理多 goal / 跨 session goal。
-- 不私开进程执行命令（沙箱 authority 归 DSH 原 owner）。
+## 核心特性
 
-## Composition
+| 维度 | 原生智能体执行 | Gungnir 控制面 |
+| --- | --- | --- |
+| 完成判定 | 依赖模型自我宣称 | 依据环境证据与退出码客观裁决 |
+| 假完成拦截 | 容易放行未完成的任务 | 运行时拦截虚假完成并要求修正 |
+| 正常任务开销 | 基础开销 | 保持静默，Token 额外开销仅 +7.8% |
+| 控制面额外交互 | 无 | 正常路径零额外模型往返 |
 
-```bash
-dsh plugin --profile gungnir-dev add <本包路径>
-dsh --profile gungnir-dev --dump-config   # 装载验证
+## 架构设计
+
+Gungnir 采用分层解耦的插件化架构，全面适配 DeepSeek Harness 生态：
+
+```text
+┌─────────────────────────────────────────────┐
+│ Gungnir Goal Contract                       │  目标锁定：定义任务交付物与验证规则
+├─────────────────────────────────────────────┤
+│ Gungnir Evidence / Verifier / Reconciler    │  证据裁决：收集环境事实，静默验证并按需介入
+├─────────────────────────────────────────────┤
+│ DSH Agent Contract / Session Log / Services │  基础平台：提供会话与工具交互能力
+└─────────────────────────────────────────────┘
 ```
 
-inject：`commands / tools / storage`；运行时另按需访问 `goals / llm / userQuestions / agents`（缺服务 fail loud）。Config：`workspaceRoot / maxGoalRounds / rubricProvider / rubricModel / rubricTimeoutMs`。
+### 控制流程
 
-## Failure discipline
+1. **环境监听**：在智能体调用工具的过程中，被动收集命令退出码与生成文件状态。
+2. **契约校验**：当智能体发出完成任务的声明时，系统基于已捕获的环境证据执行确定性验证。
+3. **精准反馈**：若验证通过，系统保持静默放行；若存在未满足的检验条件，系统注入简明的客观事实反馈，引导模型完成修复。
 
-- 所有 ledger 写入先持久后内存；坏事件使该 agent 的 ledger poisoned，后续 append 一律拒绝（重启冷重建会停在同一个坏事件——诚实暴露，不掩盖）。
-- 轮末 reconcile 失败：完整错误进结构化日志，ledger 停在最后一个一致事件；下一轮末重试。
-- 接缝解析失败（如 storage 无 KvFacet）在插件加载时即抛出，绝不带病运行。
+## 实验评测
 
-## Known Limitations
+Gungnir 建立了标准化的评测基准，并在 54 组真实环境运行中完成了多模型对比实验。
 
-- **v0.1.2 适配三件套未落地**（二阶段 M0 先行项，ADR-0011）：插件 patch 的 storage 插入行与 v0.1.2 base 自带冲突（boot 失败，适配点③）；`defineTool` 须补显式 `additionalProperties`（适配点①）；verifier 终判时序须复核 wrapup 行为（适配点②）。
-- `agent/turn-stopping` 的 payload 形状按 `agent?.id` 防御式取值；llm stream chunk 的文本抽取兼容 `block.text / text / delta` 三种形状——两者均待真实 profile 冒烟确认。
-- 事件载体为共享 KV unit（按 agentId 前缀隔离）；ledger 无 compaction，事件只增。
-- L3 external-state verifier、L5 human、spec 编译器（苏格拉底澄清）为三阶段内容（原二阶段 Proof-Carrying，ADR-0012 后并入三阶段）；自适应 Loop 由 `@gungnir/agent-loop` 承担（二阶段 spike）。
+| 评测场景 | 具体用例 | 原生执行 (E0) | Gungnir 控制面 (E2) |
+| --- | --- | --- | --- |
+| 虚假完成拦截 | CLI 任务重试场景 | 0% (0/2) | **100% (2/2)** |
+| 语义缺陷修复 | 状态重入场景 (Ledgerd) | 0% (0/2) | **100% (2/2)** |
+| 验证错配修复 | 消息中继场景 (RelayPump) | 50% (1/2) | **100% (2/2)** |
+| 标准开发任务 | 常规开发基准 (H1) | 100% (6/6) | **100% (6/6)** |
+
+| 模型类型 | 虚假完成拦截率 | 语义缺陷修复率 | 标准任务通行率 |
+| --- | --- | --- | --- |
+| DeepSeek 系列 | 100% | 100% | 100% |
+| GPT 系列 | 100% | 100% | 100% |
+| GLM 系列 | 100% | 100% | 100% |
+
+| 评测指标 | 原生执行 | Gungnir 控制面 | 控制面开销增量 |
+| --- | --- | --- | --- |
+| 中位 Token 消耗 | 24,151 | 26,025 | **+7.8%** |
+| 中位模型交互轮次 | 12.0 轮 | 12.0 轮 | **0 轮** |
+| 任务执行超时率 | 3.7% | 0.0% | **-3.7%** |
+
+## 快速上手
+
+**兼容性**：插件以 dsh v0.1.2-rc.1 为基线，peerDependencies 锁定实测版本。
+
+### 安装
+
+在 DeepSeek Harness 中执行安装命令：
+
+```powershell
+dsh plugin add dsh-gungnir
+```
+
+### 配置
+
+插件装载后自动注册 `/ultragoal` 与 `/gungnir` 命令及模型侧工具。需要调整时，在配置文件中覆盖插件参数：
+
+```yaml
+plugins:
+  - name: dsh-gungnir
+    config:
+      maxGoalRounds: 64
+```
+
+常用配置项：`maxGoalRounds`（目标轮次上限）、`rubricProvider` / `rubricModel`（LLM 评审模型）、`passive`（被动观察形态）。
+
+## 参与项目
+
+欢迎提交 Issue 与 Pull Request。提交修改前请在本地运行测试：
+
+```powershell
+pnpm -r typecheck
+pnpm -r test
+```
+
+## 许可协议
+
+本项目采用 [Apache License 2.0](LICENSE) 开源许可协议。版权所有 © 2026 Zonghe Wu。

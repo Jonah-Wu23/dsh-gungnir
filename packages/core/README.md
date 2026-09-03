@@ -1,28 +1,75 @@
-# @gungnir/core
+<p align="center">
+  <h1 align="center">gungnir-core (冈格尼尔核心)</h1>
+</p>
 
-Gungnir 的纯域函数包：GoalSpec / ledger 事件 / verdict 的 zod schema、fold（strict replay）、Reconciler 决策表、Verifier 契约；二阶段起增加 Loop Strategy 与路由规则的纯函数定义（Adaptive Loop Runtime 的决策核心，ADR-0012）。**零 DSH 依赖**——fold/replay 与决策全部是可脱离 harness 全量单测的纯函数，这是"从 ledger 重建可信"的前提。
+<p align="center">
+  <strong>Lock the goal. Adapt the loop. Prove the hit.</strong>
+</p>
 
-## Contract
+<p align="center">
+  言出必行：证据裁决的领域核心，零依赖的纯函数库
+</p>
 
-**做什么**
+<p align="center">
+  <a href="https://www.npmjs.com/package/gungnir-core"><img src="https://img.shields.io/npm/v/gungnir-core?color=cb3837&logo=npm" alt="npm package" /></a>
+  <img src="https://img.shields.io/badge/platform-Node.js%20ESM-2F5D50" alt="Platform" />
+  <a href="https://github.com/Jonah-Wu23/dsh-gungnir/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-5B6C8F" alt="Apache License 2.0" /></a>
+  <img src="https://img.shields.io/badge/dependencies-zero-2EA043" alt="Zero Dependencies" />
+</p>
 
-- **Schema v1（M0 冻结）**：`GoalSpec`（objective / successCriteria / constraints / nonGoals / assumptions / budget；criterion 携带 `predicate` 与 `verifierLevel`，二者一致性在 parse 时强制）；九类事件 `gungnir/spec | plan-projection | commit | evidence | claim | verdict | status | loop-state | loop-transition`；envelope `{v:1, ts}` 由单一时间权威。
-- **fold（strict replay）**：`foldEvents(raw[]) → GungnirState` 纯函数重放。畸形 schema、断序 round、非法 phase 转换、快照与派生值不一致、verifier 与 criterion 声明不匹配、FAIL 无签名、evidenceId 重复……任何违规立即抛 `FoldError` 并停在首个坏事件（`eventIndex`/`code` 可定位）。绝不静默跳过或猜测修复。
-- **Reconciler**：`reconcile(state, roundVerdicts) → Decision` 决策表——ADVANCE / REPLAN / RETRY / BLOCKED / NEEDS_HUMAN / REVALIDATE / COMPLETE。熔断三件套（budget.maxRounds、budget.maxVerifierRuns、roundsNoImprovement ≥ 3、consecutiveInconclusive ≥ 3）任一触发即禁止继续 commit。阶梯强制：L4 PASS 在生效判定中降级 PARTIAL（纯语义永远不足以支撑最终 PASS）；COMPLETE 要求存在 L1/L2 PASS 佐证（`deterministicPassSeen`）。
-- **Verifier 契约**：`Verifier { kind, level, verify(criterion, ctx) }` + `VerifyContext`（runCommand / readFile / completeRubric / now 由宿主注入）。契约在此，实现在 dsh-gungnir。
-- **药方（H-VE，ADR-0019）**：M-A trunk-path oracle 模板（`pricing-round-once` / `pipeline-validation`：隐藏代表性输入生成 + spec 属性检查）、M-B 判别性证据规则（replay 到 buggy 必 FAIL 才算判别）、M-C UNVERIFIABLE 三态、M-D grounding read→write 时序检查（只判时序，不猜语义）。
-- **派发契约（Dispatch Contract，ADR-0020）**：`DispatchContract` zod schema + `contractToSupplied` 投影（契约 → supplied 四块：api / replay / unverifiableCriteria / grounding）+ `supplyCoverageOf` 供给覆盖报告（每个药方 applied / not-applied + 原因）。权威文档 `docs/plan/派发契约-v0.md`；执行面在 `tools/ve-supply/`。
+<p align="center">
+  <a href="#30-秒了解">30 秒了解</a> ·
+  <a href="#核心能力">核心能力</a> ·
+  <a href="#数据流">数据流</a> ·
+  <a href="#快速上手">快速上手</a> ·
+  <a href="#参与项目">参与项目</a> ·
+  <a href="#许可协议">许可协议</a>
+</p>
 
-**不做什么**
+## 30 秒了解
 
-- 不 import 任何 DSH/cordis 模块；不做 IO（node:crypto 仅用于确定性 digest）。
-- 不决定"如何执行"——投影与 action 的作者是模型，裁决只依据事件流。
-- 不实现 verifier 本体、不持有 driver 实例、不管理 native goal、不渲染任何 UI 文本。
+**gungnir-core 是 Gungnir 的领域函数库：目标契约、事件账本与裁决规则全部以零依赖的纯函数实现。** 任何运行时都能独立装载与测试，不依赖 DeepSeek Harness 或 cordis。
 
-## Known Limitations
+## 核心能力
 
-- `gungnir/loop-state` / `gungnir/loop-transition` 当前为占位命名空间（ADR-0005）：schema 可 parse，fold 遇到即抛 `reserved`。二阶段 Adaptive Loop Spike 起接入并放开拦截（ADR-0012）。
-- REVALIDATING 中"全部满足但无 L1/L2 佐证"的 COMPLETE 拒绝分支是防御性守卫：在现行 effectiveOutcome 规则下结构性不可达（L4 PASS 必然降级），保留作 defense-in-depth。
-- `roundsNoImprovement` 只在离开 VERIFYING（轮末）时结算；REVALIDATING 的进出不重复计数。
-- 一阶段 L3 external-state 与 L5 human 无 verifier 实现：human 谓词 criterion 只能经 NEEDS_HUMAN 出口。
-- 派发契约 `replay.evidence` v0 只取契约声明的 provable L1 command 判据（最诚实）；从 session log 提取 agent 实际跑过的命令列为后续增强。M-A 模板库覆盖面 = 现役 2 模板。
+| 能力 | 说明 |
+| --- | --- |
+| 目标契约 | GoalSpec 与事件、verdict 的类型化 schema，版本化目标规格 |
+| 事件账本 | 追加式事件流与严格重放，畸形事件当场抛错，不做静默修复 |
+| 裁决规则 | Reconciler 决策表，默认不升级，证据齐备才放行 |
+| 验证器契约 | Verifier 接口与 VerifyContext 注入点，宿主按契约实现 |
+
+## 数据流
+
+```text
+事件流（追加式） → fold（严格重放） → GungnirState → reconcile（决策表） → Decision
+```
+
+## 快速上手
+
+```powershell
+npm install gungnir-core
+```
+
+```ts
+import { foldEvents, reconcile } from 'gungnir-core'
+
+// 严格重放：畸形事件当场抛错，停在首个坏事件
+const state = foldEvents(rawEvents)
+
+// 裁决：依据轮末 verdict 决定下一步
+const decision = reconcile(state, roundVerdicts)
+```
+
+## 参与项目
+
+欢迎提交 Issue 与 Pull Request。提交修改前请在本地运行测试：
+
+```powershell
+pnpm -r typecheck
+pnpm -r test
+```
+
+## 许可协议
+
+本项目采用 [Apache License 2.0](https://github.com/Jonah-Wu23/dsh-gungnir/blob/main/LICENSE) 开源许可协议。版权所有 © 2026 Zonghe Wu。

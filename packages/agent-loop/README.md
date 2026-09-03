@@ -1,44 +1,87 @@
-# dsh-gungnir-loop
+<p align="center">
+  <h1 align="center">dsh-gungnir-loop (冈格尼尔回路)</h1>
+</p>
 
-**Gungnir Adaptive Loop Runtime** — a drop-in replacement driver for the DSH default agent loop. *Lock the goal. Adapt the loop. Prove the hit.*
+<p align="center">
+  <strong>Lock the goal. Adapt the loop. Prove the hit.</strong>
+</p>
 
-Adaptive Loop Runtime（`@gungnir/agent-loop`，发布名候选 `dsh-gungnir-loop`）：经 DSH 官方组合接缝一次性替换默认 agent-loop 的树外 driver（ADR-0012/0014）。session 生命周期内单实例；运行期由确定性 router 在 FAST / EXECUTE / VERIFY 三种 Loop Strategy 之间切换（ADR-0015）。
+<p align="center">
+  言出必行：DeepSeek Harness 的自适应 Agent Loop 运行时
+</p>
 
-## Contract
+<p align="center">
+  <a href="https://www.npmjs.com/package/dsh-gungnir-loop"><img src="https://img.shields.io/npm/v/dsh-gungnir-loop?color=cb3837&logo=npm" alt="npm package" /></a>
+  <img src="https://img.shields.io/badge/platform-DSH%20%7C%20Node.js%20ESM-2F5D50" alt="Platform" />
+  <a href="https://github.com/Jonah-Wu23/dsh-gungnir/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-5B6C8F" alt="Apache License 2.0" /></a>
+  <img src="https://img.shields.io/badge/adaptive--loop-rule--driven-E8B25C" alt="Adaptive Loop" />
+</p>
 
-- **做什么**：
-  - 完整承担默认 driver 的九项职责（agent 生命周期 / turn-step 边界 / pre-step 管线 / 请求构造 / LLM 流 / 工具调度 / 取消 / resume-fork / 系统提示面，清单见 `docs/context/dsh-interface.md` §16.2），session log 事件语义与默认 driver 一致（B3 红线，`tools/loop-verify/compare-events.mjs` 对照）。
-  - 每步经确定性 router（`@gungnir/core` routeLoopMode）选择 Loop Strategy；切换与快照经本地事件 `gungnir-loop/transition|state` 交由 Prove 层落账（`gungnir/loop-transition|loop-state`）。
-  - hysteresis：单 turn 切换预算 4（`MAX_MODE_TRANSITIONS_PER_TURN`），耗尽即保持。
-  - 服务键保持 `ctx.agentLoop`（`AgentFactory`），headless / ACP / subagent 等消费方透明。
-- **不做什么**：
-  - 不修改 DSH 源码、不 fork；不重写 history；不做实例级热插拔（open turn / open step / pending tool call / active AbortSignal 下不替换 driver）。
-  - 不做 LLM router、不做文本语义嗅探——router 只消费 fold 状态派生的结构化事实。
-  - 不持有持久化：loop 事件的 durable 载体归 Prove 层（dsh-gungnir 插件 + ctx.storage ledger）。
-  - 不实现完整 hysteresis 五件套（dwell / cooldown / evidence threshold / circuit breaker 归三阶段）；不实现模型/成本轴（cheap model、reasoning budget 归三阶段 model 轴）。
+<p align="center">
+  <a href="#30-秒了解">30 秒了解</a> ·
+  <a href="#核心特性">核心特性</a> ·
+  <a href="#架构设计">架构设计</a> ·
+  <a href="#快速上手">快速上手</a> ·
+  <a href="#参与项目">参与项目</a> ·
+  <a href="#许可协议">许可协议</a>
+</p>
 
-## Composition
+## 30 秒了解
 
-profile bundles 清单中替换默认行（`cordis.patch.yml` 两步法）：
+**Gungnir Loop 是经 DSH 官方组合接缝整体替换默认 agent loop 的运行时驱动。** 每一轮走哪条路径由确定性决策表按证据裁决：正常回合走零打扰的快速路径，异常证据出现才升级到执行与验证路径。单回合切换预算防止策略振荡，会话可续跑。
 
-1. `agent-loop` 行 `disabled: true`（patch 按 id 原位修改；`name` 是守卫不能改写包名）；
-2. `insert` 本包行（服务键 `agentLoop`）。
+Gungnir Loop 与 dsh-gungnir 插件配合，构成完整的控制面：
 
-配合 `dsh-gungnir`（Prove 层）时：插件提供可选服务 `gungnirAdaptive`（router 输入 + 账本现值 Loop Mode），driver 据此选模式并经本地事件落账；插件缺席时 driver 退化为原生路径（FAST，零注入）。
+- **Adapt the loop（回路适配）**：经 DSH 官方组合接缝整体替换默认 loop，服务键保持兼容。
+- **Prove the hit（证据裁决）**：路由只消费事件账本派生的结构化事实。
+- **稳定优先（防振荡）**：切换受单回合预算约束，预算耗尽即保持当前模式。
 
-## Events
+## 核心特性
 
-本地（非 durable）：`gungnir-loop/transition`（from/to/turn/step/rule）、`gungnir-loop/state`（mode/turn/step 快照）。
-Durable（由 dsh-gungnir 落账）：`gungnir/loop-transition`、`gungnir/loop-state`（schema 与 fold 见 `@gungnir/core`）。
+| 维度 | 默认 Agent Loop | Gungnir Loop |
+| --- | --- | --- |
+| 执行回路 | 内置单一回路 | 官方组合接缝整体替换 |
+| 路径路由 | 固定执行策略 | 决策表在 FAST / EXECUTE / VERIFY 间选择 |
+| 稳定性 | 策略固定 | 单回合切换预算，防振荡 |
+| 事件语义 | 标准会话事件 | 同一套事件词汇，账本可冷重建 |
 
-## Failure discipline
+## 架构设计
 
-- 账本 append 失败（含 fold 拒绝）fail loud：Prove 层日志报错、账本停在最后一致事件；driver 不因落账失败中断 turn。
-- hysteresis 预算耗尽不是错误：保持当前模式并如实落快照。
+```text
+┌─────────────────────────────────────────────┐
+│ Loop Router（决策表）                        │  按证据选择执行路径
+├─────────────────────────────────────────────┤
+│ Gungnir Adaptive Loop Driver                │  回合驱动、工具调度与验证指令
+├─────────────────────────────────────────────┤
+│ DSH Agent Contract / Session Log / Services │  基础平台：提供会话与工具交互能力
+└─────────────────────────────────────────────┘
+```
 
-## Known Limitations
+## 快速上手
 
-- v0 的 FAST 模式不降模型档/不裁工具面（质量护栏）；成本轴归三阶段。
-- 未实现 driver 侧的 settings 段（默认 driver 的 `agent-loop` settings namespace 未镜像）；配置经 bundle 行 config 提供。
-- 三模式收益未经四组对照实验验证前，本包默认仅在实验/开发 profile 启用（`gungnir-loop` profile）。
-- 与宿主必须解析到同一份 `@deepseek-ai/*` 模块（`Symbol` 符号线单实例纪律，ADR-0014）。
+**兼容性**：以 dsh v0.1.2-rc.1 为基线，peerDependencies 锁定实测版本。
+
+### 安装
+
+在 DeepSeek Harness 中执行安装命令：
+
+```powershell
+dsh plugin add dsh-gungnir-loop
+```
+
+### 装配
+
+在 profile bundles 清单中禁用默认 `agent-loop` 行，插入本包行。服务键保持 `ctx.agentLoop`，headless、ACP 与子代理等消费方无需改动。
+
+## 参与项目
+
+欢迎提交 Issue 与 Pull Request。提交修改前请在本地运行测试：
+
+```powershell
+pnpm -r typecheck
+pnpm -r test
+```
+
+## 许可协议
+
+本项目采用 [Apache License 2.0](https://github.com/Jonah-Wu23/dsh-gungnir/blob/main/LICENSE) 开源许可协议。版权所有 © 2026 Zonghe Wu。
