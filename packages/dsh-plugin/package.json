@@ -1,7 +1,15 @@
 {
   "name": "dsh-gungnir",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "Gungnir — durable, evidence-driven goal reconciliation runtime for DSH. Tree-out cordis plugin: /ultragoal command, evidence capture, three verifiers (L1/L2/L4), reconcile loop over goal-round-driver.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jonah-Wu23/dsh-gungnir.git"
+  },
+  "homepage": "https://github.com/Jonah-Wu23/dsh-gungnir/tree/main/packages/dsh-plugin",
+  "bugs": {
+    "url": "https://github.com/Jonah-Wu23/dsh-gungnir/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
