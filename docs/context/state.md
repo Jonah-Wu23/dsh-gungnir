@@ -2,6 +2,13 @@
 
 > 每个工作块结束必须更新。最新在上，旧条目按时间下沉归档。
 
+## 快照（2026-09-03 · 工作块 34，四阶段生态发布：三包 README 对外化 + awesome-dsh-plugin 收录准备）
+
+- **用户指令**：三份包 README（dsh-plugin / agent-loop / core）全量改写为根 README 版式的对外营销文案，Contract / Composition / Failure discipline / Known Limitations 及一切 ADR、阶段、状态、开发中语义严禁保留；npm 补 repository 字段并重发；收录投稿单文件（#1348 纪律：不碰既有条目、不手编生成 README）；开 PR 前停等用户指令。
+- **README 对外化**（根版式：居中标题 / slogan / 徽章 / TOC / 30 秒了解 / 核心特性表 / 架构图 / 快速上手 / 参与项目 / 许可协议）：插件包（/ultragoal 版本化目标规格、追加式证据账本、退出码与工件确定性验证、LLM 评分验证器、对账循环静默介入）；loop 包（官方组合接缝整体替换、FAST/EXECUTE/VERIFY 决策表、单回合切换预算）；core 包（零依赖纯函数、foldEvents/reconcile 示例）。
+- **npm 重发**：dsh-gungnir@0.1.3 已发布（pnpm publish，workspace:* 重写为 gungnir-core@0.1.1，新 README + repository 字段入包）。此前误发的 0.1.2（npm 直发，依赖残留 workspace:* 不可安装）unpublish 被 registry 403 拒绝，待用户定夺。
+- **下一步**：条目 YAML 待用户确认 → fork 分支单文件提交 → 停等指令开 PR。本批改动已提交推送。
+
 ## 快照（2026-09-03 · 工作块 33，DSH 基线切换至 v0.1.2-rc.1 + 旧源码树删除：ADR-0023）
 
 - **用户指令**：解除仓库对 `deepseek-harness-dsh-v0.1.2-alpha.1/` 旧源码树的依赖 → 改依赖新源码树 `deepseek-harness/`（rc.1，用户已完成 `pnpm install` + `build:lib:host`）→ 删除旧树；不全局安装插件/依赖；解决版本兼容问题（rc.1 release notes 为线索）；不运行长命令。
