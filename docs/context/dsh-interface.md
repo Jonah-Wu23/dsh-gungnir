@@ -1,11 +1,11 @@
 # DSH 接口事实手册（L2）
 
-> 唯一的 DSH 接口事实权威。当前基线：**v0.1.2-alpha.1 源码构建**（2026-08-28 工作块 8 起；源码树 `deepseek-harness-dsh-v0.1.2-alpha.1/`，全局 `dsh` 经 `tools/dsh-shim/` 转发到 `apps/cli/lib/bin.js`；基线切换决策见 ADR-0011）。
+> 唯一的 DSH 接口事实权威。当前基线：**v0.1.2-rc.1**（2026-09-03 起；上游已正式发布 npm，全局 `dsh` = `@deepseek-ai/dsh@0.1.2-rc.1`，本地源码树 `deepseek-harness/` 作插件 link/类型源，ADR-0023）。
 > §1–§14 条目实测于 `@deepseek-ai/dsh@0.1.1-rc.2`（原全局 npm 安装，2026-08-28 勘察），§15 逐项复核后与 0.1.1 的差异已标注；**两版冲突处以 v0.1.2 为准**，0.1.1 实测记录保留作回归对照。
 > 标注：〔CLI〕= 命令实测；〔README〕= 包 README 阅读；〔类型〕= lib 内 .d.ts 勘察；〔实现〕= dist/lib 内编译后 .js 实现勘察；〔v0.1.2 实测〕= 源码构建运行时验证。上游仓库：`github.com/deepseek-ai/deepseek-harness`（monorepo，各包 README 从仓库相对路径引用）。
 > **与实际行为不符时：以实测为准，回写本文件。**
 > 2026-08-28 二次深勘（M0）：逐包 .d.ts + 编译后 JS 勘察，新增 §10–§14，并据实测结论回写 §4（OPEN-1 已有结论）、§5、§6。原始报告存档于 [dsh-interface-detail.md](dsh-interface-detail.md)（只读证据附录，0.1.1-rc.2 语境）。
-> 2026-08-28 v0.1.2-alpha.1 源码勘察见 §15（原"增量"节，基线切换后转正：凡 §15 与 §1–§14 冲突，以 §15 为准）。
+> 2026-08-28 v0.1.2-alpha.1 源码勘察见 §15（原"增量"节，基线切换后转正：凡 §15 与 §1–§14 冲突，以 §15 为准）。**2026-09-03 rc.1 基线事实与 alpha→rc 破坏性变更见 §17（现役基线，凡 §1–§16 冲突以 §17 为准）。**
 
 ## 1. CLI 与 Profile 机制〔CLI/README〕
 
@@ -28,7 +28,7 @@
 - 官方插件包内使用 `@deepseek-ai/schemastery`（Schema）+ `zod`（运行时校验）。
 - 参照实现：`dsh-goal`（域服务+durable 事件）、`dsh-command-goal`（人侧命令）、`dsh-tool-goal`（模型侧工具）、`dsh-tool-ralph`（编排策略插件——Gungnir 的定位参照物）。
 - 包 README 文风：Contract / Composition / Events / Failure discipline / Known Limitations 小节——本仓库包 README 对齐此风格。
-- **版本事实〔实现〕**：`@deepseek-ai/cordis` **4.0.1**（fork）；`@deepseek-ai/schemastery` **3.18.1**；`@deepseek-ai/dsh-*` 包：0.1.1 系统一 `^0.1.1-rc.2`，**v0.1.2 起统一 `0.1.2-alpha.1`**（源码树各包 version 一致；npm 未发布，仓内对齐走 `link:` 指向本地源码树，ADR-0011）。
+- **版本事实〔实现〕**：`@deepseek-ai/cordis` **4.0.1**（fork）；`@deepseek-ai/schemastery` **3.18.1**；`@deepseek-ai/dsh-*` 包：0.1.1 系统一 `^0.1.1-rc.2`，**v0.1.2 系统一 `0.1.2-rc.1`**（源码树各包 version 一致；已发布 npm，插件 peerDep 锁 `0.1.2-rc.1`，仓内类型对齐走 `link:` 指向本地源码树 `deepseek-harness/`，ADR-0023）。
 - **包级导出四件套〔类型：dsh-tool-ralph/lib/types/index.d.ts〕**：`name`（常量）、`inject: string[]`（服务键数组，如 `['tools','agents','goals','sessions']`）、`Config`（schemastery `z.object(...)`，可选）、`apply(ctx, config)`。Service 类形态（dsh-goal）：`class XService { static inject; static Config; constructor(ctx, config?) }`。
 - **peerDependencies 模板〔实现：dsh-tool-ralph/package.json 原文〕**：只声明实际 inject 的包 + cordis，版本与上游一致：
   ```json
@@ -245,9 +245,9 @@ KvUnit: loadAll() / putRecord(table, key, value) / deleteRecord(table, key) / se
 9. 插件 patch 不得再 insert `storage`/`storage-json` 行——v0.1.2 base 自带（§15 适配点⑥，重复 id 直接 boot 失败）；升级时复核 base bundle 层栈变化。
 10. loop 替换 seam 复验（OPEN-7 实证后转正）：bundles 清单中 agent-loop 行的可替换性、`ctx.agentLoop` 服务键形状、替代 driver 对 agent 生命周期/turn-step 边界/工具调度/teardown 职责的完整承担。**已实证并转正（2026-08-29，OPEN-7 关闭）**：机制与职责清单见 §16。
 
-## 15. v0.1.2-alpha.1 基线事实（2026-08-28 源码勘察；2026-08-28 工作块 8 起为开发基线）
+## 15. v0.1.2-alpha.1 基线事实（2026-08-28 源码勘察；2026-08-28 工作块 8 起为开发基线，2026-09-03 起被 §17 rc.1 基线取代）
 
-> 对象：仓库根 `deepseek-harness-dsh-v0.1.2-alpha.1/` 源码树（src/ TypeScript），已构建并设为开发基线（安装方式与冒烟结论见 ADR-0011）。标注〔v0.1.2 实测〕的条目经过该构建的运行时验证，其余为源码级结论。与 §1–§14（0.1.1-rc.2 实测）冲突时以本节为准。
+> 对象：仓库根 `deepseek-harness-dsh-v0.1.2-alpha.1/` 源码树（src/ TypeScript），已构建并设为开发基线（安装方式与冒烟结论见 ADR-0011；**该源码树已删除，本节保留作 alpha.1 历史事实存档**）。标注〔v0.1.2 实测〕的条目经过该构建的运行时验证，其余为源码级结论。与 §1–§14（0.1.1-rc.2 实测）冲突时以本节为准。
 
 **白名单与持久化**〔源码〕：
 
@@ -288,7 +288,7 @@ KvUnit: loadAll() / putRecord(table, key, value) / deleteRecord(table, key) / se
   2. `- insert: [{id: gungnir-loop, name: <自研包>, config: …}]`——追加自研 driver 行。
 - **服务键不变**：自研 service 构造时 `super(ctx, 'agentLoop')`（cordis Service 名），并 `ctx.agents.setFactory(this)`。headless/ACP/subagent 等消费方全部经 `ctx.agents.create/resume`（AgentRegistry → factory），**不直接 import 默认 driver 包**，因此替换对它们透明。
 - `--dump-config` 验证：`gungnir-loop` profile 输出中 `agent-loop` 行带 `disabled: true`、自研行就位、无 duplicate 错误；真实 boot + headless 任务由 AdaptiveLoopAgent 完成（`gungnir` 插件的 pre-step 监听与 `ctx.tokenMeter` 均在该 session 上工作）。
-- **单实例纪律（M1 硬前置，实测教训）**：树外包与宿主必须解析到**同一份** `@deepseek-ai/*` 模块。DSH 的 `TOOL_RUNTIME_SCHEDULER` 等关键符号线是 `Symbol(...)`（非 `Symbol.for`），双副本 = 符号不相等 = scheduler 不可达。仓库侧已把 `packages/dsh-plugin`、`packages/agent-loop` 的 node_modules 以 junction 指向 v0.1.2 源码树（含 `vendor/cordis`、`vendor/schemastery`），peerDeps 锁 `0.1.2-alpha.1`（ADR-0011 第 3 条落地）。
+- **单实例纪律（M1 硬前置，实测教训）**：树外包与宿主必须解析到**同一份** `@deepseek-ai/*` 模块。DSH 的 `TOOL_RUNTIME_SCHEDULER` 等关键符号线是 `Symbol(...)`（非 `Symbol.for`），双副本 = 符号不相等 = scheduler 不可达。仓库侧已把 `packages/dsh-plugin`、`packages/agent-loop`、`tools/destruction` 的 node_modules 以 junction 指向 rc.1 本地源码树 `deepseek-harness/`（含 `vendor/cordis`、`vendor/schemastery`、`packages/util/values`），peerDeps 锁 `0.1.2-rc.1`（ADR-0023 落地）。
 
 ### 16.2 替代 driver 职责清单（spike 期逐条对照 `dsh-agent-loop` 源码整理；Gungnir driver 全部承担）
 
@@ -313,3 +313,23 @@ KvUnit: loadAll() / putRecord(table, key, value) / deleteRecord(table, key) / se
 - 机制：`update_goal(complete/blocked)` 在 goal-round 权限下不再 `concludeTurn()`，改为 `deferContext` 注入 `<goal_complete>`/`<goal_blocked>` wrapup 消息（`packages/goal/tool-goal/src/wrapup.ts`）；wrapup 作为下一步输入进 turn，模型写收尾消息后 turn 才结束。
 - 与 Gungnir 的时序契约：Gungnir 的轮末 reconcile 触发点只有两个——`gungnir_report` 工具内（报告即轮末）与 `agent/turn-stopping`（兜底）。二者都不可能在 update_goal 与 wrapup 落盘之间抢跑：update_goal 所在 step 以 null 结束（无 concludeTurn）→ turn 继续到 wrapup step；turn-stopping 只在 wrapup step 收口后触发。
 - 实测：真实 headless 全链路（spec→REVALIDATION→COMPLETE→update_goal→收尾→turn/end completed）两次通过，session log 事件序与上述一致，无 goal/changed 相位失配告警。goal-round 权限路径（round>0 turn 内 complete → wrapup 注入）由确定性探针补验（M1 测试基建，同 D-13 resume 场景）。
+
+## 17. v0.1.2-rc.1 基线事实与 alpha→rc 破坏性变更（2026-09-03 起为开发基线）
+
+> 对象：上游已正式发布 npm（全局 `dsh` = `@deepseek-ai/dsh@0.1.2-rc.1`），本地源码树 `deepseek-harness/`（仓库根，git 仓库 `dsh-v0.1.2-rc.1` tag 后）作插件 link/类型源与源码对照。§15（alpha.1）与 §16 条目在 rc.1 中多数仍成立，差异以本节为准。本节为现役基线；凡 §1–§16 冲突以本节为准（ADR-0023）。
+
+**版本事实**〔源码：deepseek-harness/packages/*/package.json〕：
+
+- 所有 `@deepseek-ai/dsh-*` 包 + `vendor/cordis` + `vendor/schemastery` 统一 `0.1.2-rc.1`；`@deepseek-ai/cordis` 4.0.1、`@deepseek-ai/schemastery` 3.18.1 不变。
+- 新增包 `@deepseek-ai/dsh-util-values`（`packages/util/values`）：`assertNever`、`deepFreeze` 从 dsh-llm 移入此处（`packages/util/values/src/index.ts:12,210`）。
+- 新树构建：`pnpm install` + `pnpm run build:lib:host`；包输出 `lib/`（schemastery 为 `lib/index.cjs`+`index.mjs` 双产物）。
+
+**破坏性/适配点**〔源码，2026-09-03 typecheck 实证〕：
+
+1. `Session.events` 移除 → `Session.seq`（`SessionLogOffset`）+ `session.eventAt(SessionSeq)` + `session.snapshotEvents(from?, toExclusive?)`（`packages/core/session/src/index.ts:588-629`）。插件/测试访问历史事件一律改 `snapshotEvents()`（只读等价）；遍历用 `seq` 倒序 + `eventAt`。
+2. `SessionSeq` / `SessionLogOffset` 强类型化（branded number，`packages/core/session/src/types.ts:29-40`）：数值须经 `SessionSeq(n)` / `SessionLogOffset(n)` 构造；`append(...).seq` 已返回 `SessionSeq`；`sourceEventSeqs` 字段类型为 `SessionSeq[]`——`number[]` 直赋会类型错误。
+3. `SessionPersistence` 接口 → 抽象类 + **handle 化**（`packages/session/session-persistence/src/index.ts`）：`prepare(id)` 移除，改为 `create(header)` / `open(id, 'read'|'write')` 返回 `SessionHandle`（`read/append/flush/close` + `header` + `inheritedEventCount`）；`list()` 快照形状改为 `{ header, revision, eventCount?, sizeBytes? }`（不再有顶层 `id`）。resume 流程改为：`open(write)` → `read(0)` → `interruptedTurnClosers`（`packages/core/session/src/repair.ts:29`）补收尾 → `sessions.prepare(id, { seed, meta, inheritedEventCount, seedSource: 'persistence' })` → `SessionPreparation.create`。缺失判定用 `SessionPersistenceNotFoundError`。
+4. `SessionPreparation` 形态不变（`packages/core/session/src/preparation.ts`），但须由 `ctx.sessions.prepare(...)`（返回 `Session`）包 `SessionPreparation.create` 获得。
+5. `@deepseek-ai/dsh-session-projection` 新增（`packages/core/session` 旁）：官方 driver 用 `ctx.sessionProjections.stateOf(session, 'turnBoundary')` 取 lastTurn；Gungnir fork 未接入投影时可用 `session.snapshotEvents().findLast(...)` 等价替代。
+
+**新树与旧树其余差异（本仓库未受影响项）**：`SessionSeq`/`SessionLogOffset` 强类型化；`send_message` 取代单向 `report` 工具（subagent 相关）；SQLite session 持久化后端移除；`Session.events` 取代 API 如上；`RemoteError` 统一 Remote 网关异常；Headless stderr 进度 / stdout 结果分流维持原语义；base bundle storage 栈自带维持（插件 patch 不得重复挂载，§15 适配点⑥继续成立）。

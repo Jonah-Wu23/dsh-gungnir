@@ -1,6 +1,6 @@
 import { writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { sha256OfString } from '@gungnir/core'
+import { sha256OfString } from 'gungnir-core'
 import { AgentLedger, MemoryKv } from 'dsh-gungnir/ledger.js'
 import { engineFor, tempWorkspace, recordingHooks, AGENT } from './helpers.js'
 import { describe, expect, it } from 'vitest'

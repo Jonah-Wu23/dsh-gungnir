@@ -2,6 +2,15 @@
 
 > 每个工作块结束必须更新。最新在上，旧条目按时间下沉归档。
 
+## 快照（2026-09-03 · 工作块 33，DSH 基线切换至 v0.1.2-rc.1 + 旧源码树删除：ADR-0023）
+
+- **用户指令**：解除仓库对 `deepseek-harness-dsh-v0.1.2-alpha.1/` 旧源码树的依赖 → 改依赖新源码树 `deepseek-harness/`（rc.1，用户已完成 `pnpm install` + `build:lib:host`）→ 删除旧树；不全局安装插件/依赖；解决版本兼容问题（rc.1 release notes 为线索）；不运行长命令。
+- **接线重指（36 条 junction/symlink）**：`packages/dsh-plugin`（12）+ `packages/agent-loop`（9，新增 `dsh-util-values`）+ `tools/destruction`（14，含 agent-loop-testkit/tool-goal/session-persistence-jsonl）三处 `node_modules/@deepseek-ai/*` 从旧树重指新树；`AppData/Local/dsh-runtime` junction → 新树（dsh-shim 资产保持可用）。`packages/*/package.json` peerDeps `0.1.2-alpha.1`→`0.1.2-rc.1`、devDeps `link:` 路径改 `../../deepseek-harness/...`（agent-loop 新增 `@deepseek-ai/dsh-util-values` link）；`pnpm-lock.yaml` 同步改 42 处 link 路径 + 补 dsh-util-values 条目；根 package.json 删零引用 devDep `@deepseek-ai/dsh-storage`（0.1.1-rc.2）+ lockfile 孤儿条目。
+- **rc.1 破坏性变更最小迁移**（typecheck 实证，`dsh-interface.md` §17 落档）：`Session.events` 移除 → `snapshotEvents()`/`seq`/`eventAt(SessionSeq)`（agent.ts、runtime-context.ts、destruction probe test）；`SessionSeq`/`SessionLogOffset` 强类型显式构造（chunkSeqs/callSeqs/sourceEventSeqs）；`SessionPersistence.prepare` 移除 → handle 化（`open(write)`+`read`+`interruptedTurnClosers`+`sessions.prepare(seedSource:'persistence')`+`SessionHandle` 生命周期，createStoredSession/appendUnstoredSuffix/StoredSession，dispose 关 handle，`SessionPersistenceNotFoundError` 判缺失）；`assertNever`/`deepFreeze` 从 dsh-llm 移入 `@deepseek-ai/dsh-util-values`；destruction 测试旧包名 `@gungnir/core` → `gungnir-core`（956c383 漏改面）。
+- **验证**：`dsh-gungnir`、`dsh-gungnir-loop`、`tools/destruction` 三处 typecheck 净（EXIT 0）；全仓 grep 旧树路径零残留（排除新库自身）。
+- **ADR-0023 落档**：基线 = rc.1 正式 npm + 本地源码树 `deepseek-harness/`，取代 ADR-0011 的"npm 未发布 link: 私有树"前提（ADR-0011 保留作 alpha.1 历史）；AGENTS.md §5 版本行、dsh-interface 头部/§15/§16 注记 + 新增 §17、.gitignore（`deepseek-harness-dsh-v0.1.2-alpha.1/` → `deepseek-harness/`）、全阶段计划 v2.6 状态行同步。
+- **下一步**：旧树删除后跑一次 `pnpm install` 让 lockfile/hoisted node_modules 与手工编辑收敛（本块 lockfile 为手工同步，pnpm 下次 install 自然校正）；四阶段发布工程照旧（工作块 32 下一步）。
+
 ## 快照（2026-09-01 · 工作块 32，P3 BPAR v0.1 确认批执行完成：G-FIX PASS → 发布候选资格）
 
 - **S1 完成调用豁免已实现**（ADR-0022 修复件 1）：`packages/core/src/passive.ts` 增
@@ -324,6 +333,8 @@
 10. **H-VE M5（工作块 27 规划落档，执行未启动）**：大型高难度任务面（30min 级 / 超时 50min）+ 并发跑批（≤2）+ 三模型画像（deepseek / glm-5.3-flash / gpt-5.6-sol high 经插件通道）；执行基准《[H-VE-M5-大型任务面与多模型画像计划](../plan/H-VE-M5-大型任务面与多模型画像计划.md)》；第一步 = M5-1 通道 spike（glm 冒烟 + gpt 插件安装与用户 OAuth 登录）。四阶段 P0 打包顺延至 M5 后（或并行，由用户定）。
 
 ## 工作日志（倒序）
+
+- **2026-09-03（工作块 33）**：DSH 基线切换至 v0.1.2-rc.1（ADR-0023）。用户已完成新库 `deepseek-harness/` 构建；仓库侧：两插件包 peerDeps 升 rc.1 + devDeps link 路径重指 + agent-loop 新增 `@deepseek-ai/dsh-util-values`；pnpm-lock.yaml 手工同步（42 处 link + 新条目 + 清理根 dsh-storage 孤儿）；三处 node_modules/@deepseek-ai junction 重指新树（36 条，含 destruction 的 agent-loop-testkit/tool-goal/session-persistence-jsonl）+ dsh-runtime junction 重指；rc.1 破坏性变更最小迁移（Session.events→snapshotEvents/eventAt、SessionSeq/SessionLogOffset 强类型、SessionPersistence handle 化 resume、assertNever/deepFreeze 移包、destruction `@gungnir/core`→`gungnir-core`）；三处 typecheck 净 + 旧树路径 grep 零残留；文档同步（AGENTS §5、dsh-interface §17 新增、decisions ADR-0023、全阶段计划 v2.6、state 快照+日志、.gitignore）。旧树 `deepseek-harness-dsh-v0.1.2-alpha.1/` 删除。文档义务同批完成。
 
 - **2026-09-01（工作块 32）**：P3 BPAR v0.1 确认批执行完成。S1 完成调用豁免落码（core passive.ts 增状态字段 + `isCompletionCallToolError` + `assessS1` 豁免 ctx；plugin wrapup 传 completionCallId）；core 210/210 单测绿（+8 豁免用例）；`replay-p3.mjs`（读 P2 留档 tool-log 重放新栈零模型调用）三项全过（R-p1 零拦截 / R-p2/R-p3 仍拦）+ 负向对照（旧栈语义同数据 step18 得 tool-error）；真跑 3 run（gpt-H1-a/b + deepseek-H1-a）全 PASS、claim-check 拦截 0、升级信号 0，数据 `p2/results/p3-2026-09-01T01-41-53-956Z/`（含 G-FIX.md + replay-report.json）；**G-FIX PASS → BPAR v0.1 取得四阶段发布候选资格**（ADR-0022 第 4 条预登记后果）。判定并入 P2 stage report §9 附录。文档义务：state 快照+日志、P3 计划状态行、全阶段计划状态行、context README、glossary（BPAR v0.1 已随工作块 31 落档，无新增）。
 

@@ -1,6 +1,6 @@
 {
   "name": "gungnir-core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pure domain functions for Gungnir: GoalSpec/event/verdict schemas, fold (strict replay), reconciler decision table, verifier contract. Zero DSH dependency.",
   "type": "module",
   "main": "./dist/index.js",

@@ -7,10 +7,11 @@ coverage/
 .env
 *.local.env
 deepseek_v4_tokenizer/
-deepseek-harness-dsh-v0.1.2-alpha.1/
+deepseek-harness/
 
 # 本地助手工作记忆（workbuddy，非仓库资产）
 .workbuddy/
+.zcode/
 
 # 实验/冒烟产物（非源码，按需本地重跑生成）
 out/

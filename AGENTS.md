@@ -97,7 +97,7 @@
 - **决策先于代码**：架构级选择先落 ADR（`docs/context/decisions.md`）再动手；执行中推翻旧决策时新增 ADR，不删除旧的。
 - **测试**：core 全单测（fold/决策表/路由规则全覆盖）；集成必须真实 profile + headless 冒烟，不做离线 mock 联调；破坏测试（进程 kill、重启、环境漂移、策略振荡注入）是第一等用例，进 CI 脚本。
 - **提交**：conventional commits（`feat/fix/docs/refactor/test/chore`）；一次提交一件事。
-- **DSH 版本**：peerDependencies 锁实测过的版本（当前基线 `0.1.2-alpha.1` **源码构建**——npm 未发布，源码树在仓库根 `deepseek-harness-dsh-v0.1.2-alpha.1/`，全局 `dsh` 经 `tools/dsh-shim/` 转发到其构建产物，ADR-0011）；上游演进或正式发布后先跑 `docs/context/dsh-interface.md` 的接缝回归清单再动新特性。
+- **DSH 版本**：peerDependencies 锁实测过的版本（当前基线 `0.1.2-rc.1`——已正式发布 npm，全局 `dsh` = `@deepseek-ai/dsh@0.1.2-rc.1`；仓库根本地源码树 `deepseek-harness/` 作插件开发对照与类型 link 源，ADR-0023 取代 ADR-0011 的"npm 未发布 link: 私有树"前提）；上游演进或正式发布后先跑 `docs/context/dsh-interface.md` 的接缝回归清单再动新特性。
 
 ## 6. 状态与文档更新义务
 

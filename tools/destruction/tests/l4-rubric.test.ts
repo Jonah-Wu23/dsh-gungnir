@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { VerifyContext } from '@gungnir/core'
+import type { VerifyContext } from 'gungnir-core'
 import { AgentLedger, MemoryKv } from 'dsh-gungnir/ledger.js'
 import { ReconcileEngine, type EngineHooks } from 'dsh-gungnir/engine.js'
 import { LlmRubricVerifier } from 'dsh-gungnir/verifiers/llm-rubric.js'

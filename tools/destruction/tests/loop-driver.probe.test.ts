@@ -9,7 +9,7 @@ import * as goalRoundDriver from '@deepseek-ai/dsh-goal-round-driver'
 import * as toolGoal from '@deepseek-ai/dsh-tool-goal'
 import * as sessionPersistenceJsonl from '@deepseek-ai/dsh-session-persistence-jsonl'
 import GungnirLoop, { MAX_MODE_TRANSITIONS_PER_TURN } from '../../../packages/agent-loop/dist/index.js'
-import type { LoopRouterInputs } from '@gungnir/core'
+import type { LoopRouterInputs } from 'gungnir-core'
 import { foldEvents, routerInputsOf } from '../../../packages/core/dist/index.js'
 import { AgentLedger, MemoryKv, parseLedgerRecords } from '../../../packages/dsh-plugin/dist/ledger.js'
 import { mkdtempSync } from 'node:fs'
@@ -42,7 +42,7 @@ interface ProbeEvent {
 
 interface ProbeAgentView {
   id: string
-  session: { events: ReadonlyArray<ProbeEvent> }
+  session: { snapshotEvents(): ReadonlyArray<ProbeEvent> }
 }
 
 const USAGE: TokenUsage = { inputTokens: 10, outputTokens: 5, totalTokens: 15 }
@@ -226,7 +226,7 @@ describe('loop driver deterministic probes (real DSH stack, scripted model)', ()
     const stoppings: Array<{ turn: number; sawWrapup: boolean }> = []
     onAny(ctx, 'agent/turn-stopping', (raw) => {
       const payload = raw as { agent: ProbeAgentView; turn: number }
-      const sawWrapup = payload.agent.session.events.some(event =>
+      const sawWrapup = payload.agent.session.snapshotEvents().some(event =>
         event.type === 'user/message' && eventText(event).includes('<goal_complete>'),
       )
       stoppings.push({ turn: payload.turn, sawWrapup })
@@ -240,13 +240,13 @@ describe('loop driver deterministic probes (real DSH stack, scripted model)', ()
       content: [{ type: 'text', text: 'probe: create a goal, then complete it on the next goal round' }],
       source: { kind: 'user' },
     }))
-    await waitFor(() => agent.session.events.filter(event => event.type === 'turn/end').length >= 2, 15_000, 'two turns').catch((error: unknown) => {
-      const summary = (agent.session.events as ReadonlyArray<ProbeEvent>).map(event => `${event.seq}:${event.type}`).join(', ')
+    await waitFor(() => agent.session.snapshotEvents().filter(event => event.type === 'turn/end').length >= 2, 15_000, 'two turns').catch((error: unknown) => {
+      const summary = (agent.session.snapshotEvents() as ReadonlyArray<ProbeEvent>).map(event => `${event.seq}:${event.type}`).join(', ')
       const goalState = JSON.stringify((ctx as unknown as { goals: { get(a: unknown): unknown } }).goals.get(agent))
       throw new Error(`${String(error)} :: events=[${summary}] :: goal=${goalState} :: status=${agent.status} :: agentErrors=${errorsSeen.join(' | ')}`)
     })
 
-    const events = agent.session.events as ReadonlyArray<ProbeEvent>
+    const events = agent.session.snapshotEvents() as ReadonlyArray<ProbeEvent>
     const updateGoalCall = events.find(event => event.type === 'tool/call' && event.data.name === 'update_goal')
     expect(updateGoalCall).toBeDefined()
     const wrapup = events.find(event =>
@@ -313,7 +313,7 @@ describe('loop driver deterministic probes (real DSH stack, scripted model)', ()
       content: [{ type: 'text', text: 'probe: oscillation' }],
       source: { kind: 'user' },
     }))
-    await waitFor(() => agent.session.events.some(event => event.type === 'turn/end'), 15_000, 'turn end')
+    await waitFor(() => agent.session.snapshotEvents().some(event => event.type === 'turn/end'), 15_000, 'turn end')
     // 振荡确实发生了（≥3 次真实切换），但单 turn 不超预算（初始选定不计预算）
     expect(transitions.length).toBeGreaterThanOrEqual(3)
     // turn 内事件数上限 = 预算 + 初始选定（from=null 不占预算）
@@ -345,7 +345,7 @@ describe('loop driver deterministic probes (real DSH stack, scripted model)', ()
       content: [{ type: 'text', text: 'first turn before resume' }],
       source: { kind: 'user' },
     }))
-    await waitFor(() => first.agent.session.events.some(event => event.type === 'turn/end'), 15_000, 'first turn end')
+    await waitFor(() => first.agent.session.snapshotEvents().some(event => event.type === 'turn/end'), 15_000, 'first turn end')
     await ctx.sessions.flush(first.agent.session)
     await first.dispose()
 
@@ -358,12 +358,12 @@ describe('loop driver deterministic probes (real DSH stack, scripted model)', ()
       source: { kind: 'user' },
     }))
     await waitFor(
-      () => second.agent.session.events.filter(event => event.type === 'turn/end').length >= 2,
+      () => second.agent.session.snapshotEvents().filter(event => event.type === 'turn/end').length >= 2,
       15_000,
       'resumed turn to complete',
     )
     // 续跑的首个 request/header 带 resume 锚（从 session log 恢复请求基线）
-    const headers = second.agent.session.events.filter(event => event.type === 'request/header') as ReadonlyArray<ProbeEvent & { data: { reason?: string } }>
+    const headers = second.agent.session.snapshotEvents().filter(event => event.type === 'request/header') as ReadonlyArray<ProbeEvent & { data: { reason?: string } }>
     const resumedHeader = headers.at(-1)
     expect(resumedHeader).toBeDefined()
     expect(resumedHeader!.data.reason).toBe('resume')
@@ -376,7 +376,7 @@ describe('loop driver deterministic probes (real DSH stack, scripted model)', ()
     const anchors = records.filter(record => record.event.type === 'gungnir/loop-state').map(record => record.event as { turn: number })
     expect(anchors.some(anchor => anchor.turn === 1)).toBe(true)
     expect(anchors.some(anchor => anchor.turn === 2)).toBe(true)
-    const finalTurnEnd = second.agent.session.events.filter(event => event.type === 'turn/end').at(-1)!
+    const finalTurnEnd = second.agent.session.snapshotEvents().filter(event => event.type === 'turn/end').at(-1)!
     expect(finalTurnEnd.data.reason?.kind).toBe('completed')
     await disposeCtx(ctx)
   })

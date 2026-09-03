@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ArtifactVerifier } from 'dsh-gungnir/verifiers/artifact.js'
 import { ReconcileEngine, type EngineHooks, type LedgerDirectory } from 'dsh-gungnir/engine.js'
-import type { VerifyContext } from '@gungnir/core'
+import type { VerifyContext } from 'gungnir-core'
 import type { AgentLedger } from 'dsh-gungnir/ledger.js'
 
 /** 隔离的临时 workspace（引擎 ArtifactVerifier 的围栏根）。 */

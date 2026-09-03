@@ -1,7 +1,7 @@
 import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { CommandObservation, VerifyContext } from '@gungnir/core'
+import type { CommandObservation, VerifyContext } from 'gungnir-core'
 import { AgentLedger, MemoryKv } from 'dsh-gungnir/ledger.js'
 import { FileKv } from '../src/file-kv.js'
 import { ReconcileEngine, type EngineHooks } from 'dsh-gungnir/engine.js'

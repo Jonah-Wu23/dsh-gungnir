@@ -1,5 +1,5 @@
-import { sha256Of } from '@gungnir/core'
-import type { CommandObservation, VerifyContext } from '@gungnir/core'
+import { sha256Of } from 'gungnir-core'
+import type { CommandObservation, VerifyContext } from 'gungnir-core'
 import { ExitCodeVerifier } from 'dsh-gungnir/verifiers/exit-code.js'
 import { describe, expect, it } from 'vitest'
 

@@ -315,6 +315,27 @@ Harness 长期只信任 GoalSpec，不信任长 Plan；Plan 是 rolling-horizon 
 
 **取代/修正**：部分修正 ADR-0021 第 4 条的执行方式——G1 死刑针对 BPAR v0；v0.1 经用户确认的宽门确认批取得新资格程序。不重写 P2 任何数据与判定。**影响**：三阶段新增 **P3 = BPAR v0.1 确认批**，执行基准《[三阶段-P3-BPAR-v0.1-确认批计划](../plan/三阶段-P3-BPAR-v0.1-确认批计划.md)》；全阶段计划 v2.5。
 
+### ADR-0023 开发基线切换至 v0.1.2-rc.1 正式发布 + 本地源码树 deepseek-harness（accepted，2026-09-03；取代 ADR-0011 的"npm 未发布 link: 私有树"前提）
+
+**背景**：
+
+1. 上游 v0.1.2 已正式发布 npm（`@deepseek-ai/dsh@0.1.2-rc.1` 及全部 `@deepseek-ai/dsh-*` 子包、`vendor/cordis`、`vendor/schemastery`）；用户 2026-09-03 将全局 `dsh` 换装为 npm 正式版（`dsh --version` = `0.1.2-rc.1`），并准备新源码树 `deepseek-harness/`（仓库根，git 仓库 `dsh-v0.1.2-rc.1` tag 后、已 `pnpm install` + `pnpm run build:lib:host`）。
+2. ADR-0011（2026-08-28）的前提是"v0.1.2-alpha.1 npm 未发布，仓内对齐只能 `link:` 私有源码树"；该前提已随 npm 正式发布失效。旧源码树 `deepseek-harness-dsh-v0.1.2-alpha.1/` 按用户指令删除。
+3. rc.1 相对 alpha.1 有破坏性变更（`Session.events` 移除、`SessionSeq`/`SessionLogOffset` 强类型、`SessionPersistence` handle 化、`assertNever`/`deepFreeze` 移入 `@deepseek-ai/dsh-util-values`）——Gungnir 插件与 agent-loop 冻存资产须最小机械迁移以保持可构建（`dsh-interface.md` §17 实证）。
+
+**决定**：
+
+1. **开发基线 = v0.1.2-rc.1**（npm 正式发布）；插件 peerDependencies 统一 `0.1.2-rc.1`；仓内类型/符号解析继续走 `link:` 指向本地源码树 `deepseek-harness/`（`packages/<group>/<pkg>` 布局，含新增 `packages/util/values`）。不全局安装插件/依赖。
+2. **旧树删除**：`deepseek-harness-dsh-v0.1.2-alpha.1/` 删除（`.gitignore` 条目同步替换为 `deepseek-harness/`）。
+3. **接线重指**：`packages/dsh-plugin`、`packages/agent-loop`、`tools/destruction` 三处 `node_modules/@deepseek-ai/*` junction 重指新树（agent-loop 新增 `dsh-util-values`）；`AppData/Local/dsh-runtime` junction → 新树（`tools/dsh-shim` 回滚资产保持可用；全局 `dsh` 已 npm 正式版，不经 shim）。
+4. **最小迁移范围**（仅保持可构建与语义等价，不改行为）：`Session.events` → `snapshotEvents()`/`seq`/`eventAt`；`SessionSeq`/`SessionLogOffset` 显式构造；`SessionPersistence.prepare` → `open(write)` + `read` + `interruptedTurnClosers` + `sessions.prepare(seedSource:'persistence')` + `SessionHandle` 生命周期（`createStoredSession`/`appendUnstoredSuffix`/`StoredSession`，dispose 关 handle）；缺失判定用 `SessionPersistenceNotFoundError`；`assertNever`/`deepFreeze` 改从 `@deepseek-ai/dsh-util-values` 导入；destruction 测试旧包名 `@gungnir/core` → `gungnir-core`。
+5. **回滚路径**：`npm install -g @deepseek-ai/dsh@0.1.1-rc.2`（与 ADR-0011 一致）；源码对照树回退到任一已构建的 v0.1.2 快照。
+6. **验证**：两插件包 + destruction 三处 typecheck 净；全仓 grep 旧树路径零残留（排除新库自身）。
+
+**依据**：`dsh-interface.md` §17（rc.1 基线事实与破坏性变更，typecheck 实证）；`deepseek-harness/` 源码树；用户指令（2026-09-03：解除旧树依赖、改用新树、删除旧树、不全局安装、解决版本兼容问题、不运行长命令——新树构建由用户完成）。
+
+**取代/修正**：取代 ADR-0011 第 1/3 条的"npm 未发布"前提与私有树路径（ADR-0011 保留作 alpha.1 历史记录，不删除）；不重写 §15/§16 历史实测。**影响**：AGENTS.md §5 DSH 版本行、`dsh-interface.md` 头部与 §15/§16 注记 + 新增 §17、`.gitignore`、全阶段计划与 state.md 基线表述。
+
 ## 决策模板
 
 新增决策时使用：标题、状态、日期、背景（为什么必须选）、决定、依据（文档章节/实测数据）、被取代的 ADR（如有）。
